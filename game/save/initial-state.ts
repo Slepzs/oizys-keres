@@ -1,0 +1,26 @@
+import type { GameState } from '../types';
+import { createInitialSkillsState } from '../data/skills.data';
+import { createInitialResourcesState } from '../data/resources.data';
+
+/**
+ * Create a fresh game state for new players.
+ */
+export function createInitialGameState(): GameState {
+  const now = Date.now();
+
+  return {
+    player: {
+      level: 1,
+      xp: 0,
+    },
+    skills: createInitialSkillsState(),
+    resources: createInitialResourcesState(),
+    timestamps: {
+      lastActive: now,
+      lastSave: now,
+      sessionStart: now,
+    },
+    activeSkill: null,
+    rngSeed: Math.floor(Math.random() * 2147483647),
+  };
+}

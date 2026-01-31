@@ -1,0 +1,119 @@
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { SafeContainer } from '../components/layout/SafeContainer';
+import { Card } from '../components/common/Card';
+import { ProgressBar } from '../components/common/ProgressBar';
+import { ResourceCounter } from '../components/game/ResourceCounter';
+import { SkillCard } from '../components/game/SkillCard';
+import { useGame } from '@/hooks/useGame';
+import { useSave } from '@/hooks/useSave';
+import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
+import { xpForPlayerLevel, SKILL_IDS } from '@/game/data';
+import type { SkillId, ResourceId } from '@/game/types';
+
+export function DashboardScreen() {
+  const { state, setActiveSkill } = useGame();
+  useSave(); // Enable auto-save
+
+  const playerXpRequired = xpForPlayerLevel(state.player.level + 1);
+  const playerProgress = playerXpRequired > 0 ? state.player.xp / playerXpRequired : 1;
+
+  const handleSkillPress = (skillId: SkillId) => {
+    if (state.activeSkill === skillId) {
+      setActiveSkill(null);
+    } else {
+      setActiveSkill(skillId);
+    }
+  };
+
+  return (
+    <SafeContainer>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Player Level Card */}
+        <Card style={styles.playerCard}>
+          <View style={styles.playerHeader}>
+            <Text style={styles.playerTitle}>Player</Text>
+            <Text style={styles.playerLevel}>Level {state.player.level}</Text>
+          </View>
+          <ProgressBar
+            progress={playerProgress}
+            color={colors.primary}
+            height={8}
+          />
+        </Card>
+
+        {/* Resources Row */}
+        <View style={styles.resourcesRow}>
+          {(['wood', 'stone', 'ore'] as ResourceId[]).map((resourceId) => (
+            <Card key={resourceId} style={styles.resourceCard}>
+              <ResourceCounter
+                resourceId={resourceId}
+                amount={state.resources[resourceId].amount}
+                size="lg"
+              />
+            </Card>
+          ))}
+        </View>
+
+        {/* Skills Section */}
+        <Text style={styles.sectionTitle}>Skills</Text>
+        <Text style={styles.sectionSubtitle}>
+          Tap a skill to start training
+        </Text>
+
+        {SKILL_IDS.map((skillId) => (
+          <SkillCard
+            key={skillId}
+            skillId={skillId}
+            skill={state.skills[skillId]}
+            isActive={state.activeSkill === skillId}
+            onPress={() => handleSkillPress(skillId)}
+          />
+        ))}
+      </ScrollView>
+    </SafeContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  playerCard: {
+    marginBottom: spacing.md,
+  },
+  playerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  playerTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  playerLevel: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  resourcesRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  resourceCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  sectionTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  sectionSubtitle: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+});

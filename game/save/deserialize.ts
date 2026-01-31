@@ -1,0 +1,117 @@
+import type { GameState } from '../types';
+import type { SaveBlob } from './schema';
+import { migrateSave, needsMigration } from './migrations';
+import { createInitialGameState } from './initial-state';
+
+export interface DeserializeResult {
+  success: boolean;
+  state: GameState;
+  wasMigrated: boolean;
+  error?: string;
+}
+
+/**
+ * Parse JSON string to save blob.
+ */
+export function jsonToSave(json: string): SaveBlob | null {
+  try {
+    const parsed = JSON.parse(json);
+
+    // Basic validation
+    if (typeof parsed !== 'object' || parsed === null) {
+      return null;
+    }
+
+    if (typeof parsed.version !== 'number') {
+      return null;
+    }
+
+    if (!parsed.state || typeof parsed.state !== 'object') {
+      return null;
+    }
+
+    return parsed as SaveBlob;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Deserialize a save blob to game state.
+ * Handles migrations and validation.
+ */
+export function deserializeSave(save: SaveBlob): DeserializeResult {
+  try {
+    let processedSave = save;
+    let wasMigrated = false;
+
+    // Apply migrations if needed
+    if (needsMigration(save)) {
+      processedSave = migrateSave(save);
+      wasMigrated = true;
+    }
+
+    // Validate state structure
+    const state = validateAndRepairState(processedSave.state);
+
+    return {
+      success: true,
+      state,
+      wasMigrated,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      state: createInitialGameState(),
+      wasMigrated: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Convenience function to deserialize directly from JSON.
+ */
+export function jsonToState(json: string): DeserializeResult {
+  const save = jsonToSave(json);
+
+  if (!save) {
+    return {
+      success: false,
+      state: createInitialGameState(),
+      wasMigrated: false,
+      error: 'Invalid JSON or save format',
+    };
+  }
+
+  return deserializeSave(save);
+}
+
+/**
+ * Validate state and repair any missing fields with defaults.
+ */
+function validateAndRepairState(state: Partial<GameState>): GameState {
+  const initial = createInitialGameState();
+
+  return {
+    player: {
+      level: state.player?.level ?? initial.player.level,
+      xp: state.player?.xp ?? initial.player.xp,
+    },
+    skills: {
+      ...initial.skills,
+      ...state.skills,
+    },
+    resources: {
+      ...initial.resources,
+      ...state.resources,
+    },
+    timestamps: {
+      lastActive: state.timestamps?.lastActive ?? initial.timestamps.lastActive,
+      lastSave: state.timestamps?.lastSave ?? initial.timestamps.lastSave,
+      sessionStart: Date.now(), // Always reset session start
+    },
+    activeSkill: state.activeSkill ?? null,
+    rngSeed: state.rngSeed ?? initial.rngSeed,
+  };
+}
