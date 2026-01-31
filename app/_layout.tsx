@@ -1,11 +1,12 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { GameProvider } from '@/ui/providers';
+import { HydrationGate, TickManager } from '@/ui/providers';
 import { colors } from '@/constants/theme';
 
 export default function RootLayout() {
   return (
-    <GameProvider>
+    <HydrationGate>
+      <TickManager />
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -13,6 +14,6 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.background },
         }}
       />
-    </GameProvider>
+    </HydrationGate>
   );
 }

@@ -1,13 +1,28 @@
 import { useState, useEffect } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { useGame } from './useGame';
-import { processOfflineProgress, summarizeOfflineProgress, OfflineProgressSummary } from '@/game/logic';
+import { useGameStore } from '@/store';
+import {
+  processOfflineProgress,
+  summarizeOfflineProgress,
+  OfflineProgressSummary,
+} from '@/game/logic';
+import type { GameState } from '@/game/types';
 
 /**
  * Hook to handle offline progress when app comes back to foreground.
  */
 export function useOfflineProgress() {
-  const { state, dispatch } = useGame();
+  const state = useGameStore((s) => ({
+    player: s.player,
+    skills: s.skills,
+    resources: s.resources,
+    timestamps: s.timestamps,
+    activeSkill: s.activeSkill,
+    rngSeed: s.rngSeed,
+  })) as GameState;
+
+  const loadSave = useGameStore((s) => s.loadSave);
+
   const [lastSummary, setLastSummary] = useState<OfflineProgressSummary | null>(null);
   const [showSummary, setShowSummary] = useState(false);
 
@@ -25,7 +40,7 @@ export function useOfflineProgress() {
           setShowSummary(true);
         }
 
-        dispatch({ type: 'LOAD_SAVE', payload: { state: result.state } });
+        loadSave(result.state);
       }
     }
 
@@ -34,7 +49,7 @@ export function useOfflineProgress() {
     return () => {
       subscription.remove();
     };
-  }, [state, dispatch]);
+  }, [state, loadSave]);
 
   const dismissSummary = () => {
     setShowSummary(false);

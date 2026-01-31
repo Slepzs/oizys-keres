@@ -228,3 +228,6 @@ North Star Question
 “Does this feature meaningfully increase long-term progression or player agency?”
 
 If not, it probably doesn’t belong.
+
+
+Explore other agents.md to gain context.

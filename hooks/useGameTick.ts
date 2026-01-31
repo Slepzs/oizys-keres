@@ -1,14 +1,23 @@
 import { useEffect, useRef } from 'react';
-import { useGame } from './useGame';
+import { useGameStore } from '@/store';
 import { TICK_RATE_MS } from '@/game/data';
+import type { GameState } from '@/game/types';
 
 /**
  * Hook to manage the game tick loop.
- * Note: The main tick loop is in GameProvider.
+ * Note: The main tick loop is in TickManager.
  * This hook is for components that need tick-synchronized updates.
  */
 export function useGameTick(onTick?: (deltaMs: number) => void) {
-  const { state } = useGame();
+  const state = useGameStore((s) => ({
+    player: s.player,
+    skills: s.skills,
+    resources: s.resources,
+    timestamps: s.timestamps,
+    activeSkill: s.activeSkill,
+    rngSeed: s.rngSeed,
+  })) as GameState;
+
   const lastTickRef = useRef(Date.now());
   const callbackRef = useRef(onTick);
 
@@ -36,7 +45,7 @@ export function useGameTick(onTick?: (deltaMs: number) => void) {
  * Get elapsed time since session start.
  */
 export function useSessionTime() {
-  const { state } = useGame();
+  const sessionStart = useGameStore((s) => s.timestamps.sessionStart);
   const now = Date.now();
-  return now - state.timestamps.sessionStart;
+  return now - sessionStart;
 }

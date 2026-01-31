@@ -1,66 +1,33 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useGame } from './useGame';
+import { useCallback } from 'react';
+import { useGameStore, useIsHydrated } from '@/store';
 import { stateToJson, jsonToState } from '@/game/save';
-import { saveToStorage, loadFromStorage } from '@/services/storage';
-import { AUTO_SAVE_INTERVAL_MS } from '@/game/data';
-import { processOfflineProgress } from '@/game/logic';
+import { storage, clearStorageSync } from '@/services/mmkv-storage';
+import type { GameState } from '@/game/types';
+
+const MANUAL_SAVE_KEY = 'manual-save';
 
 /**
  * Hook to manage save/load operations.
+ * Auto-save is handled automatically by Zustand persist middleware.
  */
 export function useSave() {
-  const { state, dispatch, isLoaded } = useGame();
-  const hasLoadedRef = useRef(false);
+  const state = useGameStore((s) => ({
+    player: s.player,
+    skills: s.skills,
+    resources: s.resources,
+    timestamps: s.timestamps,
+    activeSkill: s.activeSkill,
+    rngSeed: s.rngSeed,
+  })) as GameState;
 
-  // Load save on mount
-  useEffect(() => {
-    if (hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
+  const loadSave = useGameStore((s) => s.loadSave);
+  const resetStore = useGameStore((s) => s.reset);
+  const isLoaded = useIsHydrated();
 
-    async function loadSave() {
-      try {
-        const json = await loadFromStorage();
-        if (json) {
-          const result = jsonToState(json);
-          if (result.success) {
-            // Process offline progress
-            const offlineResult = processOfflineProgress(result.state, Date.now());
-            dispatch({ type: 'LOAD_SAVE', payload: { state: offlineResult.state } });
-
-            if (offlineResult.elapsedMs > 60_000) {
-              // Could show offline progress modal here
-              console.log(`Processed ${Math.floor(offlineResult.elapsedMs / 1000)}s of offline progress`);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load save:', error);
-      }
-    }
-
-    loadSave();
-  }, [dispatch]);
-
-  // Auto-save
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const json = stateToJson(state);
-        await saveToStorage(json);
-      } catch (error) {
-        console.error('Auto-save failed:', error);
-      }
-    }, AUTO_SAVE_INTERVAL_MS);
-
-    return () => clearInterval(interval);
-  }, [state, isLoaded]);
-
-  const save = useCallback(async () => {
+  const save = useCallback(() => {
     try {
       const json = stateToJson(state);
-      await saveToStorage(json);
+      storage.set(MANUAL_SAVE_KEY, json);
       return true;
     } catch (error) {
       console.error('Manual save failed:', error);
@@ -68,13 +35,13 @@ export function useSave() {
     }
   }, [state]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     try {
-      const json = await loadFromStorage();
+      const json = storage.getString(MANUAL_SAVE_KEY);
       if (json) {
         const result = jsonToState(json);
         if (result.success) {
-          dispatch({ type: 'LOAD_SAVE', payload: { state: result.state } });
+          loadSave(result.state);
           return true;
         }
       }
@@ -83,11 +50,12 @@ export function useSave() {
       console.error('Manual load failed:', error);
       return false;
     }
-  }, [dispatch]);
+  }, [loadSave]);
 
   const reset = useCallback(() => {
-    dispatch({ type: 'RESET' });
-  }, [dispatch]);
+    clearStorageSync();
+    resetStore();
+  }, [resetStore]);
 
-  return { save, load, reset };
+  return { save, load, reset, isLoaded };
 }
