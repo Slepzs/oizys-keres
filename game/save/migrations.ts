@@ -1,6 +1,7 @@
 import type { SaveBlob } from './schema';
 import { CURRENT_SAVE_VERSION } from './schema';
 import { createInitialBagState } from '../data/items.data';
+import { createInitialQuestsState } from '../data/quests.data';
 
 type MigrationFn = (save: SaveBlob) => SaveBlob;
 
@@ -16,6 +17,27 @@ const migrations: Record<number, MigrationFn> = {
     state: {
       ...save.state,
       bag: createInitialBagState(),
+    },
+  }),
+  // Migration from v2 to v3: Add quest system
+  2: (save) => ({
+    ...save,
+    version: 3,
+    state: {
+      ...save.state,
+      quests: createInitialQuestsState(),
+    },
+  }),
+  // Migration from v3 to v4: Add bag settings
+  3: (save) => ({
+    ...save,
+    version: 4,
+    state: {
+      ...save.state,
+      bagSettings: {
+        autoSort: false,
+        sortMode: 'rarity' as const,
+      },
     },
   }),
 };

@@ -1,7 +1,15 @@
-import type { GameState } from '../types';
+import type { GameState, BagSettings } from '../types';
 import { createInitialSkillsState } from '../data/skills.data';
 import { createInitialResourcesState } from '../data/resources.data';
 import { createInitialBagState } from '../data/items.data';
+import { createInitialQuestsState } from '../data/quests.data';
+
+export function createInitialBagSettings(): BagSettings {
+  return {
+    autoSort: false,
+    sortMode: 'rarity',
+  };
+}
 
 /**
  * Create a fresh game state for new players.
@@ -17,6 +25,8 @@ export function createInitialGameState(): GameState {
     skills: createInitialSkillsState(),
     resources: createInitialResourcesState(),
     bag: createInitialBagState(),
+    bagSettings: createInitialBagSettings(),
+    quests: createInitialQuestsState(),
     timestamps: {
       lastActive: now,
       lastSave: now,

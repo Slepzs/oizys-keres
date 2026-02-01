@@ -1,6 +1,12 @@
 import type { ResourcesState } from './resources';
 import type { SkillsState } from './skills';
-import type { BagState } from './items';
+import type { BagState, SortMode } from './items';
+import type { QuestsState } from './quests';
+
+export interface BagSettings {
+  autoSort: boolean;
+  sortMode: SortMode;
+}
 
 export interface PlayerState {
   level: number;
@@ -18,6 +24,8 @@ export interface GameState {
   skills: SkillsState;
   resources: ResourcesState;
   bag: BagState;
+  bagSettings: BagSettings;
+  quests: QuestsState;
   timestamps: TimestampsState;
   activeSkill: string | null;
   rngSeed: number;

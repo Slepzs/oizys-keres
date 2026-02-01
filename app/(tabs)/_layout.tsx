@@ -39,6 +39,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="quests"
+        options={{
+          title: 'Quests',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 20, color }}>📜</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="bag"
         options={{
           title: 'Bag',

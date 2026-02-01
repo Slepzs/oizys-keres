@@ -40,6 +40,11 @@ export function BagSlot({ slot, isSelected, onPress }: BagSlotProps) {
               <Text style={styles.quantityText}>{slot.quantity}</Text>
             </View>
           )}
+          {slot.locked && (
+            <View style={styles.lockBadge}>
+              <Text style={styles.lockIcon}>🔒</Text>
+            </View>
+          )}
         </>
       ) : (
         <View style={styles.empty} />
@@ -87,6 +92,20 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
     color: colors.text,
+  },
+  lockBadge: {
+    position: 'absolute',
+    top: 2,
+    left: 2,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.sm,
+    width: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockIcon: {
+    fontSize: 10,
   },
   empty: {
     width: 20,

@@ -1,5 +1,19 @@
-import type { BagState, BagSlot, ItemId } from '../types/items';
+import type { BagState, BagSlot, ItemId, SortMode, ItemRarity, ItemCategory } from '../types/items';
 import { ITEM_DEFINITIONS } from '../data/items.data';
+
+const RARITY_ORDER: Record<ItemRarity, number> = {
+  epic: 0,
+  rare: 1,
+  uncommon: 2,
+  common: 3,
+};
+
+const CATEGORY_ORDER: Record<ItemCategory, number> = {
+  equipment: 0,
+  tool: 1,
+  material: 2,
+  misc: 3,
+};
 
 export interface AddItemResult {
   bag: BagState;
@@ -166,4 +180,183 @@ export function isBagFull(bag: BagState): boolean {
     const definition = ITEM_DEFINITIONS[slot.itemId];
     return slot.quantity >= definition.maxStack;
   });
+}
+
+/**
+ * Consolidate fragmented stacks of the same item.
+ * Merges stacks together and moves all items to the front, nulls to the end.
+ */
+export function consolidateStacks(bag: BagState): BagState {
+  // Group items by itemId
+  const itemGroups = new Map<ItemId, number>();
+
+  for (const slot of bag.slots) {
+    if (slot) {
+      const current = itemGroups.get(slot.itemId) ?? 0;
+      itemGroups.set(slot.itemId, current + slot.quantity);
+    }
+  }
+
+  // Rebuild slots with consolidated stacks
+  const newSlots: (BagSlot | null)[] = [];
+
+  for (const [itemId, totalQuantity] of itemGroups) {
+    const definition = ITEM_DEFINITIONS[itemId];
+    let remaining = totalQuantity;
+
+    while (remaining > 0) {
+      const toAdd = Math.min(remaining, definition.maxStack);
+      newSlots.push({ itemId, quantity: toAdd });
+      remaining -= toAdd;
+    }
+  }
+
+  // Fill remaining slots with null
+  while (newSlots.length < bag.maxSlots) {
+    newSlots.push(null);
+  }
+
+  return { ...bag, slots: newSlots };
+}
+
+/**
+ * Sort bag contents by the specified mode.
+ * Also consolidates stacks and moves items to front.
+ */
+export function sortBag(bag: BagState, mode: SortMode): BagState {
+  // First consolidate to clean up fragmented stacks
+  const consolidated = consolidateStacks(bag);
+
+  // Get non-null slots
+  const items = consolidated.slots.filter((slot): slot is BagSlot => slot !== null);
+
+  // Sort based on mode
+  items.sort((a, b) => {
+    const defA = ITEM_DEFINITIONS[a.itemId];
+    const defB = ITEM_DEFINITIONS[b.itemId];
+
+    switch (mode) {
+      case 'rarity':
+        // Epic first, then rare, uncommon, common
+        const rarityDiff = RARITY_ORDER[defA.rarity] - RARITY_ORDER[defB.rarity];
+        if (rarityDiff !== 0) return rarityDiff;
+        // Secondary sort by name
+        return defA.name.localeCompare(defB.name);
+
+      case 'category':
+        // Equipment first, then tool, material, misc
+        const categoryDiff = CATEGORY_ORDER[defA.category] - CATEGORY_ORDER[defB.category];
+        if (categoryDiff !== 0) return categoryDiff;
+        // Secondary sort by rarity
+        return RARITY_ORDER[defA.rarity] - RARITY_ORDER[defB.rarity];
+
+      case 'quantity':
+        // Highest quantity first
+        const quantityDiff = b.quantity - a.quantity;
+        if (quantityDiff !== 0) return quantityDiff;
+        // Secondary sort by name
+        return defA.name.localeCompare(defB.name);
+
+      case 'name':
+        return defA.name.localeCompare(defB.name);
+
+      default:
+        return 0;
+    }
+  });
+
+  // Rebuild slots with sorted items and null padding
+  const newSlots: (BagSlot | null)[] = [...items];
+  while (newSlots.length < bag.maxSlots) {
+    newSlots.push(null);
+  }
+
+  return { ...consolidated, slots: newSlots };
+}
+
+/**
+ * Expand the bag by adding additional slots.
+ */
+export function expandBag(bag: BagState, additionalSlots: number): BagState {
+  const newMaxSlots = bag.maxSlots + additionalSlots;
+  const newSlots = [...bag.slots];
+
+  // Add null slots for the expansion
+  for (let i = 0; i < additionalSlots; i++) {
+    newSlots.push(null);
+  }
+
+  return {
+    ...bag,
+    slots: newSlots,
+    maxSlots: newMaxSlots,
+  };
+}
+
+/**
+ * Toggle the locked state of a slot at the given index.
+ */
+export function toggleSlotLock(bag: BagState, slotIndex: number): BagState {
+  const slot = bag.slots[slotIndex];
+  if (!slot) return bag;
+
+  const newSlots = [...bag.slots];
+  newSlots[slotIndex] = {
+    ...slot,
+    locked: !slot.locked,
+  };
+
+  return { ...bag, slots: newSlots };
+}
+
+/**
+ * Remove items from a specific slot by index, respecting lock state.
+ */
+export function removeItemFromSlot(
+  bag: BagState,
+  slotIndex: number,
+  quantity: number
+): RemoveItemResult {
+  const slot = bag.slots[slotIndex];
+
+  if (!slot) {
+    return { bag, removed: 0, remaining: quantity };
+  }
+
+  // Locked slots cannot be removed from
+  if (slot.locked) {
+    return { bag, removed: 0, remaining: quantity };
+  }
+
+  const toRemove = Math.min(quantity, slot.quantity);
+  const newQuantity = slot.quantity - toRemove;
+
+  const newSlots = [...bag.slots];
+  if (newQuantity <= 0) {
+    newSlots[slotIndex] = null;
+  } else {
+    newSlots[slotIndex] = { ...slot, quantity: newQuantity };
+  }
+
+  return {
+    bag: { ...bag, slots: newSlots },
+    removed: toRemove,
+    remaining: quantity - toRemove,
+  };
+}
+
+/**
+ * Discard an entire slot (remove all items in that slot).
+ */
+export function discardSlot(bag: BagState, slotIndex: number): BagState {
+  const slot = bag.slots[slotIndex];
+
+  if (!slot || slot.locked) {
+    return bag;
+  }
+
+  const newSlots = [...bag.slots];
+  newSlots[slotIndex] = null;
+
+  return { ...bag, slots: newSlots };
 }

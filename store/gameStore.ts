@@ -1,8 +1,24 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 import type { GameState, SkillId, ItemId } from '@/game/types';
 import { createInitialGameState } from '@/game/save';
-import { processTick, processOfflineProgress, addItemToBag, removeItemFromBag } from '@/game/logic';
+import {
+  processTick,
+  processOfflineProgress,
+  addItemToBag,
+  removeItemFromBag,
+  sortBag,
+  consolidateStacks,
+  expandBag,
+  toggleSlotLock,
+  discardSlot,
+  processQuestEvents,
+  applyQuestRewards,
+  startQuest as startQuestLogic,
+  abandonQuest as abandonQuestLogic,
+} from '@/game/logic';
+import type { SortMode } from '@/game/types';
 import { zustandStorage } from '@/services/mmkv-storage';
 
 interface GameActions {
@@ -11,6 +27,16 @@ interface GameActions {
   toggleAutomation: (skillId: SkillId) => void;
   addItem: (itemId: ItemId, quantity: number) => { added: number; overflow: number };
   removeItem: (itemId: ItemId, quantity: number) => { removed: number; remaining: number };
+  discardSlot: (slotIndex: number) => void;
+  sortBag: (mode: SortMode) => void;
+  consolidateBag: () => void;
+  toggleAutoSort: () => void;
+  setSortMode: (mode: SortMode) => void;
+  toggleSlotLock: (slotIndex: number) => void;
+  expandBag: (additionalSlots: number) => void;
+  startQuest: (questId: string) => { success: boolean; error?: string };
+  abandonQuest: (questId: string) => void;
+  claimQuestRewards: (questId: string) => void;
   loadSave: (state: GameState) => void;
   reset: () => void;
 }
@@ -42,10 +68,25 @@ export const useGameStore = create<GameStore>()(
       tick: (deltaMs: number) => {
         const state = get();
         const result = processTick(state, deltaMs);
+
+        // Process quest events
+        const questResult = processQuestEvents(
+          result.events,
+          result.state.quests,
+          result.state
+        );
+
+        // Apply rewards for completed quests
+        let finalState: GameState = { ...result.state, quests: questResult.quests };
+        for (const questId of questResult.completedQuests) {
+          const rewardResult = applyQuestRewards(finalState, finalState.quests, questId);
+          finalState = { ...rewardResult.state, quests: rewardResult.quests };
+        }
+
         set({
-          ...result.state,
+          ...finalState,
           timestamps: {
-            ...result.state.timestamps,
+            ...finalState.timestamps,
             lastActive: Date.now(),
           },
         });
@@ -86,6 +127,105 @@ export const useGameStore = create<GameStore>()(
         return { removed: result.removed, remaining: result.remaining };
       },
 
+      discardSlot: (slotIndex: number) => {
+        const state = get();
+        const newBag = discardSlot(state.bag, slotIndex);
+        set({ bag: newBag });
+      },
+
+      sortBag: (mode: SortMode) => {
+        const state = get();
+        const newBag = sortBag(state.bag, mode);
+        set({ bag: newBag });
+      },
+
+      consolidateBag: () => {
+        const state = get();
+        const newBag = consolidateStacks(state.bag);
+        set({ bag: newBag });
+      },
+
+      toggleAutoSort: () => {
+        const state = get();
+        set({
+          bagSettings: {
+            ...state.bagSettings,
+            autoSort: !state.bagSettings.autoSort,
+          },
+        });
+      },
+
+      setSortMode: (mode: SortMode) => {
+        const state = get();
+        set({
+          bagSettings: {
+            ...state.bagSettings,
+            sortMode: mode,
+          },
+        });
+      },
+
+      toggleSlotLock: (slotIndex: number) => {
+        const state = get();
+        const newBag = toggleSlotLock(state.bag, slotIndex);
+        set({ bag: newBag });
+      },
+
+      expandBag: (additionalSlots: number) => {
+        const state = get();
+        const newBag = expandBag(state.bag, additionalSlots);
+        set({ bag: newBag });
+      },
+
+      startQuest: (questId: string) => {
+        const state = get();
+        const gameState: GameState = {
+          player: state.player,
+          skills: state.skills,
+          resources: state.resources,
+          bag: state.bag,
+          bagSettings: state.bagSettings,
+          quests: state.quests,
+          timestamps: state.timestamps,
+          activeSkill: state.activeSkill,
+          rngSeed: state.rngSeed,
+        };
+        const result = startQuestLogic(questId, gameState, state.quests);
+        if (result.success) {
+          set({ quests: result.quests });
+        }
+        return { success: result.success, error: result.error };
+      },
+
+      abandonQuest: (questId: string) => {
+        const state = get();
+        const newQuests = abandonQuestLogic(questId, state.quests);
+        set({ quests: newQuests });
+      },
+
+      claimQuestRewards: (questId: string) => {
+        const state = get();
+        const gameState: GameState = {
+          player: state.player,
+          skills: state.skills,
+          resources: state.resources,
+          bag: state.bag,
+          bagSettings: state.bagSettings,
+          quests: state.quests,
+          timestamps: state.timestamps,
+          activeSkill: state.activeSkill,
+          rngSeed: state.rngSeed,
+        };
+        const result = applyQuestRewards(gameState, state.quests, questId);
+        set({
+          player: result.state.player,
+          skills: result.state.skills,
+          resources: result.state.resources,
+          bag: result.state.bag,
+          quests: result.quests,
+        });
+      },
+
       loadSave: (newState: GameState) => {
         set(newState);
       },
@@ -104,6 +244,8 @@ export const useGameStore = create<GameStore>()(
         skills: state.skills,
         resources: state.resources,
         bag: state.bag,
+        bagSettings: state.bagSettings,
+        quests: state.quests,
         timestamps: state.timestamps,
         activeSkill: state.activeSkill,
         rngSeed: state.rngSeed,
@@ -124,6 +266,8 @@ export const useGameStore = create<GameStore>()(
             skills: state.skills,
             resources: state.resources,
             bag: state.bag,
+            bagSettings: state.bagSettings,
+            quests: state.quests,
             timestamps: state.timestamps,
             activeSkill: state.activeSkill,
             rngSeed: state.rngSeed,
@@ -143,6 +287,8 @@ export const useGameStore = create<GameStore>()(
             skills: result.state.skills,
             resources: result.state.resources,
             bag: result.state.bag,
+            bagSettings: result.state.bagSettings,
+            quests: result.state.quests,
             timestamps: result.state.timestamps,
             activeSkill: result.state.activeSkill,
             rngSeed: result.state.rngSeed,
@@ -162,17 +308,31 @@ export const usePlayer = () => useGameStore((state) => state.player);
 export const useSkills = () => useGameStore((state) => state.skills);
 export const useResources = () => useGameStore((state) => state.resources);
 export const useBag = () => useGameStore((state) => state.bag);
+export const useBagSettings = () => useGameStore((state) => state.bagSettings);
+export const useQuests = () => useGameStore((state) => state.quests);
 export const useActiveSkill = () => useGameStore((state) => state.activeSkill);
 export const useIsHydrated = () => useGameStore((state) => state.isHydrated);
 
 // Actions (stable references, no re-renders)
 export const useGameActions = () =>
-  useGameStore((state) => ({
-    tick: state.tick,
-    setActiveSkill: state.setActiveSkill,
-    toggleAutomation: state.toggleAutomation,
-    addItem: state.addItem,
-    removeItem: state.removeItem,
-    loadSave: state.loadSave,
-    reset: state.reset,
-  }));
+  useGameStore(
+    useShallow((state) => ({
+      tick: state.tick,
+      setActiveSkill: state.setActiveSkill,
+      toggleAutomation: state.toggleAutomation,
+      addItem: state.addItem,
+      removeItem: state.removeItem,
+      discardSlot: state.discardSlot,
+      sortBag: state.sortBag,
+      consolidateBag: state.consolidateBag,
+      toggleAutoSort: state.toggleAutoSort,
+      setSortMode: state.setSortMode,
+      toggleSlotLock: state.toggleSlotLock,
+      expandBag: state.expandBag,
+      startQuest: state.startQuest,
+      abandonQuest: state.abandonQuest,
+      claimQuestRewards: state.claimQuestRewards,
+      loadSave: state.loadSave,
+      reset: state.reset,
+    }))
+  );

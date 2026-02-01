@@ -5,7 +5,7 @@ import { skillEfficiencyMultiplier, skillSpeedMultiplier } from '../data/curves'
 import { TICKS_PER_SECOND } from '../data/constants';
 import { addSkillXp, addPlayerXp } from './xp';
 import { addResource } from './resources';
-import { addItemToBag } from './bag';
+import { addItemToBag, isBagFull } from './bag';
 import { advanceSeed, createRng, rollChance, randomInt } from './rng';
 
 export interface TickResult {
@@ -19,7 +19,8 @@ export type TickEvent =
   | { type: 'PLAYER_LEVEL_UP'; newLevel: number }
   | { type: 'AUTOMATION_UNLOCKED'; skillId: SkillId }
   | { type: 'ITEM_DROPPED'; skillId: SkillId; itemId: ItemId; quantity: number }
-  | { type: 'BAG_FULL'; itemId: ItemId; quantity: number };
+  | { type: 'BAG_FULL'; itemId: ItemId; quantity: number }
+  | { type: 'ACTIONS_PAUSED_BAG_FULL' };
 
 /**
  * Process a single game tick.
@@ -155,10 +156,15 @@ function processSkillTick(
     };
   }
 
-  // Process item drops for each action completed
-  const dropResult = processSkillDrops(newState, skillId, actionsCompleted);
-  newState = dropResult.state;
-  events.push(...dropResult.events);
+  // Check if bag is full before processing drops to prevent item loss
+  if (isBagFull(newState.bag)) {
+    events.push({ type: 'ACTIONS_PAUSED_BAG_FULL' });
+  } else {
+    // Process item drops for each action completed
+    const dropResult = processSkillDrops(newState, skillId, actionsCompleted);
+    newState = dropResult.state;
+    events.push(...dropResult.events);
+  }
 
   if (xpGained > 0 || resourceGained > 0) {
     events.push({ type: 'SKILL_ACTION', skillId, xpGained, resourceGained });

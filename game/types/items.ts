@@ -16,6 +16,8 @@ export type ItemCategory = 'material' | 'tool' | 'equipment' | 'misc';
 
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic';
 
+export type SortMode = 'rarity' | 'category' | 'quantity' | 'name';
+
 export interface ItemDefinition {
   id: ItemId;
   name: string;
@@ -29,6 +31,7 @@ export interface ItemDefinition {
 export interface BagSlot {
   itemId: ItemId;
   quantity: number;
+  locked?: boolean;
 }
 
 export interface BagState {

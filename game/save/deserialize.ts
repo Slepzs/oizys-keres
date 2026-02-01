@@ -107,6 +107,11 @@ function validateAndRepairState(state: Partial<GameState>): GameState {
       ...state.resources,
     },
     bag: state.bag ?? initial.bag,
+    bagSettings: {
+      autoSort: state.bagSettings?.autoSort ?? initial.bagSettings.autoSort,
+      sortMode: state.bagSettings?.sortMode ?? initial.bagSettings.sortMode,
+    },
+    quests: state.quests ?? initial.quests,
     timestamps: {
       lastActive: state.timestamps?.lastActive ?? initial.timestamps.lastActive,
       lastSave: state.timestamps?.lastSave ?? initial.timestamps.lastSave,
