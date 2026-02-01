@@ -21,3 +21,6 @@ applyTo: '**'
 - XP curves use polynomial scaling
 - Tick-based game loop with deterministic offline progress
 - Seeded RNG for reproducibility
+- Bag/inventory system with 20 slots and item stacking
+- Save migrations pattern: version bump in schema.ts, migration fn in migrations.ts
+- When adding state: update GameState, initial-state.ts, deserialize.ts, gameStore.ts (partialize + rehydration), useGame.ts hooks

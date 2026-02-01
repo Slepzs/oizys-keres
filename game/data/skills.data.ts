@@ -42,6 +42,7 @@ export function createInitialSkillState(): SkillState {
     xp: 0,
     automationUnlocked: false,
     automationEnabled: false,
+    tickProgress: 0,
   };
 }
 

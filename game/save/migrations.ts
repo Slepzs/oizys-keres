@@ -1,5 +1,6 @@
 import type { SaveBlob } from './schema';
 import { CURRENT_SAVE_VERSION } from './schema';
+import { createInitialBagState } from '../data/items.data';
 
 type MigrationFn = (save: SaveBlob) => SaveBlob;
 
@@ -8,15 +9,15 @@ type MigrationFn = (save: SaveBlob) => SaveBlob;
  * Key is the version we're migrating FROM.
  */
 const migrations: Record<number, MigrationFn> = {
-  // Example migration from v1 to v2:
-  // 1: (save) => ({
-  //   ...save,
-  //   version: 2,
-  //   state: {
-  //     ...save.state,
-  //     newField: 'default',
-  //   },
-  // }),
+  // Migration from v1 to v2: Add bag system
+  1: (save) => ({
+    ...save,
+    version: 2,
+    state: {
+      ...save.state,
+      bag: createInitialBagState(),
+    },
+  }),
 };
 
 /**

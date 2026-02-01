@@ -1,6 +1,7 @@
 import type { GameState } from '../types';
 import { createInitialSkillsState } from '../data/skills.data';
 import { createInitialResourcesState } from '../data/resources.data';
+import { createInitialBagState } from '../data/items.data';
 
 /**
  * Create a fresh game state for new players.
@@ -15,6 +16,7 @@ export function createInitialGameState(): GameState {
     },
     skills: createInitialSkillsState(),
     resources: createInitialResourcesState(),
+    bag: createInitialBagState(),
     timestamps: {
       lastActive: now,
       lastSave: now,

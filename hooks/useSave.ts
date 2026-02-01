@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useIsHydrated } from '@/store';
 import { stateToJson, jsonToState } from '@/game/save';
 import { storage, clearStorageSync } from '@/services/mmkv-storage';
@@ -11,14 +12,16 @@ const MANUAL_SAVE_KEY = 'manual-save';
  * Auto-save is handled automatically by Zustand persist middleware.
  */
 export function useSave() {
-  const state = useGameStore((s) => ({
-    player: s.player,
-    skills: s.skills,
-    resources: s.resources,
-    timestamps: s.timestamps,
-    activeSkill: s.activeSkill,
-    rngSeed: s.rngSeed,
-  })) as GameState;
+  const state = useGameStore(
+    useShallow((s) => ({
+      player: s.player,
+      skills: s.skills,
+      resources: s.resources,
+      timestamps: s.timestamps,
+      activeSkill: s.activeSkill,
+      rngSeed: s.rngSeed,
+    }))
+  ) as GameState;
 
   const loadSave = useGameStore((s) => s.loadSave);
   const resetStore = useGameStore((s) => s.reset);

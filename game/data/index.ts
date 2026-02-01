@@ -2,3 +2,5 @@ export * from './constants';
 export * from './curves';
 export * from './resources.data';
 export * from './skills.data';
+export * from './items.data';
+export * from './skill-drops.data';

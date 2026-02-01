@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useIsHydrated } from '@/store';
 import type { GameState, GameAction, SkillId } from '@/game/types';
 
@@ -7,14 +8,17 @@ import type { GameState, GameAction, SkillId } from '@/game/types';
  * Maintains API compatibility with the old Context-based implementation.
  */
 export function useGame() {
-  const state = useGameStore((s) => ({
-    player: s.player,
-    skills: s.skills,
-    resources: s.resources,
-    timestamps: s.timestamps,
-    activeSkill: s.activeSkill,
-    rngSeed: s.rngSeed,
-  })) as GameState;
+  const state = useGameStore(
+    useShallow((s) => ({
+      player: s.player,
+      skills: s.skills,
+      resources: s.resources,
+      bag: s.bag,
+      timestamps: s.timestamps,
+      activeSkill: s.activeSkill,
+      rngSeed: s.rngSeed,
+    }))
+  ) as GameState;
 
   const storeSetActiveSkill = useGameStore((s) => s.setActiveSkill);
   const storeToggleAutomation = useGameStore((s) => s.toggleAutomation);
@@ -77,14 +81,17 @@ export function useGame() {
  * Access just the game state (for components that only read).
  */
 export function useGameState() {
-  return useGameStore((s) => ({
-    player: s.player,
-    skills: s.skills,
-    resources: s.resources,
-    timestamps: s.timestamps,
-    activeSkill: s.activeSkill,
-    rngSeed: s.rngSeed,
-  })) as GameState;
+  return useGameStore(
+    useShallow((s) => ({
+      player: s.player,
+      skills: s.skills,
+      resources: s.resources,
+      bag: s.bag,
+      timestamps: s.timestamps,
+      activeSkill: s.activeSkill,
+      rngSeed: s.rngSeed,
+    }))
+  ) as GameState;
 }
 
 /**

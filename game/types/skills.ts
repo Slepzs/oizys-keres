@@ -7,6 +7,7 @@ export interface SkillState {
   xp: number;
   automationUnlocked: boolean;
   automationEnabled: boolean;
+  tickProgress: number;
 }
 
 export type SkillsState = Record<SkillId, SkillState>;

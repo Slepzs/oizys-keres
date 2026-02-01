@@ -26,6 +26,12 @@ export const colors = {
   xpBarBg: '#1e3a5f',
   healthBar: '#4ade80',
   healthBarBg: '#1e3a1e',
+
+  // Item rarities
+  rarityCommon: '#9ca3af',
+  rarityUncommon: '#22c55e',
+  rarityRare: '#3b82f6',
+  rarityEpic: '#a855f7',
 };
 
 export const spacing = {

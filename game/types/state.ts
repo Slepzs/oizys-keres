@@ -1,5 +1,6 @@
 import type { ResourcesState } from './resources';
 import type { SkillsState } from './skills';
+import type { BagState } from './items';
 
 export interface PlayerState {
   level: number;
@@ -16,6 +17,7 @@ export interface GameState {
   player: PlayerState;
   skills: SkillsState;
   resources: ResourcesState;
+  bag: BagState;
   timestamps: TimestampsState;
   activeSkill: string | null;
   rngSeed: number;

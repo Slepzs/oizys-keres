@@ -106,6 +106,7 @@ function validateAndRepairState(state: Partial<GameState>): GameState {
       ...initial.resources,
       ...state.resources,
     },
+    bag: state.bag ?? initial.bag,
     timestamps: {
       lastActive: state.timestamps?.lastActive ?? initial.timestamps.lastActive,
       lastSave: state.timestamps?.lastSave ?? initial.timestamps.lastSave,

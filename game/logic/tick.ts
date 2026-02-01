@@ -1,10 +1,12 @@
-import type { GameState, SkillId } from '../types';
+import type { GameState, SkillId, ItemId } from '../types';
 import { SKILL_DEFINITIONS } from '../data/skills.data';
+import { SKILL_DROP_TABLES } from '../data/skill-drops.data';
 import { skillEfficiencyMultiplier, skillSpeedMultiplier } from '../data/curves';
 import { TICKS_PER_SECOND } from '../data/constants';
 import { addSkillXp, addPlayerXp } from './xp';
 import { addResource } from './resources';
-import { advanceSeed } from './rng';
+import { addItemToBag } from './bag';
+import { advanceSeed, createRng, rollChance, randomInt } from './rng';
 
 export interface TickResult {
   state: GameState;
@@ -15,7 +17,9 @@ export type TickEvent =
   | { type: 'SKILL_ACTION'; skillId: SkillId; xpGained: number; resourceGained: number }
   | { type: 'SKILL_LEVEL_UP'; skillId: SkillId; newLevel: number }
   | { type: 'PLAYER_LEVEL_UP'; newLevel: number }
-  | { type: 'AUTOMATION_UNLOCKED'; skillId: SkillId };
+  | { type: 'AUTOMATION_UNLOCKED'; skillId: SkillId }
+  | { type: 'ITEM_DROPPED'; skillId: SkillId; itemId: ItemId; quantity: number }
+  | { type: 'BAG_FULL'; itemId: ItemId; quantity: number };
 
 /**
  * Process a single game tick.
@@ -70,29 +74,37 @@ function processSkillTick(
   const speedMult = skillSpeedMultiplier(skill.level);
   const effectiveTicksPerAction = definition.ticksPerAction / speedMult;
 
-  // Calculate actions performed (can be fractional for smooth progression)
-  const actionsPerformed = ticksElapsed / effectiveTicksPerAction;
+  // Accumulate tick progress and calculate complete actions
+  const totalTicks = (skill.tickProgress ?? 0) + ticksElapsed;
+  const actionsCompleted = Math.floor(totalTicks / effectiveTicksPerAction);
+  const remainingTicks = totalTicks % effectiveTicksPerAction;
 
-  if (actionsPerformed <= 0) {
-    return { state, events };
+  // Always update tick progress, even if no actions completed
+  let newState = {
+    ...state,
+    skills: {
+      ...state.skills,
+      [skillId]: {
+        ...skill,
+        tickProgress: remainingTicks,
+      },
+    },
+  };
+
+  if (actionsCompleted <= 0) {
+    return { state: newState, events };
   }
 
-  // Calculate rewards
+  // Calculate rewards based on complete actions only
   const efficiencyMult = skillEfficiencyMultiplier(skill.level);
-  const xpGained = Math.floor(definition.baseXpPerAction * actionsPerformed);
-  const resourceGained = Math.floor(definition.baseResourcePerAction * efficiencyMult * actionsPerformed);
-
-  if (xpGained === 0 && resourceGained === 0) {
-    return { state, events };
-  }
-
-  let newState = { ...state };
+  const xpGained = definition.baseXpPerAction * actionsCompleted;
+  const resourceGained = Math.floor(definition.baseResourcePerAction * efficiencyMult * actionsCompleted);
 
   // Add XP to skill
   if (xpGained > 0) {
     const xpResult = addSkillXp(skill, xpGained);
     const updatedSkill = {
-      ...skill,
+      ...newState.skills[skillId],
       xp: xpResult.newXp,
       level: xpResult.newLevel,
     };
@@ -143,8 +155,82 @@ function processSkillTick(
     };
   }
 
+  // Process item drops for each action completed
+  const dropResult = processSkillDrops(newState, skillId, actionsCompleted);
+  newState = dropResult.state;
+  events.push(...dropResult.events);
+
   if (xpGained > 0 || resourceGained > 0) {
     events.push({ type: 'SKILL_ACTION', skillId, xpGained, resourceGained });
+  }
+
+  return { state: newState, events };
+}
+
+interface DropResult {
+  state: GameState;
+  events: TickEvent[];
+}
+
+/**
+ * Process potential item drops for a skill after completing actions.
+ * Uses seeded RNG for deterministic drops.
+ */
+function processSkillDrops(
+  state: GameState,
+  skillId: SkillId,
+  actionsCompleted: number
+): DropResult {
+  const events: TickEvent[] = [];
+  let newState = state;
+
+  const dropTable = SKILL_DROP_TABLES[skillId];
+  if (!dropTable || dropTable.length === 0) {
+    return { state: newState, events };
+  }
+
+  const skillLevel = state.skills[skillId].level;
+
+  // Create RNG from current seed
+  const rng = createRng(state.rngSeed);
+
+  // Roll for drops for each action completed
+  for (let action = 0; action < actionsCompleted; action++) {
+    for (const drop of dropTable) {
+      // Skip if skill level too low
+      if (skillLevel < drop.minLevel) {
+        continue;
+      }
+
+      // Roll for drop
+      if (rollChance(rng, drop.chance)) {
+        const quantity = randomInt(rng, drop.minQuantity, drop.maxQuantity + 1);
+
+        // Try to add to bag
+        const bagResult = addItemToBag(newState.bag, drop.itemId, quantity);
+        newState = {
+          ...newState,
+          bag: bagResult.bag,
+        };
+
+        if (bagResult.added > 0) {
+          events.push({
+            type: 'ITEM_DROPPED',
+            skillId,
+            itemId: drop.itemId,
+            quantity: bagResult.added,
+          });
+        }
+
+        if (bagResult.overflow > 0) {
+          events.push({
+            type: 'BAG_FULL',
+            itemId: drop.itemId,
+            quantity: bagResult.overflow,
+          });
+        }
+      }
+    }
   }
 
   return { state: newState, events };
