@@ -55,6 +55,7 @@ export interface CombatState {
   playerCurrentHp: number;
   playerMaxHp: number;
   selectedZoneId: string | null;
+  selectedEnemyByZone: Record<string, string>;
   autoFight: boolean;
   totalKills: number;
   totalDeaths: number;

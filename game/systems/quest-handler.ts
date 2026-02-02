@@ -119,6 +119,12 @@ function getEventProgressDelta(
       }
       return 0;
 
+    case 'COMBAT_ITEM_DROPPED':
+      if (objective.type === 'collect_item' && objective.target === event.itemId) {
+        return event.quantity;
+      }
+      return 0;
+
     default:
       return 0;
   }
@@ -135,5 +141,6 @@ export function registerQuestHandlers(): void {
     eventBus.on('SKILL_ACTION', processQuestProgress, 50);
     eventBus.on('SKILL_LEVEL_UP', processQuestProgress, 50);
     eventBus.on('ITEM_DROPPED', processQuestProgress, 50);
+    eventBus.on('COMBAT_ITEM_DROPPED', processQuestProgress, 50);
   });
 }

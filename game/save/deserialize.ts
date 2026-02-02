@@ -105,6 +105,7 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
     player: {
       level: state.player?.level ?? initial.player.level,
       xp: state.player?.xp ?? initial.player.xp,
+      coins: (state.player as any)?.coins ?? initial.player.coins,
     },
     skills: {
       ...initial.skills,
@@ -123,7 +124,19 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...state.resources,
     },
     bag: state.bag ?? initial.bag,
-    combat: state.combat ?? initial.combat,
+    combat: {
+      ...initial.combat,
+      ...(state.combat ?? {}),
+      combatSkills: {
+        ...initial.combat.combatSkills,
+        ...(state.combat?.combatSkills ?? {}),
+      },
+      equipment: {
+        ...initial.combat.equipment,
+        ...(state.combat?.equipment ?? {}),
+      },
+      selectedEnemyByZone: (state.combat as any)?.selectedEnemyByZone ?? initial.combat.selectedEnemyByZone,
+    },
     bagSettings: {
       autoSort: state.bagSettings?.autoSort ?? initial.bagSettings.autoSort,
       sortMode: state.bagSettings?.sortMode ?? initial.bagSettings.sortMode,

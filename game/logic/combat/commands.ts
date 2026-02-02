@@ -21,7 +21,20 @@ export function startCombat(combatState: CombatState, zoneId: string, now: numbe
     return combatState;
   }
 
-  const enemyId = zone.enemies[0];
+  const preferredEnemyId = combatState.selectedEnemyByZone[zoneId];
+  const candidateEnemyIds = preferredEnemyId
+    ? [preferredEnemyId, ...zone.enemies.filter((id) => id !== preferredEnemyId)]
+    : zone.enemies;
+
+  const enemyId = candidateEnemyIds.find((id) => {
+    const enemy = ENEMY_DEFINITIONS[id];
+    return !!enemy && combatLevel >= enemy.combatLevelRequired;
+  });
+
+  if (!enemyId) {
+    return combatState;
+  }
+
   const enemy = ENEMY_DEFINITIONS[enemyId];
   if (!enemy) {
     return combatState;
@@ -141,6 +154,28 @@ export function selectZone(combatState: CombatState, zoneId: string | null): Com
 }
 
 /**
+ * Select an enemy to fight in a specific zone (without starting combat).
+ */
+export function selectEnemyForZone(combatState: CombatState, zoneId: string, enemyId: string): CombatState {
+  const zone = ZONE_DEFINITIONS[zoneId];
+  if (!zone || zone.enemies.length === 0) {
+    return combatState;
+  }
+
+  if (!zone.enemies.includes(enemyId)) {
+    return combatState;
+  }
+
+  return {
+    ...combatState,
+    selectedEnemyByZone: {
+      ...combatState.selectedEnemyByZone,
+      [zoneId]: enemyId,
+    },
+  };
+}
+
+/**
  * Create initial combat state for new players.
  */
 export function createInitialCombatState(): CombatState {
@@ -162,9 +197,9 @@ export function createInitialCombatState(): CombatState {
     playerCurrentHp: maxHp,
     playerMaxHp: maxHp,
     selectedZoneId: null,
+    selectedEnemyByZone: {},
     autoFight: false,
     totalKills: 0,
     totalDeaths: 0,
   };
 }
-

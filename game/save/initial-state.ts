@@ -40,6 +40,7 @@ export function createInitialGameState(params: CreateInitialGameStateParams = {}
 		player: {
 			level: 1,
 			xp: 0,
+			coins: 0,
 		},
 		skills: createInitialSkillsState(),
 		attributes: createInitialAttributesState(),

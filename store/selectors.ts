@@ -149,6 +149,7 @@ export function useCombatSummary() {
       totalKills: combat.totalKills,
       totalDeaths: combat.totalDeaths,
       selectedZoneId: combat.selectedZoneId,
+      selectedEnemyByZone: combat.selectedEnemyByZone,
     };
   }, [combat]);
 }
@@ -204,6 +205,7 @@ export function useCombatActions() {
       equipItem: state.equipItem,
       unequipSlot: state.unequipSlot,
       selectZone: state.selectZone,
+      selectEnemyForZone: state.selectEnemyForZone,
     }))
   );
 }

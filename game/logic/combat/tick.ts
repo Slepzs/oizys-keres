@@ -4,6 +4,7 @@ import { ENEMY_DEFINITIONS } from '../../data/enemies.data';
 import { ZONE_DEFINITIONS } from '../../data/zones.data';
 import {
   calculateDamage,
+  calculateCombatLevel,
   calculateMaxHp,
   distributeXpOnKill,
   getPlayerAttackSpeed,
@@ -109,9 +110,20 @@ export function processCombatTick(
           const selectedZoneId = newState.selectedZoneId;
           const zone = ZONE_DEFINITIONS[selectedZoneId];
           if (zone && zone.enemies.length > 0) {
-            const nextEnemyId = zone.enemies[0];
-            const nextEnemy = ENEMY_DEFINITIONS[nextEnemyId];
-            if (nextEnemy) {
+            const combatLevel = calculateCombatLevel(newState.combatSkills);
+            const preferredEnemyId = newState.selectedEnemyByZone[selectedZoneId];
+            const candidateEnemyIds = preferredEnemyId
+              ? [preferredEnemyId, ...zone.enemies.filter((id) => id !== preferredEnemyId)]
+              : zone.enemies;
+
+            const nextEnemyId = candidateEnemyIds.find((id) => {
+              const enemy = ENEMY_DEFINITIONS[id];
+              return !!enemy && combatLevel >= enemy.combatLevelRequired;
+            });
+
+            const nextEnemy = nextEnemyId ? ENEMY_DEFINITIONS[nextEnemyId] : null;
+
+            if (nextEnemyId && nextEnemy) {
               const nextAttackSpeed = getPlayerAttackSpeed(newState);
               newState = {
                 ...newState,

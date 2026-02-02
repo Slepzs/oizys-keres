@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { BagGrid } from '../components/game/BagGrid';
-import { useBag, useBagSettings, useGameActions } from '@/store/gameStore';
+import { useBag, useBagSettings, useGameActions, useGameStore } from '@/store/gameStore';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
 import { getUsedSlotCount } from '@/game/logic';
+import { formatNumber } from '@/utils/format';
 import type { SortMode } from '@/game/types';
 
 const SORT_MODE_LABELS: Record<SortMode, string> = {
@@ -20,6 +21,7 @@ export function BagScreen() {
   const bag = useBag();
   const bagSettings = useBagSettings();
   const { sortBag, consolidateBag, toggleAutoSort, setSortMode } = useGameActions();
+  const coins = useGameStore((state) => state.player.coins);
   const [showSortModal, setShowSortModal] = useState(false);
 
   const usedSlots = getUsedSlotCount(bag);
@@ -36,9 +38,14 @@ export function BagScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Bag</Text>
-          <Text style={styles.slotCount}>
-            {usedSlots}/{bag.maxSlots} slots
-          </Text>
+          <View style={styles.headerRight}>
+            <Text style={styles.slotCount}>
+              {usedSlots}/{bag.maxSlots} slots
+            </Text>
+            <Text style={styles.coins}>
+              {'\u{1FA99}'} {formatNumber(coins)}
+            </Text>
+          </View>
         </View>
 
         {/* Action Bar */}
@@ -145,6 +152,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: spacing.md,
   },
+  headerRight: {
+    alignItems: 'flex-end',
+    gap: spacing.xs,
+  },
   title: {
     fontSize: fontSize.xxl,
     fontWeight: fontWeight.bold,
@@ -153,6 +164,11 @@ const styles = StyleSheet.create({
   slotCount: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
+  },
+  coins: {
+    fontSize: fontSize.md,
+    color: colors.text,
+    fontWeight: fontWeight.semibold,
   },
   actionBar: {
     flexDirection: 'row',

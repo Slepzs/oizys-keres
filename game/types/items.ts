@@ -6,6 +6,15 @@ export type ItemId =
   | 'iron_ingot'
   | 'bronze_pickaxe'
   | 'bronze_hatchet'
+  // Combat drops
+  | 'rat_fang'
+  | 'wolf_pelt'
+  | 'nerd_notes'
+  | 'goblin_ear'
+  | 'bone_shard'
+  | 'orc_tusk'
+  | 'troll_toe'
+  | 'demon_essence'
   // Woodcutting drops
   | 'tree_seed'
   | 'bird_nest'

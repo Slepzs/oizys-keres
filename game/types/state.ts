@@ -15,6 +15,7 @@ export interface BagSettings {
 export interface PlayerState {
   level: number;
   xp: number;
+  coins: number;
 }
 
 export interface AttributeState {

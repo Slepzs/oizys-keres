@@ -28,6 +28,12 @@ export function registerAchievementHandlers(): void {
       return checkAchievements(newState, event, ctx);
     }, 100);
 
+    eventBus.on('COMBAT_ITEM_DROPPED', (event, state, ctx) => {
+      const progressKey = `items_${event.itemId}`;
+      const newState = updateAchievementProgress(state, progressKey, event.quantity);
+      return checkAchievements(newState, event, ctx);
+    }, 100);
+
     // Note: QUEST_COMPLETED achievements are handled directly in quest-handler.ts
     // to avoid timing issues with the event bus. This ensures quest completion
     // counts are updated before achievement checks run.

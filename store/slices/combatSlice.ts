@@ -2,6 +2,7 @@ import type { EquipmentSlot, ItemId, TrainingMode } from '@/game/types';
 import {
   equipItem as equipItemLogic,
   fleeCombat as fleeCombatLogic,
+  selectEnemyForZone as selectEnemyForZoneLogic,
   selectZone as selectZoneLogic,
   setTrainingMode as setTrainingModeLogic,
   startCombat as startCombatLogic,
@@ -18,6 +19,7 @@ export interface CombatSlice {
   equipItem: (itemId: ItemId) => { unequippedItemId: ItemId | null; success: boolean };
   unequipSlot: (slot: EquipmentSlot) => { unequippedItemId: ItemId | null };
   selectZone: (zoneId: string | null) => void;
+  selectEnemyForZone: (zoneId: string, enemyId: string) => void;
 }
 
 export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreHelpers): CombatSlice {
@@ -66,6 +68,11 @@ export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
       const newCombat = selectZoneLogic(state.combat, zoneId);
       set({ combat: newCombat });
     },
+
+    selectEnemyForZone: (zoneId: string, enemyId: string) => {
+      const state = get();
+      const newCombat = selectEnemyForZoneLogic(state.combat, zoneId, enemyId);
+      set({ combat: newCombat });
+    },
   };
 }
-

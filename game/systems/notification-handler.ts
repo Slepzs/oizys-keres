@@ -117,17 +117,6 @@ export function registerNotificationHandlers(): void {
     }, 200);
 
     // Combat notifications
-    eventBus.on('COMBAT_ENEMY_KILLED', (event, state, _ctx) => {
-      if (notificationCallback) {
-        notificationCallback(
-          'combat',
-          'Enemy Defeated!',
-          `+${event.xpReward} Combat XP`
-        );
-      }
-      return state;
-    }, 200);
-
     eventBus.on('COMBAT_PLAYER_DIED', (_event, state, _ctx) => {
       if (notificationCallback) {
         notificationCallback(

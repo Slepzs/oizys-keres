@@ -7,7 +7,7 @@ export const ZONE_DEFINITIONS: Record<string, ZoneDefinition> = {
     description: 'Dark tunnels beneath the city, home to rats and other vermin.',
     icon: '🚰',
     combatLevelRequired: 1,
-    enemies: ['rat', 'wolf'],
+    enemies: ['rat', 'wolf', 'nerd'],
   },
   forest: {
     id: 'forest',

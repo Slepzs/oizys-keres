@@ -75,6 +75,8 @@ getAvailableSkills(level)     // Skills unlocked at player level
 4. Export from `systems/index.ts`
 5. Create `game/modules/[feature]/register.ts` and add it to `game/modules/registry.ts`
 
+See `game/modules/agents.md` for the registration pattern and checklist.
+
 ## Pattern
 
 Each system folder should have:

@@ -22,6 +22,7 @@ export function CombatScreen() {
     toggleAutoFight,
     unequipSlot,
     selectZone,
+    selectEnemyForZone,
   } = useCombatActions();
 
   const handleTrainingModeChange = (mode: TrainingMode) => {
@@ -143,7 +144,9 @@ export function CombatScreen() {
               combatLevel={combatSummary.combatLevel}
               isSelected={combatSummary.selectedZoneId === zoneId}
               isInCombat={activeCombat?.zoneId === zoneId}
+              selectedEnemyId={combatSummary.selectedEnemyByZone?.[zoneId] ?? null}
               onSelect={() => handleZoneSelect(zoneId)}
+              onSelectEnemy={(enemyId) => selectEnemyForZone(zoneId, enemyId)}
               onStartCombat={handleStartCombat}
             />
           ))}

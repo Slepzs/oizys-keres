@@ -10,8 +10,10 @@ export type GameEvent =
   | { type: 'PLAYER_LEVEL_UP'; newLevel: number }
   | { type: 'AUTOMATION_UNLOCKED'; skillId: SkillId }
   | { type: 'ITEM_DROPPED'; skillId: SkillId; itemId: ItemId; quantity: number }
+  | { type: 'COMBAT_ITEM_DROPPED'; enemyId: string; itemId: ItemId; quantity: number }
   | { type: 'BAG_FULL'; itemId: ItemId; quantity: number }
   | { type: 'ACTIONS_PAUSED_BAG_FULL' }
+  | { type: 'COINS_EARNED'; source: 'combat'; enemyId: string; amount: number }
   | { type: 'QUEST_COMPLETED'; questId: string }
   | { type: 'ACHIEVEMENT_UNLOCKED'; achievementId: string }
   // Combat events

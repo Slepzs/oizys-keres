@@ -91,6 +91,23 @@ const migrations: Record<number, MigrationFn> = {
       },
     };
   },
+
+  // Migration from v7 to v8: Add player coins + per-zone enemy selection
+  7: (save) => ({
+    ...save,
+    version: 8,
+    state: {
+      ...save.state,
+      player: {
+        ...save.state.player,
+        coins: (save.state.player as any)?.coins ?? 0,
+      },
+      combat: {
+        ...save.state.combat,
+        selectedEnemyByZone: (save.state.combat as any)?.selectedEnemyByZone ?? {},
+      },
+    },
+  }),
 };
 
 /**

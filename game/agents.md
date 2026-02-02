@@ -17,7 +17,8 @@ This is the **pure game logic layer** - it has zero React dependencies and can b
 | `data/` | Static configs, constants, XP curves |
 | `logic/` | Pure functions for game mechanics |
 | `save/` | Serialization, versioning, migrations |
-| `systems/` | Feature modules (skills, future: combat, automation) |
+| `systems/` | Event-driven systems (quests, achievements, notifications, etc.) |
+| `modules/` | Module registration layer (wires systems once) |
 
 ## Key Patterns
 
@@ -57,4 +58,4 @@ import { GameState, processTick, SKILL_DEFINITIONS } from '@/game';
 2. **Never use Date.now()** in logic - pass timestamps as parameters
 3. **Never use Math.random()** - use seeded RNG from `logic/rng.ts`
 4. **All game balance values** go in `data/` folder
-5. **New features** get their own folder in `systems/`
+5. **New event consumers**: add handlers in `systems/` and register via `modules/`
