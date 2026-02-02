@@ -120,6 +120,8 @@ function validateAndRepairState(state: Partial<GameState>): GameState {
       sortMode: state.bagSettings?.sortMode ?? initial.bagSettings.sortMode,
     },
     quests: state.quests ?? initial.quests,
+    achievements: state.achievements ?? initial.achievements,
+    multipliers: state.multipliers ?? initial.multipliers,
     timestamps: {
       lastActive: state.timestamps?.lastActive ?? initial.timestamps.lastActive,
       lastSave: state.timestamps?.lastSave ?? initial.timestamps.lastSave,

@@ -2,6 +2,8 @@ import type { SaveBlob } from './schema';
 import { CURRENT_SAVE_VERSION } from './schema';
 import { createInitialBagState } from '../data/items.data';
 import { createInitialQuestsState } from '../data/quests.data';
+import { createInitialAchievementsState } from '../data/achievements.data';
+import { createInitialMultipliersState } from '../logic/multipliers';
 
 type MigrationFn = (save: SaveBlob) => SaveBlob;
 
@@ -38,6 +40,16 @@ const migrations: Record<number, MigrationFn> = {
         autoSort: false,
         sortMode: 'rarity' as const,
       },
+    },
+  }),
+  // Migration from v4 to v5: Add achievements and multipliers
+  4: (save) => ({
+    ...save,
+    version: 5,
+    state: {
+      ...save.state,
+      achievements: createInitialAchievementsState(),
+      multipliers: createInitialMultipliersState(),
     },
   }),
 };

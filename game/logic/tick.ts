@@ -1,4 +1,5 @@
-import type { GameState, SkillId, ItemId } from '../types';
+import type { GameState, SkillId } from '../types';
+import type { GameEvent } from '../systems/events.types';
 import { SKILL_DEFINITIONS } from '../data/skills.data';
 import { SKILL_DROP_TABLES } from '../data/skill-drops.data';
 import { skillEfficiencyMultiplier, skillSpeedMultiplier } from '../data/curves';
@@ -7,27 +8,24 @@ import { addSkillXp, addPlayerXp } from './xp';
 import { addResource } from './resources';
 import { addItemToBag, isBagFull } from './bag';
 import { advanceSeed, createRng, rollChance, randomInt } from './rng';
+import { getSkillXpMultiplier, getEffectiveMultiplier } from './multipliers';
 
 export interface TickResult {
   state: GameState;
-  events: TickEvent[];
+  events: GameEvent[];
 }
 
-export type TickEvent =
-  | { type: 'SKILL_ACTION'; skillId: SkillId; xpGained: number; resourceGained: number }
-  | { type: 'SKILL_LEVEL_UP'; skillId: SkillId; newLevel: number }
-  | { type: 'PLAYER_LEVEL_UP'; newLevel: number }
-  | { type: 'AUTOMATION_UNLOCKED'; skillId: SkillId }
-  | { type: 'ITEM_DROPPED'; skillId: SkillId; itemId: ItemId; quantity: number }
-  | { type: 'BAG_FULL'; itemId: ItemId; quantity: number }
-  | { type: 'ACTIONS_PAUSED_BAG_FULL' };
+/**
+ * @deprecated Use GameEvent from '../systems/events.types' instead
+ */
+export type TickEvent = GameEvent;
 
 /**
  * Process a single game tick.
  * This is the core game loop function - pure and deterministic.
  */
 export function processTick(state: GameState, deltaMs: number): TickResult {
-  const events: TickEvent[] = [];
+  const events: GameEvent[] = [];
   let newState = { ...state };
 
   // Calculate ticks elapsed (fractional)
@@ -59,7 +57,7 @@ export function processTick(state: GameState, deltaMs: number): TickResult {
 
 interface SkillTickResult {
   state: GameState;
-  events: TickEvent[];
+  events: GameEvent[];
 }
 
 function processSkillTick(
@@ -67,7 +65,7 @@ function processSkillTick(
   skillId: SkillId,
   ticksElapsed: number
 ): SkillTickResult {
-  const events: TickEvent[] = [];
+  const events: GameEvent[] = [];
   const definition = SKILL_DEFINITIONS[skillId];
   const skill = state.skills[skillId];
 
@@ -98,7 +96,8 @@ function processSkillTick(
 
   // Calculate rewards based on complete actions only
   const efficiencyMult = skillEfficiencyMultiplier(skill.level);
-  const xpGained = definition.baseXpPerAction * actionsCompleted;
+  const xpMultiplier = getSkillXpMultiplier(newState, skillId);
+  const xpGained = Math.floor(definition.baseXpPerAction * actionsCompleted * xpMultiplier);
   const resourceGained = Math.floor(definition.baseResourcePerAction * efficiencyMult * actionsCompleted);
 
   // Add XP to skill
@@ -175,7 +174,7 @@ function processSkillTick(
 
 interface DropResult {
   state: GameState;
-  events: TickEvent[];
+  events: GameEvent[];
 }
 
 /**
@@ -187,7 +186,7 @@ function processSkillDrops(
   skillId: SkillId,
   actionsCompleted: number
 ): DropResult {
-  const events: TickEvent[] = [];
+  const events: GameEvent[] = [];
   let newState = state;
 
   const dropTable = SKILL_DROP_TABLES[skillId];
@@ -196,6 +195,7 @@ function processSkillDrops(
   }
 
   const skillLevel = state.skills[skillId].level;
+  const dropMultiplier = getEffectiveMultiplier(state, 'drops');
 
   // Create RNG from current seed
   const rng = createRng(state.rngSeed);
@@ -208,8 +208,11 @@ function processSkillDrops(
         continue;
       }
 
+      // Apply drop rate multiplier (capped at 100%)
+      const effectiveChance = Math.min(1, drop.chance * dropMultiplier);
+
       // Roll for drop
-      if (rollChance(rng, drop.chance)) {
+      if (rollChance(rng, effectiveChance)) {
         const quantity = randomInt(rng, drop.minQuantity, drop.maxQuantity + 1);
 
         // Try to add to bag
@@ -251,7 +254,7 @@ export function processMultipleTicks(
   chunkMs: number = 1000
 ): TickResult {
   let currentState = state;
-  const allEvents: TickEvent[] = [];
+  const allEvents: GameEvent[] = [];
 
   let remainingMs = totalMs;
 

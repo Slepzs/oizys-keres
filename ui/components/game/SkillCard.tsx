@@ -38,7 +38,7 @@ export function SkillCard({ skillId, skill, isActive, onPress }: SkillCardProps)
         )}
       </View>
 
-      <SkillProgressBar skill={skill} />
+      <SkillProgressBar skill={skill} skillId={skillId} isActive={isActive} />
 
       {skill.automationUnlocked && (
         <View style={styles.automationRow}>

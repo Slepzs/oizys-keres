@@ -10,6 +10,10 @@ Static configuration, constants, and balance values. No logic here - just data.
 | `curves.ts` | XP formulas, scaling functions |
 | `skills.data.ts` | Skill definitions and initial state factories |
 | `resources.data.ts` | Resource definitions and initial state factories |
+| `items.data.ts` | Item definitions and bag initial state |
+| `skill-drops.data.ts` | Drop tables for each skill |
+| `quests.data.ts` | Quest definitions and initial state |
+| `achievements.data.ts` | Achievement definitions and initial state |
 
 ## Key Constants
 
@@ -38,3 +42,30 @@ To adjust progression speed, modify exponents in `curves.ts`.
 1. Add `ResourceId` to union in `types/resources.ts`
 2. Add definition to `RESOURCE_DEFINITIONS` in `resources.data.ts`
 3. Add to `createInitialResourcesState()` factory
+
+## Adding New Achievements
+
+1. Add definition to `ACHIEVEMENT_DEFINITIONS` in `achievements.data.ts`:
+```typescript
+achievement_id: {
+  id: 'achievement_id',
+  name: 'Achievement Name',
+  description: 'How to unlock',
+  icon: '🏆',
+  category: 'skill' | 'collection' | 'progression' | 'secret',
+  condition: { type: 'skill_level', skillId: 'woodcutting', level: 10 },
+  rewards: [{ type: 'multiplier', target: 'woodcutting', bonus: 0.05 }],
+}
+```
+
+Achievement categories:
+- `skill` - Skill milestones (level 10, 25, 50)
+- `collection` - Item/resource gathering
+- `progression` - Player level, quests completed
+- `secret` - Hidden until unlocked
+
+## Adding New Quests
+
+1. Add definition to `QUEST_DEFINITIONS` in `quests.data.ts`
+2. Define objectives, unlock conditions, and rewards
+3. See `quests.data.ts` for examples

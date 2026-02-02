@@ -20,6 +20,10 @@ Per project requirements:
 | `deserialize.ts` | JSON string → `GameState` with validation |
 | `migrations.ts` | Version upgrade functions |
 
+## Current Version
+
+**CURRENT_SAVE_VERSION = 5**
+
 ## Save Blob Structure
 
 ```typescript
@@ -30,6 +34,16 @@ interface SaveBlob {
 }
 ```
 
+## Version History
+
+| Version | Changes |
+|---------|---------|
+| 1 | Initial save format |
+| 2 | Added `bag` (inventory system) |
+| 3 | Added `quests` (quest system) |
+| 4 | Added `bagSettings` (sort preferences) |
+| 5 | Added `achievements` and `multipliers` |
+
 ## Migration Pattern
 
 When save format changes:
@@ -39,18 +53,20 @@ When save format changes:
 
 ```typescript
 const migrations: Record<number, MigrationFn> = {
-  1: (save) => ({
+  // v4 → v5: Add achievements and multipliers
+  4: (save) => ({
     ...save,
-    version: 2,
+    version: 5,
     state: {
       ...save.state,
-      newField: 'default',
+      achievements: createInitialAchievementsState(),
+      multipliers: createInitialMultipliersState(),
     },
   }),
 };
 ```
 
-3. Migrations chain automatically: v1 → v2 → v3 → current
+3. Migrations chain automatically: v1 → v2 → v3 → v4 → v5 → current
 
 ## Validation
 
@@ -60,3 +76,15 @@ const migrations: Record<number, MigrationFn> = {
 - Ensures valid state structure
 
 This prevents crashes from corrupted/partial saves.
+
+## Adding New State
+
+When adding new state fields:
+
+1. Update `GameState` in `types/state.ts`
+2. Add initial factory in `initial-state.ts`
+3. Add default in `validateAndRepairState()` in `deserialize.ts`
+4. Add to `partialize` in `gameStore.ts`
+5. Add to rehydration handler in `gameStore.ts`
+6. Add selector hook in `gameStore.ts`
+7. Bump `CURRENT_SAVE_VERSION` and add migration

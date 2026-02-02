@@ -54,7 +54,7 @@ export function SkillsScreen() {
                 )}
               </View>
 
-              <SkillProgressBar skill={skill} />
+              <SkillProgressBar skill={skill} skillId={skillId} isActive={isActive} />
 
               {/* Automation Toggle */}
               {skill.automationUnlocked ? (

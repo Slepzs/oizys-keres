@@ -12,10 +12,12 @@ interface QuestCardProps {
   state?: PlayerQuestState;
   progress?: number;
   isComplete?: boolean;
-  variant: 'available' | 'active' | 'claim';
+  variant: 'available' | 'active' | 'claim' | 'completed';
   onStart?: () => void;
   onClaim?: () => void;
   onAbandon?: () => void;
+  completedAt?: number;
+  completedCount?: number;
 }
 
 export function QuestCard({
@@ -27,6 +29,8 @@ export function QuestCard({
   onStart,
   onClaim,
   onAbandon,
+  completedAt,
+  completedCount,
 }: QuestCardProps) {
   const getCategoryColor = () => {
     switch (definition.category) {
@@ -58,6 +62,11 @@ export function QuestCard({
         {isComplete && variant === 'claim' && (
           <View style={styles.completeBadge}>
             <Text style={styles.completeBadgeText}>COMPLETE</Text>
+          </View>
+        )}
+        {variant === 'completed' && (
+          <View style={[styles.completeBadge, { backgroundColor: colors.textMuted }]}>
+            <Text style={styles.completeBadgeText}>DONE</Text>
           </View>
         )}
       </View>
@@ -101,6 +110,20 @@ export function QuestCard({
           ))}
         </View>
       </View>
+
+      {/* Completion info for completed quests */}
+      {variant === 'completed' && completedAt && (
+        <View style={styles.completedInfoContainer}>
+          <Text style={styles.completedInfoText}>
+            Completed: {new Date(completedAt).toLocaleDateString()}
+          </Text>
+          {completedCount && completedCount > 1 && (
+            <Text style={styles.completedCountText}>
+              Completed {completedCount} times
+            </Text>
+          )}
+        </View>
+      )}
 
       {/* Action buttons */}
       <View style={styles.actionsContainer}>
@@ -292,6 +315,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  completedInfoContainer: {
+    marginBottom: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+  },
+  completedInfoText: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  completedCountText: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     marginTop: spacing.xs,
   },
 });

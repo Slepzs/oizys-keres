@@ -11,6 +11,10 @@ Pure functions that process game state. The heart of the game engine.
 | `resources.ts` | Add/remove resources with cap handling |
 | `offline.ts` | Process elapsed time when app resumes |
 | `rng.ts` | Seeded random number generator |
+| `bag.ts` | Inventory management (add/remove items, sorting) |
+| `quests.ts` | Quest progress, rewards, availability checks |
+| `achievements.ts` | Achievement condition evaluation and unlocking |
+| `multipliers.ts` | Bonus calculation from achievements/upgrades |
 
 ## Core Function: processTick
 
@@ -19,18 +23,60 @@ function processTick(state: GameState, deltaMs: number): TickResult {
   // 1. Calculate ticks elapsed
   // 2. Process active skill (if any)
   // 3. Process automated skills at 50% efficiency
-  // 4. Advance RNG seed
-  // 5. Return new state + events
+  // 4. Apply multipliers to XP and drop rates
+  // 5. Advance RNG seed
+  // 6. Return new state + events
 }
 ```
 
+## Multipliers System
+
+Multipliers affect XP and drop rate calculations in `tick.ts`:
+
+```typescript
+// In processSkillTick:
+const xpMultiplier = getSkillXpMultiplier(state, skillId);
+const xpGained = Math.floor(base * actionsCompleted * xpMultiplier);
+
+// In processSkillDrops:
+const dropMultiplier = getEffectiveMultiplier(state, 'drops');
+const effectiveChance = Math.min(1, drop.chance * dropMultiplier);
+```
+
+Key functions in `multipliers.ts`:
+- `getEffectiveMultiplier(state, target)` - Get combined multiplier for target
+- `getSkillXpMultiplier(state, skillId)` - XP multiplier including global bonuses
+- `addMultiplier(state, multiplier)` - Add or update a multiplier
+- `removeMultiplier(state, multiplierId)` - Remove a multiplier
+
+## Achievements System
+
+Achievements are checked via event bus after game events:
+
+```typescript
+// In achievements.ts:
+checkAchievements(state, event)  // Check all unlockable achievements
+evaluateAchievementCondition(condition, state)  // Test single condition
+unlockAchievement(state, definition)  // Unlock and apply rewards
+```
+
+Achievement conditions include:
+- `skill_level` - Specific skill at level
+- `any_skill_level` - Any skill at level
+- `player_level` - Player level
+- `quests_completed` - Total quest completions
+
 ## Events System
 
-Tick processing returns events for UI feedback:
+Tick processing returns events consumed by the event bus:
 - `SKILL_ACTION` - XP/resources gained
 - `SKILL_LEVEL_UP` - Level increased
 - `PLAYER_LEVEL_UP` - Player level increased
 - `AUTOMATION_UNLOCKED` - Skill can now be automated
+- `ITEM_DROPPED` - Item added to bag
+- `BAG_FULL` - Item couldn't be added
+- `QUEST_COMPLETED` - Quest objectives met
+- `ACHIEVEMENT_UNLOCKED` - Achievement unlocked
 
 ## Seeded RNG
 

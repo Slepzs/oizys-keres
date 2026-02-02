@@ -1,15 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { QuestCard } from '../components/game/QuestCard';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { useQuestsHook } from '@/hooks/useQuests';
 
 export function QuestsScreen() {
+  const [showCompleted, setShowCompleted] = useState(false);
   const {
     activeQuests,
     readyToClaim,
     availableQuests,
+    completedQuests,
     totalCompleted,
     startQuest,
     claimRewards,
@@ -75,10 +77,38 @@ export function QuestsScreen() {
           </View>
         )}
 
+        {/* Completed Quests Toggle */}
+        {totalCompleted > 0 && (
+          <Pressable
+            style={styles.completedToggle}
+            onPress={() => setShowCompleted(!showCompleted)}
+          >
+            <Text style={styles.completedToggleText}>
+              {showCompleted ? '▼' : '▶'} Completed Quests ({totalCompleted})
+            </Text>
+          </Pressable>
+        )}
+
+        {/* Completed Quests Section */}
+        {showCompleted && completedQuests.length > 0 && (
+          <View style={styles.section}>
+            {completedQuests.map((quest) => (
+              <QuestCard
+                key={quest.definition.id}
+                definition={quest.definition}
+                variant="completed"
+                completedAt={quest.completedAt}
+                completedCount={quest.completedCount}
+              />
+            ))}
+          </View>
+        )}
+
         {/* Empty State */}
         {activeQuests.length === 0 &&
           readyToClaim.length === 0 &&
-          availableQuests.length === 0 && (
+          availableQuests.length === 0 &&
+          (!showCompleted || completedQuests.length === 0) && (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>📜</Text>
               <Text style={styles.emptyText}>No quests available</Text>
@@ -136,5 +166,16 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
+  },
+  completedToggle: {
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: 8,
+    marginBottom: spacing.md,
+  },
+  completedToggleText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
 });

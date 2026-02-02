@@ -2,6 +2,8 @@ import type { ResourcesState } from './resources';
 import type { SkillId, SkillsState } from './skills';
 import type { BagState, SortMode } from './items';
 import type { QuestsState } from './quests';
+import type { AchievementsState } from './achievements';
+import type { MultipliersState } from './multipliers';
 
 export interface BagSettings {
   autoSort: boolean;
@@ -46,6 +48,8 @@ export interface GameState {
   bag: BagState;
   bagSettings: BagSettings;
   quests: QuestsState;
+  achievements: AchievementsState;
+  multipliers: MultipliersState;
   timestamps: TimestampsState;
   activeSkill: string | null;
   rngSeed: number;

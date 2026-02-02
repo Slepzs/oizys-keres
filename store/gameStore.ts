@@ -13,13 +13,17 @@ import {
   expandBag,
   toggleSlotLock,
   discardSlot,
-  processQuestEvents,
   applyQuestRewards,
   startQuest as startQuestLogic,
   abandonQuest as abandonQuestLogic,
 } from '@/game/logic';
+import { eventBus, registerQuestHandlers, registerAchievementHandlers } from '@/game/systems';
 import type { SortMode } from '@/game/types';
 import { zustandStorage } from '@/services/mmkv-storage';
+
+// Register event handlers once at module load
+registerQuestHandlers();
+registerAchievementHandlers();
 
 interface GameActions {
   tick: (deltaMs: number) => void;
@@ -69,19 +73,8 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const result = processTick(state, deltaMs);
 
-        // Process quest events
-        const questResult = processQuestEvents(
-          result.events,
-          result.state.quests,
-          result.state
-        );
-
-        // Apply rewards for completed quests
-        let finalState: GameState = { ...result.state, quests: questResult.quests };
-        for (const questId of questResult.completedQuests) {
-          const rewardResult = applyQuestRewards(finalState, finalState.quests, questId);
-          finalState = { ...rewardResult.state, quests: rewardResult.quests };
-        }
+        // Dispatch events through event bus (handles quests, achievements, etc.)
+        const finalState = eventBus.dispatch(result.events, result.state);
 
         set({
           ...finalState,
@@ -186,6 +179,8 @@ export const useGameStore = create<GameStore>()(
           bag: state.bag,
           bagSettings: state.bagSettings,
           quests: state.quests,
+          achievements: state.achievements,
+          multipliers: state.multipliers,
           timestamps: state.timestamps,
           activeSkill: state.activeSkill,
           rngSeed: state.rngSeed,
@@ -212,6 +207,8 @@ export const useGameStore = create<GameStore>()(
           bag: state.bag,
           bagSettings: state.bagSettings,
           quests: state.quests,
+          achievements: state.achievements,
+          multipliers: state.multipliers,
           timestamps: state.timestamps,
           activeSkill: state.activeSkill,
           rngSeed: state.rngSeed,
@@ -246,6 +243,8 @@ export const useGameStore = create<GameStore>()(
         bag: state.bag,
         bagSettings: state.bagSettings,
         quests: state.quests,
+        achievements: state.achievements,
+        multipliers: state.multipliers,
         timestamps: state.timestamps,
         activeSkill: state.activeSkill,
         rngSeed: state.rngSeed,
@@ -261,6 +260,7 @@ export const useGameStore = create<GameStore>()(
         // Process offline progress if we have stored state
         if (state && state.timestamps) {
           const now = Date.now();
+          const initial = createInitialGameState();
           const currentState: GameState = {
             player: state.player,
             skills: state.skills,
@@ -268,6 +268,8 @@ export const useGameStore = create<GameStore>()(
             bag: state.bag,
             bagSettings: state.bagSettings,
             quests: state.quests,
+            achievements: state.achievements ?? initial.achievements,
+            multipliers: state.multipliers ?? initial.multipliers,
             timestamps: state.timestamps,
             activeSkill: state.activeSkill,
             rngSeed: state.rngSeed,
@@ -289,6 +291,8 @@ export const useGameStore = create<GameStore>()(
             bag: result.state.bag,
             bagSettings: result.state.bagSettings,
             quests: result.state.quests,
+            achievements: result.state.achievements,
+            multipliers: result.state.multipliers,
             timestamps: result.state.timestamps,
             activeSkill: result.state.activeSkill,
             rngSeed: result.state.rngSeed,
@@ -310,6 +314,8 @@ export const useResources = () => useGameStore((state) => state.resources);
 export const useBag = () => useGameStore((state) => state.bag);
 export const useBagSettings = () => useGameStore((state) => state.bagSettings);
 export const useQuests = () => useGameStore((state) => state.quests);
+export const useAchievements = () => useGameStore((state) => state.achievements);
+export const useMultipliers = () => useGameStore((state) => state.multipliers);
 export const useActiveSkill = () => useGameStore((state) => state.activeSkill);
 export const useIsHydrated = () => useGameStore((state) => state.isHydrated);
 

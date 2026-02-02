@@ -7,7 +7,7 @@ import type {
   QuestReward,
   Objective,
 } from '../types/quests';
-import type { TickEvent } from './tick';
+import type { GameEvent } from '../systems/events.types';
 import { QUEST_DEFINITIONS, getQuestDefinition } from '../data/quests.data';
 import { addSkillXp, addPlayerXp } from './xp';
 import { addResource } from './resources';
@@ -215,74 +215,11 @@ export function getQuestProgress(
 }
 
 // ============================================================================
-// Event Processing
+// Event Processing (moved to systems/quest-handler.ts)
 // ============================================================================
 
-export interface QuestEventResult {
-  quests: QuestsState;
-  completedQuests: string[];
-}
-
-export function processQuestEvents(
-  events: TickEvent[],
-  questsState: QuestsState,
-  gameState: GameState
-): QuestEventResult {
-  const completedQuests: string[] = [];
-  let newQuestsState = { ...questsState };
-
-  // Process each active quest
-  const updatedActive = newQuestsState.active.map((questState) => {
-    if (questState.completed) return questState;
-
-    const definition = getQuestDefinition(questState.questId);
-    if (!definition) return questState;
-
-    let newProgress = { ...questState.progress };
-    let hasChanges = false;
-
-    // Process each event against objectives
-    for (const event of events) {
-      for (const objective of definition.objectives) {
-        const progressDelta = getEventProgressDelta(event, objective, gameState);
-        if (progressDelta > 0) {
-          newProgress[objective.id] = (newProgress[objective.id] ?? 0) + progressDelta;
-          hasChanges = true;
-        }
-      }
-    }
-
-    if (!hasChanges) return questState;
-
-    // Check if quest is now complete
-    const updatedQuestState: PlayerQuestState = {
-      ...questState,
-      progress: newProgress,
-    };
-
-    const { allComplete } = getQuestProgress(updatedQuestState);
-    if (allComplete) {
-      completedQuests.push(questState.questId);
-      return {
-        ...updatedQuestState,
-        completed: true,
-        completedAt: Date.now(),
-      };
-    }
-
-    return updatedQuestState;
-  });
-
-  newQuestsState = {
-    ...newQuestsState,
-    active: updatedActive,
-  };
-
-  return { quests: newQuestsState, completedQuests };
-}
-
 function getEventProgressDelta(
-  event: TickEvent,
+  event: GameEvent,
   objective: Objective,
   gameState: GameState
 ): number {
@@ -461,4 +398,31 @@ export function getCooldownRemaining(
 
   const elapsed = Date.now() - lastCompleted;
   return Math.max(0, definition.cooldownMs - elapsed);
+}
+
+// ============================================================================
+// Completed Quests
+// ============================================================================
+
+export interface CompletedQuestInfo {
+  definition: QuestDefinition;
+  completedAt: number;
+  completedCount: number;
+}
+
+export function getCompletedQuests(
+  questsState: QuestsState
+): CompletedQuestInfo[] {
+  return questsState.completed
+    .map((questId) => {
+      const definition = getQuestDefinition(questId);
+      if (!definition) return null;
+      return {
+        definition,
+        completedAt: questsState.lastCompletedAt[questId] ?? 0,
+        completedCount: questsState.completedCount[questId] ?? 1,
+      };
+    })
+    .filter((q): q is CompletedQuestInfo => q !== null)
+    .sort((a, b) => b.completedAt - a.completedAt);
 }

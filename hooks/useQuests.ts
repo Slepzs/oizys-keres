@@ -8,6 +8,8 @@ import {
   getActiveIncompleteQuests,
   getQuestProgress,
   getCooldownRemaining,
+  getCompletedQuests,
+  type CompletedQuestInfo,
 } from '@/game/logic';
 import { QUEST_DEFINITIONS, getQuestDefinition } from '@/game/data';
 
@@ -23,6 +25,7 @@ interface UseQuestsReturn {
   activeQuests: QuestWithProgress[];
   readyToClaim: QuestWithProgress[];
   availableQuests: QuestDefinition[];
+  completedQuests: CompletedQuestInfo[];
   completedQuestIds: string[];
   totalCompleted: number;
 
@@ -89,6 +92,11 @@ export function useQuestsHook(): UseQuestsReturn {
     return getAvailableQuests(gameState, questsState);
   }, [gameState, questsState]);
 
+  // Memoized completed quests
+  const completedQuests = useMemo((): CompletedQuestInfo[] => {
+    return getCompletedQuests(questsState);
+  }, [questsState]);
+
   // Actions wrapped with useCallback
   const startQuest = useCallback(
     (questId: string) => storeStartQuest(questId),
@@ -125,6 +133,7 @@ export function useQuestsHook(): UseQuestsReturn {
     activeQuests,
     readyToClaim,
     availableQuests,
+    completedQuests,
     completedQuestIds: questsState.completed,
     totalCompleted: questsState.totalCompleted,
     startQuest,
