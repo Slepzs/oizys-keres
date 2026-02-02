@@ -1,4 +1,4 @@
-import type { GameState, SkillId, ItemId } from '../types';
+import type { GameState, SkillId, ItemId, CombatSkillId } from '../types';
 
 /**
  * Game events emitted by the tick system and other game logic.
@@ -13,7 +13,22 @@ export type GameEvent =
   | { type: 'BAG_FULL'; itemId: ItemId; quantity: number }
   | { type: 'ACTIONS_PAUSED_BAG_FULL' }
   | { type: 'QUEST_COMPLETED'; questId: string }
-  | { type: 'ACHIEVEMENT_UNLOCKED'; achievementId: string };
+  | { type: 'ACHIEVEMENT_UNLOCKED'; achievementId: string }
+  // Combat events
+  | { type: 'COMBAT_STARTED'; zoneId: string; enemyId: string }
+  | { type: 'COMBAT_PLAYER_ATTACK'; damage: number; enemyHpRemaining: number }
+  | { type: 'COMBAT_ENEMY_ATTACK'; damage: number; playerHpRemaining: number }
+  | { type: 'COMBAT_ENEMY_KILLED'; enemyId: string; xpReward: number }
+  | { type: 'COMBAT_PLAYER_DIED' }
+  | { type: 'COMBAT_SKILL_LEVEL_UP'; skillId: CombatSkillId; newLevel: number };
+
+/**
+ * Event handler result type.
+ * Handlers can return a new GameState directly or a result with follow-up events.
+ */
+export type EventHandlerResult =
+  | GameState
+  | { state: GameState; events?: GameEvent[] };
 
 /**
  * Handler function type for a specific event type.
@@ -22,4 +37,4 @@ export type GameEvent =
 export type EventHandler<T extends GameEvent['type']> = (
   event: Extract<GameEvent, { type: T }>,
   state: GameState
-) => GameState;
+) => EventHandlerResult;

@@ -7,13 +7,20 @@ import {
 	createInitialAttributesState,
 	createInitialSkillStatsState,
 } from "../data/stats.data";
+import { createInitialCombatState } from "../logic/combat";
 import { createInitialMultipliersState } from "../logic/multipliers";
-import type { BagSettings, GameState } from "../types";
+import type { BagSettings, GameState, NotificationsState } from "../types";
 
 export function createInitialBagSettings(): BagSettings {
 	return {
 		autoSort: false,
 		sortMode: "rarity",
+	};
+}
+
+export function createInitialNotificationsState(): NotificationsState {
+	return {
+		items: [],
 	};
 }
 
@@ -37,6 +44,7 @@ export function createInitialGameState(): GameState {
 		quests: createInitialQuestsState(),
 		achievements: createInitialAchievementsState(),
 		multipliers: createInitialMultipliersState(),
+		combat: createInitialCombatState(),
 		timestamps: {
 			lastActive: now,
 			lastSave: now,
@@ -44,5 +52,6 @@ export function createInitialGameState(): GameState {
 		},
 		activeSkill: null,
 		rngSeed: Math.floor(Math.random() * 2147483647),
+		notifications: createInitialNotificationsState(),
 	};
 }

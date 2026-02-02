@@ -6,9 +6,10 @@ export {
   useBag,
   useBagSettings,
   useQuests,
+  useCombat,
   useActiveSkill,
   useIsHydrated,
   useGameActions,
   type GameStore,
 } from './gameStore';
-export { usePlayerSummary, useSkillSummaries } from './selectors';
+export { usePlayerSummary, useSkillSummaries, useTotalSkillLevels, useCombatSummary, useActiveCombat, useEquipment, useCombatActions } from './selectors';

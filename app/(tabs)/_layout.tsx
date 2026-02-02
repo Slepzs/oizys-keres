@@ -34,16 +34,16 @@ export default function TabLayout() {
         options={{
           title: 'Skills',
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>⚔️</Text>
+            <Text style={{ fontSize: 20, color }}>🔨</Text>
           ),
         }}
       />
       <Tabs.Screen
-        name="quests"
+        name="combat"
         options={{
-          title: 'Quests',
+          title: 'Combat',
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>📜</Text>
+            <Text style={{ fontSize: 20, color }}>⚔️</Text>
           ),
         }}
       />
@@ -53,15 +53,6 @@ export default function TabLayout() {
           title: 'Bag',
           tabBarIcon: ({ color }) => (
             <Text style={{ fontSize: 20, color }}>🎒</Text>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="stats"
-        options={{
-          title: 'Stats',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>📊</Text>
           ),
         }}
       />

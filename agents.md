@@ -231,3 +231,49 @@ If not, it probably doesn’t belong.
 
 
 Explore other agents.md to gain context.
+
+## React/Zustand Store Selectors (CRITICAL)
+
+When creating Zustand selectors in this project, follow these patterns to avoid infinite loops:
+
+### The Problem
+Creating new objects inside selectors causes infinite re-renders because `useShallow` only does shallow comparison - nested new objects still trigger updates.
+
+### Correct Pattern
+
+```typescript
+// ✅ CORRECT - Select primitives, use useMemo for derived state
+export function usePlayerSummary() {
+  const { level, xp } = useGameStore(
+    useShallow((state) => ({ level: state.player.level, xp: state.player.xp }))
+  );
+
+  return useMemo(() => {
+    const xpRequired = xpForPlayerLevel(level + 1);
+    return { level, xp, xpRequired, progress: xpRequired > 0 ? xp / xpRequired : 1 };
+  }, [level, xp]);
+}
+```
+
+### Incorrect Pattern (causes infinite loops)
+
+```typescript
+// ❌ WRONG - Creates new objects every render
+export function useBadSelector() {
+  return useGameStore(
+    useShallow((state) => {
+      return {
+        level: state.player.level,
+        xpRequired: calculateXp(state.player.level), // Called in selector!
+      };
+    })
+  );
+}
+```
+
+### Key Rules
+
+1. **Use `useShallow`** when selecting objects from the store
+2. **Extract primitive values first**, then use `useMemo` for derived calculations
+3. **Never transform data inside the selector** - do it in `useMemo`
+4. **Always include dependencies** in the `useMemo` dependency array

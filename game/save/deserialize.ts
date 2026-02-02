@@ -1,7 +1,7 @@
 import type { GameState } from '../types';
 import type { SaveBlob } from './schema';
 import { migrateSave, needsMigration } from './migrations';
-import { createInitialGameState } from './initial-state';
+import { createInitialGameState, createInitialNotificationsState } from './initial-state';
 
 export interface DeserializeResult {
   success: boolean;
@@ -115,6 +115,7 @@ function validateAndRepairState(state: Partial<GameState>): GameState {
       ...state.resources,
     },
     bag: state.bag ?? initial.bag,
+    combat: state.combat ?? initial.combat,
     bagSettings: {
       autoSort: state.bagSettings?.autoSort ?? initial.bagSettings.autoSort,
       sortMode: state.bagSettings?.sortMode ?? initial.bagSettings.sortMode,
@@ -129,5 +130,7 @@ function validateAndRepairState(state: Partial<GameState>): GameState {
     },
     activeSkill: state.activeSkill ?? null,
     rngSeed: state.rngSeed ?? initial.rngSeed,
+    // Notifications are transient UI state - always reset to empty on load
+    notifications: createInitialNotificationsState(),
   };
 }

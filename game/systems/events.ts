@@ -1,9 +1,9 @@
 import type { GameState } from '../types';
-import type { GameEvent, EventHandler } from './events.types';
+import type { GameEvent, EventHandler, EventHandlerResult } from './events.types';
 
 interface Listener {
   type: GameEvent['type'];
-  handler: (event: GameEvent, state: GameState) => GameState;
+  handler: (event: GameEvent, state: GameState) => EventHandlerResult;
   priority: number;
 }
 
@@ -31,7 +31,7 @@ class EventBus {
   ): () => void {
     const listener: Listener = {
       type,
-      handler: handler as (event: GameEvent, state: GameState) => GameState,
+      handler: handler as (event: GameEvent, state: GameState) => EventHandlerResult,
       priority,
     };
     this.listeners.push(listener);
@@ -60,11 +60,21 @@ class EventBus {
    */
   dispatch(events: GameEvent[], state: GameState): GameState {
     let currentState = state;
+    const queue: GameEvent[] = [...events];
 
-    for (const event of events) {
+    for (let index = 0; index < queue.length; index += 1) {
+      const event = queue[index];
       for (const listener of this.listeners) {
         if (listener.type === event.type) {
-          currentState = listener.handler(event, currentState);
+          const result = listener.handler(event, currentState);
+          if (isHandlerResult(result)) {
+            currentState = result.state;
+            if (result.events && result.events.length > 0) {
+              queue.push(...result.events);
+            }
+          } else {
+            currentState = result;
+          }
         }
       }
     }
@@ -91,3 +101,17 @@ class EventBus {
  * Singleton event bus instance for the game.
  */
 export const eventBus = new EventBus();
+
+function isHandlerResult(result: EventHandlerResult): result is { state: GameState; events?: GameEvent[] } {
+  return typeof result === 'object' && result !== null && 'state' in result;
+}
+
+const registrationKeys = new Set<string>();
+
+export function registerOnce(key: string, register: () => void): void {
+  if (registrationKeys.has(key)) {
+    return;
+  }
+  registrationKeys.add(key);
+  register();
+}

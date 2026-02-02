@@ -1,9 +1,11 @@
+import type { CombatState } from './combat';
 import type { ResourcesState } from './resources';
 import type { SkillId, SkillsState } from './skills';
 import type { BagState, SortMode } from './items';
 import type { QuestsState } from './quests';
 import type { AchievementsState } from './achievements';
 import type { MultipliersState } from './multipliers';
+import type { NotificationsState } from './notifications';
 
 export interface BagSettings {
   autoSort: boolean;
@@ -50,9 +52,11 @@ export interface GameState {
   quests: QuestsState;
   achievements: AchievementsState;
   multipliers: MultipliersState;
+  combat: CombatState;
   timestamps: TimestampsState;
   activeSkill: string | null;
   rngSeed: number;
+  notifications: NotificationsState;
 }
 
 export type GameAction =

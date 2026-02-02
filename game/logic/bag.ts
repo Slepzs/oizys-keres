@@ -31,6 +31,13 @@ export function addItemToBag(
   quantity: number
 ): AddItemResult {
   const definition = ITEM_DEFINITIONS[itemId];
+
+  // Defensive: if item definition doesn't exist, return unchanged
+  if (!definition) {
+    console.warn(`Item ${itemId} not found in definitions`);
+    return { bag, added: 0, overflow: quantity };
+  }
+
   const maxStack = definition.maxStack;
 
   let remaining = quantity;
@@ -136,6 +143,12 @@ export function hasSpaceForItem(
   quantity: number = 1
 ): boolean {
   const definition = ITEM_DEFINITIONS[itemId];
+
+  // Defensive: if item definition doesn't exist, no space available
+  if (!definition) {
+    return false;
+  }
+
   const maxStack = definition.maxStack;
 
   let availableSpace = 0;
@@ -178,6 +191,8 @@ export function isBagFull(bag: BagState): boolean {
   return bag.slots.every((slot) => {
     if (slot === null) return false;
     const definition = ITEM_DEFINITIONS[slot.itemId];
+    // Defensive: if definition doesn't exist, treat as full to prevent issues
+    if (!definition) return true;
     return slot.quantity >= definition.maxStack;
   });
 }
@@ -202,6 +217,13 @@ export function consolidateStacks(bag: BagState): BagState {
 
   for (const [itemId, totalQuantity] of itemGroups) {
     const definition = ITEM_DEFINITIONS[itemId];
+
+    // Defensive: skip items without definitions
+    if (!definition) {
+      console.warn(`Item ${itemId} not found in definitions during consolidation`);
+      continue;
+    }
+
     let remaining = totalQuantity;
 
     while (remaining > 0) {
@@ -234,6 +256,10 @@ export function sortBag(bag: BagState, mode: SortMode): BagState {
   items.sort((a, b) => {
     const defA = ITEM_DEFINITIONS[a.itemId];
     const defB = ITEM_DEFINITIONS[b.itemId];
+
+    // Defensive: if definitions are missing, sort to end
+    if (!defA) return 1;
+    if (!defB) return -1;
 
     switch (mode) {
       case 'rarity':

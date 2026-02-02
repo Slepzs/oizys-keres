@@ -1,12 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { router } from 'expo-router';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { Card } from '../components/common/Card';
 import { ProgressBar } from '../components/common/ProgressBar';
 import { ResourceCounter } from '../components/game/ResourceCounter';
 import { SkillCard } from '../components/game/SkillCard';
+import { QuestSummaryCard } from '../components/game/QuestSummaryCard';
 import { useGame } from '@/hooks/useGame';
 import { useSave } from '@/hooks/useSave';
+import { usePlayerSummary, useTotalSkillLevels } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { SKILL_IDS } from '@/game/data';
 import { playerXpProgress } from '@/game/logic';
@@ -17,6 +20,8 @@ export function DashboardScreen() {
   useSave(); // Enable auto-save
 
   const playerProgress = playerXpProgress(state.player);
+  const playerSummary = usePlayerSummary();
+  const totalSkillLevels = useTotalSkillLevels();
 
   const handleSkillPress = (skillId: SkillId) => {
     if (state.activeSkill === skillId) {
@@ -30,17 +35,30 @@ export function DashboardScreen() {
     <SafeContainer>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Player Level Card */}
-        <Card style={styles.playerCard}>
-          <View style={styles.playerHeader}>
-            <Text style={styles.playerTitle}>Player</Text>
-            <Text style={styles.playerLevel}>Level {state.player.level}</Text>
-          </View>
-          <ProgressBar
-            progress={playerProgress}
-            color={colors.primary}
-            height={8}
-          />
-        </Card>
+        <Pressable onPress={() => router.push('/stats')}>
+          <Card style={styles.playerCard}>
+            <View style={styles.playerHeader}>
+              <Text style={styles.playerTitle}>Player</Text>
+              <View style={styles.playerLevelRow}>
+                <Text style={styles.playerLevel}>Level {state.player.level}</Text>
+                <Text style={styles.chevron}>{'\u2192'}</Text>
+              </View>
+            </View>
+            <ProgressBar
+              progress={playerProgress}
+              color={colors.primary}
+              height={8}
+            />
+            <View style={styles.playerStats}>
+              <Text style={styles.statText}>
+                {'\u2764\uFE0F'} {playerSummary.currentHealth}/{playerSummary.maxHealth}
+              </Text>
+              <Text style={styles.statText}>
+                Skills: {totalSkillLevels}
+              </Text>
+            </View>
+          </Card>
+        </Pressable>
 
         {/* Resources Row */}
         <View style={styles.resourcesRow}>
@@ -54,6 +72,9 @@ export function DashboardScreen() {
             </Card>
           ))}
         </View>
+
+        {/* Quest Summary Card */}
+        <QuestSummaryCard />
 
         {/* Skills Section */}
         <Text style={styles.sectionTitle}>Skills</Text>
@@ -94,6 +115,24 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
     color: colors.primary,
+  },
+  playerLevelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  chevron: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+  },
+  playerStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+  },
+  statText: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
   resourcesRow: {
     flexDirection: 'row',

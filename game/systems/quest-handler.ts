@@ -1,16 +1,16 @@
 import type { GameState } from '../types';
-import type { GameEvent } from './events.types';
+import type { GameEvent, EventHandlerResult } from './events.types';
 import type { QuestsState, PlayerQuestState, Objective } from '../types/quests';
 import { getQuestDefinition } from '../data/quests.data';
 import { getQuestProgress, applyQuestRewards } from '../logic/quests';
 import { checkAchievements } from '../logic/achievements';
-import { eventBus } from './events';
+import { eventBus, registerOnce } from './events';
 
 /**
  * Process quest progress for events that contribute to objectives.
  * Returns updated game state with quest progress applied.
  */
-function processQuestProgress(event: GameEvent, state: GameState): GameState {
+function processQuestProgress(event: GameEvent, state: GameState): EventHandlerResult {
   const { quests } = state;
 
   // Skip if no active quests
@@ -19,6 +19,7 @@ function processQuestProgress(event: GameEvent, state: GameState): GameState {
   }
 
   const completedQuests: string[] = [];
+  const emittedEvents: GameEvent[] = [];
   let hasChanges = false;
 
   // Process each active quest
@@ -82,9 +83,10 @@ function processQuestProgress(event: GameEvent, state: GameState): GameState {
     // Check achievements for quest completion
     const questCompletedEvent: GameEvent = { type: 'QUEST_COMPLETED', questId };
     newState = checkAchievements(newState, questCompletedEvent);
+    emittedEvents.push(questCompletedEvent);
   }
 
-  return newState;
+  return emittedEvents.length > 0 ? { state: newState, events: emittedEvents } : newState;
 }
 
 /**
@@ -127,9 +129,11 @@ function getEventProgressDelta(
  * Should be called once during app initialization.
  */
 export function registerQuestHandlers(): void {
-  // Register handlers for all events that can progress quests
-  // Priority 50 ensures quests process before achievements (which use priority 100)
-  eventBus.on('SKILL_ACTION', processQuestProgress, 50);
-  eventBus.on('SKILL_LEVEL_UP', processQuestProgress, 50);
-  eventBus.on('ITEM_DROPPED', processQuestProgress, 50);
+  registerOnce('quest-handlers', () => {
+    // Register handlers for all events that can progress quests
+    // Priority 50 ensures quests process before achievements (which use priority 100)
+    eventBus.on('SKILL_ACTION', processQuestProgress, 50);
+    eventBus.on('SKILL_LEVEL_UP', processQuestProgress, 50);
+    eventBus.on('ITEM_DROPPED', processQuestProgress, 50);
+  });
 }

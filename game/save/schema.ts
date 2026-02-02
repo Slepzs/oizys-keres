@@ -1,6 +1,6 @@
 import type { GameState } from '../types';
 
-export const CURRENT_SAVE_VERSION = 5;
+export const CURRENT_SAVE_VERSION = 7;
 
 export interface SaveBlob {
   version: number;

@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { Card } from '../components/common/Card';
 import { SkillProgressBar } from '../components/game/SkillProgressBar';
+import { TreeSelector } from '../components/game/TreeSelector';
 import { useGame } from '@/hooks/useGame';
+import { useGameActions } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
-import { SKILL_DEFINITIONS, SKILL_IDS } from '@/game/data';
+import { SKILL_DEFINITIONS, SKILL_IDS, WOODCUTTING_TREES } from '@/game/data';
 import type { SkillId } from '@/game/types';
 
 export function SkillsScreen() {
   const { state, setActiveSkill, toggleAutomation } = useGame();
+  const { setActiveTree } = useGameActions();
+  const [showTreeSelector, setShowTreeSelector] = useState(false);
 
   const handleSkillPress = (skillId: SkillId) => {
     if (state.activeSkill === skillId) {
@@ -18,6 +22,11 @@ export function SkillsScreen() {
       setActiveSkill(skillId);
     }
   };
+
+  const woodcuttingSkill = state.skills.woodcutting;
+  const activeTree = woodcuttingSkill.activeTreeId
+    ? WOODCUTTING_TREES[woodcuttingSkill.activeTreeId]
+    : null;
 
   return (
     <SafeContainer padTop={false}>
@@ -56,6 +65,22 @@ export function SkillsScreen() {
 
               <SkillProgressBar skill={skill} skillId={skillId} isActive={isActive} />
 
+              {/* Tree Selector for Woodcutting */}
+              {skillId === 'woodcutting' && (
+                <View style={styles.treeRow}>
+                  <Text style={styles.treeLabel}>Tree:</Text>
+                  <Text style={styles.treeValue}>
+                    {activeTree ? `${activeTree.icon} ${activeTree.name}` : '🌳 Normal Tree'}
+                  </Text>
+                  <Text
+                    style={styles.treeChangeButton}
+                    onPress={() => setShowTreeSelector(true)}
+                  >
+                    Change
+                  </Text>
+                </View>
+              )}
+
               {/* Automation Toggle */}
               {skill.automationUnlocked ? (
                 <View style={styles.automationRow}>
@@ -78,6 +103,16 @@ export function SkillsScreen() {
           );
         })}
       </ScrollView>
+
+      {/* Tree Selector Modal */}
+      {showTreeSelector && (
+        <TreeSelector
+          currentLevel={woodcuttingSkill.level}
+          activeTreeId={woodcuttingSkill.activeTreeId}
+          onSelectTree={setActiveTree}
+          onClose={() => setShowTreeSelector(false)}
+        />
+      )}
     </SafeContainer>
   );
 }
@@ -151,5 +186,29 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textMuted,
     fontStyle: 'italic',
+  },
+  treeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+  },
+  treeLabel: {
+    fontSize: fontSize.md,
+    color: colors.text,
+    marginRight: spacing.xs,
+  },
+  treeValue: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.medium,
+    color: colors.text,
+    flex: 1,
+  },
+  treeChangeButton: {
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: fontWeight.medium,
   },
 });

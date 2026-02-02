@@ -18,6 +18,13 @@ export function addResource(
 ): ResourceChangeResult {
   const current = resources[resourceId];
   const definition = RESOURCE_DEFINITIONS[resourceId];
+
+  // Defensive: if resource doesn't exist in state or definitions, return unchanged
+  if (!current || !definition) {
+    console.warn(`Resource ${resourceId} not found in state or definitions`);
+    return { resources, actualChange: 0, capped: false };
+  }
+
   const maxStack = definition.maxStack ?? DEFAULT_MAX_STACK;
 
   const newAmount = Math.min(current.amount + amount, maxStack);

@@ -1,24 +1,30 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Card } from '../common/Card';
 import { SkillProgressBar } from './SkillProgressBar';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import type { SkillId, SkillState } from '@/game/types';
-import { SKILL_DEFINITIONS } from '@/game/data';
+import { SKILL_DEFINITIONS, WOODCUTTING_TREES } from '@/game/data';
 
 interface SkillCardProps {
   skillId: SkillId;
   skill: SkillState;
   isActive: boolean;
   onPress: () => void;
+  onSelectTree?: () => void;
 }
 
-export function SkillCard({ skillId, skill, isActive, onPress }: SkillCardProps) {
+export function SkillCard({ skillId, skill, isActive, onPress, onSelectTree }: SkillCardProps) {
   const definition = SKILL_DEFINITIONS[skillId];
 
   const cardStyle = isActive
     ? { ...styles.card, ...styles.activeCard }
     : styles.card;
+
+  // Get active tree for woodcutting
+  const activeTree = skillId === 'woodcutting' && skill.activeTreeId
+    ? WOODCUTTING_TREES[skill.activeTreeId]
+    : null;
 
   return (
     <Card
@@ -39,6 +45,16 @@ export function SkillCard({ skillId, skill, isActive, onPress }: SkillCardProps)
       </View>
 
       <SkillProgressBar skill={skill} skillId={skillId} isActive={isActive} />
+
+      {skillId === 'woodcutting' && onSelectTree && (
+        <TouchableOpacity onPress={onSelectTree} style={styles.treeRow}>
+          <Text style={styles.treeLabel}>Tree:</Text>
+          <Text style={styles.treeValue}>
+            {activeTree ? `${activeTree.icon} ${activeTree.name}` : '🌳 Normal Tree'}
+          </Text>
+          <Text style={styles.treeChangeHint}>(tap to change)</Text>
+        </TouchableOpacity>
+      )}
 
       {skill.automationUnlocked && (
         <View style={styles.automationRow}>
@@ -90,6 +106,29 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
     color: colors.text,
+  },
+  treeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+  },
+  treeLabel: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginRight: spacing.xs,
+  },
+  treeValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    color: colors.text,
+    flex: 1,
+  },
+  treeChangeHint: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
   automationRow: {
     marginTop: spacing.sm,

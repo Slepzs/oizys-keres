@@ -24,7 +24,7 @@ applyTo: '**'
 - Bag/inventory system with 20 slots and item stacking
 - Save migrations pattern: version bump in schema.ts (CURRENT_SAVE_VERSION), migration fn in migrations.ts
 - When adding state: update GameState in types/state.ts, initial-state.ts, deserialize.ts, gameStore.ts (partialize + rehydration + selector hooks)
-- Current save version: 5 (added achievements and multipliers)
+- Current save version: 7 (added woodcutting tree tiers with activeTreeId)
 - Event Bus Architecture:
   - /game/systems/events.ts - EventBus class for decoupling producers/consumers
   - /game/systems/events.types.ts - GameEvent union type (replaces TickEvent)
@@ -58,4 +58,32 @@ applyTo: '**'
   - ACTIONS_PAUSED_BAG_FULL event skips drops when bag is full (prevents item loss)
   - Store actions: sortBag, consolidateBag, toggleAutoSort, setSortMode, toggleSlotLock, expandBag, discardSlot
   - UI: Sort modal, Stack button, Auto toggle in BagScreen; Lock/Discard buttons in BagGrid; Lock icon in BagSlot
+- Notification System (v7 save schema - no migration needed, notifications are transient):
+  - Types in /game/types/notifications.ts (Notification, NotificationType, NotificationsState)
+  - Logic in /game/logic/notifications.ts (pure functions: createNotification, addNotification, removeNotification, etc.)
+  - Handler in /game/systems/notification-handler.ts (event bus subscriber, priority 200)
+  - UI components: NotificationToast (individual toast), NotificationContainer (positioned overlay)
+  - Events handled: QUEST_COMPLETED, ACHIEVEMENT_UNLOCKED, SKILL_LEVEL_UP (milestones), PLAYER_LEVEL_UP, COMBAT_ENEMY_KILLED, COMBAT_PLAYER_DIED
+  - Store actions: addNotification, removeNotification, clearNotifications (auto-dismiss via setTimeout)
+  - Notifications are NOT persisted to storage (transient UI state only)
+  - Max 4 displayed at once, max 10 in queue, priority-based eviction
+- Combat System (v6 save schema):
+  - Types in /game/types/combat.ts (CombatState, CombatSkillId, TrainingMode, EquipmentSlot, etc.)
+  - Combat skills: attack, strength, defense (XP-only storage, level derived)
+  - Combat Level = floor((attack + strength + defense) / 3)
+  - Equipment system: 6 slots (weapon, helmet, chest, legs, boots, accessory)
+  - Data files: combat-skills.data.ts, enemies.data.ts, zones.data.ts
+  - Logic in /game/logic/combat.ts (pure functions):
+    - getCombatSkillLevel(xp), calculateCombatLevel(state)
+    - getTotalEquipmentStats(equipment), getPlayerAttack/Strength/Defense(state)
+    - calculateDamage(attack, strength, defense) = max(1, strength - defense)
+    - processCombatTick(combat, now, ticksElapsed) - processes attacks, deaths, XP
+    - distributeXpOnKill(skills, xp, mode) - allocates XP per training mode
+    - startCombat/fleeCombat, equipItem/unequipSlot, createInitialCombatState
+  - Events: COMBAT_STARTED, COMBAT_PLAYER_ATTACK, COMBAT_ENEMY_ATTACK, COMBAT_ENEMY_KILLED, COMBAT_PLAYER_DIED, COMBAT_SKILL_LEVEL_UP
+  - Store actions: startCombat, fleeCombat, setTrainingMode, toggleAutoFight, equipItem, unequipSlot, selectZone
+  - Selectors: useCombatSummary, useActiveCombat, useEquipment, useCombatActions
+  - UI: CombatScreen.tsx with CombatStats, EnemyDisplay, EquipmentPanel, CombatZoneCard components
+  - Training modes: attack, strength, defense, balanced (splits XP evenly)
+  - Auto-fight: automatically spawns new enemy after kill
 - Specs directory at .agents/specs/ for future feature documentation

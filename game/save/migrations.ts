@@ -4,6 +4,7 @@ import { createInitialBagState } from '../data/items.data';
 import { createInitialQuestsState } from '../data/quests.data';
 import { createInitialAchievementsState } from '../data/achievements.data';
 import { createInitialMultipliersState } from '../logic/multipliers';
+import { createInitialCombatState } from '../logic/combat';
 
 type MigrationFn = (save: SaveBlob) => SaveBlob;
 
@@ -52,6 +53,44 @@ const migrations: Record<number, MigrationFn> = {
       multipliers: createInitialMultipliersState(),
     },
   }),
+  // Migration from v5 to v6: Add combat system
+  5: (save) => ({
+    ...save,
+    version: 6,
+    state: {
+      ...save.state,
+      combat: createInitialCombatState(),
+    },
+  }),
+  // Migration from v6 to v7: Initialize activeTreeId for woodcutting
+  6: (save) => {
+    // Set to highest available tree based on level (default behavior)
+    const woodcuttingLevel = save.state.skills.woodcutting.level;
+    const availableTrees = [
+      { id: 'normal', level: 1 },
+      { id: 'oak', level: 15 },
+      { id: 'willow', level: 30 },
+      { id: 'maple', level: 45 },
+      { id: 'yew', level: 60 },
+      { id: 'magic', level: 75 },
+    ].filter(tree => tree.level <= woodcuttingLevel);
+    const defaultTree = availableTrees[availableTrees.length - 1];
+
+    return {
+      ...save,
+      version: 7,
+      state: {
+        ...save.state,
+        skills: {
+          ...save.state.skills,
+          woodcutting: {
+            ...save.state.skills.woodcutting,
+            activeTreeId: defaultTree?.id || 'normal',
+          },
+        },
+      },
+    };
+  },
 };
 
 /**

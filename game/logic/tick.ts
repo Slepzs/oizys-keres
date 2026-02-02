@@ -1,4 +1,4 @@
-import type { GameState, SkillId } from '../types';
+import type { GameState, SkillId, SkillDefinition } from '../types';
 import type { GameEvent } from '../systems/events.types';
 import { SKILL_DEFINITIONS } from '../data/skills.data';
 import { SKILL_DROP_TABLES } from '../data/skill-drops.data';
@@ -9,6 +9,8 @@ import { addResource } from './resources';
 import { addItemToBag, isBagFull } from './bag';
 import { advanceSeed, createRng, rollChance, randomInt } from './rng';
 import { getSkillXpMultiplier, getEffectiveMultiplier } from './multipliers';
+import { processCombatTick } from './combat';
+import { getActiveTree } from './woodcutting';
 
 export interface TickResult {
   state: GameState;
@@ -49,6 +51,14 @@ export function processTick(state: GameState, deltaMs: number): TickResult {
     }
   }
 
+  // Process combat if active
+  if (newState.combat.activeCombat) {
+    const now = Date.now();
+    const combatResult = processCombatTick(newState.combat, now, ticksElapsed);
+    newState = { ...newState, combat: combatResult.state };
+    events.push(...combatResult.events);
+  }
+
   // Advance RNG seed
   newState.rngSeed = advanceSeed(newState.rngSeed);
 
@@ -69,9 +79,24 @@ function processSkillTick(
   const definition = SKILL_DEFINITIONS[skillId];
   const skill = state.skills[skillId];
 
+  // For woodcutting, use active tree tier if set
+  let effectiveDefinition: SkillDefinition = definition;
+  if (skillId === 'woodcutting') {
+    const treeTier = getActiveTree(skill);
+    if (treeTier && skill.level >= treeTier.levelRequired) {
+      effectiveDefinition = {
+        ...definition,
+        baseXpPerAction: treeTier.baseXpPerAction,
+        baseResourcePerAction: treeTier.baseResourcePerAction,
+        resourceProduced: treeTier.resourceProduced,
+        ticksPerAction: treeTier.ticksPerAction,
+      };
+    }
+  }
+
   // Calculate effective speed
   const speedMult = skillSpeedMultiplier(skill.level);
-  const effectiveTicksPerAction = definition.ticksPerAction / speedMult;
+  const effectiveTicksPerAction = effectiveDefinition.ticksPerAction / speedMult;
 
   // Accumulate tick progress and calculate complete actions
   const totalTicks = (skill.tickProgress ?? 0) + ticksElapsed;
@@ -97,8 +122,8 @@ function processSkillTick(
   // Calculate rewards based on complete actions only
   const efficiencyMult = skillEfficiencyMultiplier(skill.level);
   const xpMultiplier = getSkillXpMultiplier(newState, skillId);
-  const xpGained = Math.floor(definition.baseXpPerAction * actionsCompleted * xpMultiplier);
-  const resourceGained = Math.floor(definition.baseResourcePerAction * efficiencyMult * actionsCompleted);
+  const xpGained = Math.floor(effectiveDefinition.baseXpPerAction * actionsCompleted * xpMultiplier);
+  const resourceGained = Math.floor(effectiveDefinition.baseResourcePerAction * efficiencyMult * actionsCompleted);
 
   // Add XP to skill
   if (xpGained > 0) {
@@ -148,7 +173,7 @@ function processSkillTick(
 
   // Add resources
   if (resourceGained > 0) {
-    const resourceResult = addResource(newState.resources, definition.resourceProduced, resourceGained);
+    const resourceResult = addResource(newState.resources, effectiveDefinition.resourceProduced, resourceGained);
     newState = {
       ...newState,
       resources: resourceResult.resources,

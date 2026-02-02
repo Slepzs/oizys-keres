@@ -1,3 +1,5 @@
+import type { EquipmentSlot, EquipmentStats } from './combat';
+
 export type ItemId =
   // Smithing products
   | 'bronze_ingot'
@@ -10,7 +12,31 @@ export type ItemId =
   // Mining drops
   | 'ruby'
   | 'sapphire'
-  | 'geode';
+  | 'geode'
+  // Equipment - Weapons
+  | 'bronze_sword'
+  | 'iron_sword'
+  | 'steel_sword'
+  | 'mithril_sword'
+  // Equipment - Helmets
+  | 'bronze_helmet'
+  | 'iron_helmet'
+  | 'steel_helmet'
+  // Equipment - Chestplates
+  | 'bronze_chestplate'
+  | 'iron_chestplate'
+  | 'steel_chestplate'
+  // Equipment - Legs
+  | 'bronze_platelegs'
+  | 'iron_platelegs'
+  | 'steel_platelegs'
+  // Equipment - Boots
+  | 'leather_boots'
+  | 'iron_boots'
+  | 'steel_boots'
+  // Equipment - Accessories
+  | 'power_amulet'
+  | 'defense_ring';
 
 export type ItemCategory = 'material' | 'tool' | 'equipment' | 'misc';
 
@@ -28,6 +54,13 @@ export interface ItemDefinition {
   maxStack: number;
 }
 
+export interface EquipmentDefinition extends ItemDefinition {
+  category: 'equipment';
+  slot: EquipmentSlot;
+  stats: EquipmentStats;
+  levelRequired?: number;
+}
+
 export interface BagSlot {
   itemId: ItemId;
   quantity: number;
@@ -37,4 +70,8 @@ export interface BagSlot {
 export interface BagState {
   slots: (BagSlot | null)[];
   maxSlots: number;
+}
+
+export function isEquipment(item: ItemDefinition): item is EquipmentDefinition {
+  return item.category === 'equipment';
 }

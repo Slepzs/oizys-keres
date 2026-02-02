@@ -8,6 +8,7 @@ export interface SkillState {
   automationUnlocked: boolean;
   automationEnabled: boolean;
   tickProgress: number;
+  activeTreeId?: string;
 }
 
 export type SkillsState = Record<SkillId, SkillState>;

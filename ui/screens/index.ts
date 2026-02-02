@@ -1,3 +1,4 @@
+export { CombatScreen } from './CombatScreen';
 export { DashboardScreen } from './DashboardScreen';
 export { SkillsScreen } from './SkillsScreen';
 export { BagScreen } from './BagScreen';
