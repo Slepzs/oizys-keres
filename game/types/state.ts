@@ -1,5 +1,5 @@
 import type { ResourcesState } from './resources';
-import type { SkillsState } from './skills';
+import type { SkillId, SkillsState } from './skills';
 import type { BagState, SortMode } from './items';
 import type { QuestsState } from './quests';
 
@@ -13,6 +13,24 @@ export interface PlayerState {
   xp: number;
 }
 
+export interface AttributeState {
+  base: number;
+  bonus: number;
+  multiplier: number;
+  current?: number;
+}
+
+export type AttributesState = Record<string, AttributeState>;
+
+export interface SkillStatState {
+  level: number;
+  xp: number;
+  tier?: number;
+  mastery?: number;
+}
+
+export type SkillStatsState = Record<SkillId, SkillStatState>;
+
 export interface TimestampsState {
   lastActive: number;
   lastSave: number;
@@ -22,6 +40,8 @@ export interface TimestampsState {
 export interface GameState {
   player: PlayerState;
   skills: SkillsState;
+  attributes: AttributesState;
+  skillStats: SkillStatsState;
   resources: ResourcesState;
   bag: BagState;
   bagSettings: BagSettings;

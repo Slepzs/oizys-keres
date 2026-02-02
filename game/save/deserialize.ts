@@ -102,6 +102,14 @@ function validateAndRepairState(state: Partial<GameState>): GameState {
       ...initial.skills,
       ...state.skills,
     },
+    attributes: {
+      ...initial.attributes,
+      ...state.attributes,
+    },
+    skillStats: {
+      ...initial.skillStats,
+      ...state.skillStats,
+    },
     resources: {
       ...initial.resources,
       ...state.resources,
