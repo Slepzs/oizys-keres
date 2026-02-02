@@ -32,7 +32,7 @@ export function useGame() {
     (action: GameAction) => {
       switch (action.type) {
         case 'TICK':
-          storeTick(action.payload.deltaMs);
+          storeTick(action.payload.deltaMs, Date.now());
           break;
         case 'SET_ACTIVE_SKILL':
           storeSetActiveSkill(action.payload.skillId as SkillId | null);
@@ -109,7 +109,7 @@ export function useGameActions() {
     (action: GameAction) => {
       switch (action.type) {
         case 'TICK':
-          tick(action.payload.deltaMs);
+          tick(action.payload.deltaMs, Date.now());
           break;
         case 'SET_ACTIVE_SKILL':
           setActiveSkill(action.payload.skillId as SkillId | null);

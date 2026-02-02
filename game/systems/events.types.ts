@@ -1,4 +1,4 @@
-import type { GameState, SkillId, ItemId, CombatSkillId } from '../types';
+import type { GameContext, GameState, SkillId, ItemId, CombatSkillId } from '../types';
 
 /**
  * Game events emitted by the tick system and other game logic.
@@ -36,5 +36,6 @@ export type EventHandlerResult =
  */
 export type EventHandler<T extends GameEvent['type']> = (
   event: Extract<GameEvent, { type: T }>,
-  state: GameState
+  state: GameState,
+  ctx: GameContext
 ) => EventHandlerResult;

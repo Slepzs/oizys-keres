@@ -1,40 +1,34 @@
-import type {
-  Notification,
-  NotificationType,
-  NotificationsState,
-} from '../types/notifications';
+import type { Notification, NotificationType, NotificationsState } from '../types/notifications';
 import {
   NOTIFICATION_DURATIONS,
   NOTIFICATION_PRIORITIES,
   MAX_NOTIFICATIONS_QUEUE,
 } from '../types/notifications';
 
-/**
- * Generate a unique notification ID.
- */
-export function generateNotificationId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+export interface CreateNotificationInput {
+  id: string;
+  now: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  options?: {
+    icon?: string;
+    duration?: number;
+    priority?: Notification['priority'];
+  };
 }
 
 /**
  * Create a new notification.
  */
-export function createNotification(
-  type: NotificationType,
-  title: string,
-  message: string,
-  options?: {
-    icon?: string;
-    duration?: number;
-    priority?: Notification['priority'];
-  }
-): Notification {
+export function createNotification(input: CreateNotificationInput): Notification {
+  const { id, now, type, title, message, options } = input;
   return {
-    id: generateNotificationId(),
+    id,
     type,
     title,
     message,
-    timestamp: Date.now(),
+    timestamp: now,
     duration: options?.duration ?? NOTIFICATION_DURATIONS[type],
     icon: options?.icon,
     priority: options?.priority ?? NOTIFICATION_PRIORITIES[type],
@@ -95,7 +89,7 @@ export function clearNotifications(state: NotificationsState): NotificationsStat
  */
 export function clearExpiredNotifications(
   state: NotificationsState,
-  now: number = Date.now()
+  now: number
 ): NotificationsState {
   return {
     items: state.items.filter((n) => now - n.timestamp < n.duration),
@@ -108,7 +102,7 @@ export function clearExpiredNotifications(
 export function getDisplayNotifications(
   state: NotificationsState,
   maxDisplay: number = 4,
-  now: number = Date.now()
+  now: number
 ): Notification[] {
   const active = state.items.filter((n) => now - n.timestamp < n.duration);
   // Sort by priority (high first) then by timestamp (newest first)
@@ -125,7 +119,7 @@ export function getDisplayNotifications(
 /**
  * Get remaining time for a notification in milliseconds.
  */
-export function getRemainingTime(notification: Notification, now: number = Date.now()): number {
+export function getRemainingTime(notification: Notification, now: number): number {
   const elapsed = now - notification.timestamp;
   return Math.max(0, notification.duration - elapsed);
 }
@@ -135,7 +129,7 @@ export function getRemainingTime(notification: Notification, now: number = Date.
  */
 export function getNotificationProgress(
   notification: Notification,
-  now: number = Date.now()
+  now: number
 ): number {
   const elapsed = now - notification.timestamp;
   return Math.max(0, Math.min(1, 1 - elapsed / notification.duration));

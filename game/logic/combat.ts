@@ -30,6 +30,8 @@ export interface CombatTickResult {
   events: GameEvent[];
 }
 
+const MAX_COMBAT_STEPS_PER_TICK = 250;
+
 /**
  * Get combat skill level from XP.
  */
@@ -195,140 +197,151 @@ export function processCombatTick(
   _ticksElapsed: number
 ): CombatTickResult {
   const events: GameEvent[] = [];
-  let newState = { ...combatState };
+  let newState: CombatState = { ...combatState };
 
-  // No active combat, nothing to process
   if (!newState.activeCombat) {
     return { state: newState, events };
   }
 
-  const combat = newState.activeCombat;
-  const enemy = ENEMY_DEFINITIONS[combat.enemyId];
-  if (!enemy) {
-    // Invalid enemy, clear combat
-    return { state: { ...newState, activeCombat: null }, events };
-  }
+  let steps = 0;
 
-  // Process player attack
-  if (now >= combat.playerNextAttackAt) {
-    const playerStrength = getPlayerStrength(newState);
-    const damage = calculateDamage(playerStrength, enemy.defense);
-    const newEnemyHp = Math.max(0, combat.enemyCurrentHp - damage);
+  while (newState.activeCombat && steps < MAX_COMBAT_STEPS_PER_TICK) {
+    const combat = newState.activeCombat;
+    const enemy = ENEMY_DEFINITIONS[combat.enemyId];
+    if (!enemy) {
+      newState = { ...newState, activeCombat: null };
+      break;
+    }
 
-    events.push({
-      type: 'COMBAT_PLAYER_ATTACK',
-      damage,
-      enemyHpRemaining: newEnemyHp,
-    });
+    const nextEventAt = Math.min(combat.playerNextAttackAt, combat.enemyNextAttackAt);
+    if (nextEventAt > now) {
+      break;
+    }
 
-    const attackSpeed = getPlayerAttackSpeed(newState);
-    newState = {
-      ...newState,
-      activeCombat: {
-        ...combat,
-        enemyCurrentHp: newEnemyHp,
-        playerNextAttackAt: now + attackSpeed * 1000,
-      },
-    };
+    const isPlayerTurn = combat.playerNextAttackAt <= combat.enemyNextAttackAt;
 
-    // Check if enemy is killed
-    if (newEnemyHp <= 0) {
-      const xpResult = distributeXpOnKill(newState.combatSkills, enemy.xpReward, newState.trainingMode);
-
-      // Recalculate max HP in case defense leveled up
-      const newMaxHp = calculateMaxHp(xpResult.skills);
+    if (isPlayerTurn) {
+      const playerStrength = getPlayerStrength(newState);
+      const damage = calculateDamage(playerStrength, enemy.defense);
+      const enemyHpRemaining = Math.max(0, combat.enemyCurrentHp - damage);
 
       events.push({
-        type: 'COMBAT_ENEMY_KILLED',
-        enemyId: enemy.id,
-        xpReward: enemy.xpReward,
+        type: 'COMBAT_PLAYER_ATTACK',
+        damage,
+        enemyHpRemaining,
       });
 
-      for (const levelUp of xpResult.levelUps) {
+      const attackSpeed = getPlayerAttackSpeed(newState);
+
+      newState = {
+        ...newState,
+        activeCombat: {
+          ...combat,
+          enemyCurrentHp: enemyHpRemaining,
+          playerNextAttackAt: combat.playerNextAttackAt + attackSpeed * 1000,
+        },
+      };
+
+      if (enemyHpRemaining <= 0) {
+        const xpResult = distributeXpOnKill(
+          newState.combatSkills,
+          enemy.xpReward,
+          newState.trainingMode
+        );
+
+        const newMaxHp = calculateMaxHp(xpResult.skills);
+
         events.push({
-          type: 'COMBAT_SKILL_LEVEL_UP',
-          skillId: levelUp.skillId,
-          newLevel: levelUp.newLevel,
+          type: 'COMBAT_ENEMY_KILLED',
+          enemyId: enemy.id,
+          xpReward: enemy.xpReward,
         });
-      }
 
-      newState = {
-        ...newState,
-        combatSkills: xpResult.skills,
-        totalKills: newState.totalKills + 1,
-        playerMaxHp: newMaxHp,
-        playerCurrentHp: Math.min(newState.playerCurrentHp, newMaxHp),
-      };
-
-      // Auto-fight: spawn new enemy if enabled
-      if (newState.autoFight && newState.selectedZoneId) {
-        const zone = ZONE_DEFINITIONS[newState.selectedZoneId];
-        if (zone && zone.enemies.length > 0) {
-          const nextEnemyId = zone.enemies[0]; // Use first enemy in zone
-          const nextEnemy = ENEMY_DEFINITIONS[nextEnemyId];
-          if (nextEnemy) {
-            const attackSpeed = getPlayerAttackSpeed(newState);
-            newState = {
-              ...newState,
-              activeCombat: {
-                zoneId: newState.selectedZoneId,
-                enemyId: nextEnemyId,
-                enemyCurrentHp: nextEnemy.maxHp,
-                playerNextAttackAt: now + attackSpeed * 1000,
-                enemyNextAttackAt: now + nextEnemy.attackSpeed * 1000,
-              },
-            };
-            events.push({
-              type: 'COMBAT_STARTED',
-              zoneId: newState.selectedZoneId!,
-              enemyId: nextEnemyId,
-            });
-          }
+        for (const levelUp of xpResult.levelUps) {
+          events.push({
+            type: 'COMBAT_SKILL_LEVEL_UP',
+            skillId: levelUp.skillId,
+            newLevel: levelUp.newLevel,
+          });
         }
-      } else {
-        // Clear combat if not auto-fighting
-        newState = { ...newState, activeCombat: null };
+
+        newState = {
+          ...newState,
+          combatSkills: xpResult.skills,
+          totalKills: newState.totalKills + 1,
+          playerMaxHp: newMaxHp,
+          playerCurrentHp: Math.min(newState.playerCurrentHp, newMaxHp),
+        };
+
+        if (newState.autoFight && newState.selectedZoneId) {
+          const selectedZoneId = newState.selectedZoneId;
+          const zone = ZONE_DEFINITIONS[selectedZoneId];
+          if (zone && zone.enemies.length > 0) {
+            const nextEnemyId = zone.enemies[0];
+            const nextEnemy = ENEMY_DEFINITIONS[nextEnemyId];
+            if (nextEnemy) {
+              const nextAttackSpeed = getPlayerAttackSpeed(newState);
+              newState = {
+                ...newState,
+                activeCombat: {
+                  zoneId: selectedZoneId,
+                  enemyId: nextEnemyId,
+                  enemyCurrentHp: nextEnemy.maxHp,
+                  playerNextAttackAt: nextEventAt + nextAttackSpeed * 1000,
+                  enemyNextAttackAt: nextEventAt + nextEnemy.attackSpeed * 1000,
+                },
+              };
+              events.push({
+                type: 'COMBAT_STARTED',
+                zoneId: selectedZoneId,
+                enemyId: nextEnemyId,
+              });
+            } else {
+              newState = { ...newState, activeCombat: null };
+            }
+          } else {
+            newState = { ...newState, activeCombat: null };
+          }
+        } else {
+          newState = { ...newState, activeCombat: null };
+        }
       }
+    } else {
+      const playerDefense = getPlayerDefense(newState);
+      const damage = calculateDamage(enemy.strength, playerDefense);
+      const playerHpRemaining = Math.max(0, newState.playerCurrentHp - damage);
 
-      return { state: newState, events };
-    }
-  }
+      events.push({
+        type: 'COMBAT_ENEMY_ATTACK',
+        damage,
+        playerHpRemaining,
+      });
 
-  // Process enemy attack (only if combat still active)
-  if (newState.activeCombat && now >= newState.activeCombat.enemyNextAttackAt) {
-    const playerDefense = getPlayerDefense(newState);
-    const damage = calculateDamage(enemy.strength, playerDefense);
-    const newPlayerHp = Math.max(0, newState.playerCurrentHp - damage);
-
-    events.push({
-      type: 'COMBAT_ENEMY_ATTACK',
-      damage,
-      playerHpRemaining: newPlayerHp,
-    });
-
-    newState = {
-      ...newState,
-      playerCurrentHp: newPlayerHp,
-      activeCombat: {
-        ...newState.activeCombat,
-        enemyNextAttackAt: now + enemy.attackSpeed * 1000,
-      },
-    };
-
-    // Check if player died
-    if (newPlayerHp <= 0) {
-      events.push({ type: 'COMBAT_PLAYER_DIED' });
-
-      // Respawn with full HP, clear combat
-      const maxHp = calculateMaxHp(newState.combatSkills);
       newState = {
         ...newState,
-        playerCurrentHp: maxHp,
-        playerMaxHp: maxHp,
-        totalDeaths: newState.totalDeaths + 1,
-        activeCombat: null,
+        playerCurrentHp: playerHpRemaining,
+        activeCombat: {
+          ...combat,
+          enemyNextAttackAt: combat.enemyNextAttackAt + enemy.attackSpeed * 1000,
+        },
       };
+
+      if (playerHpRemaining <= 0) {
+        events.push({ type: 'COMBAT_PLAYER_DIED' });
+
+        const maxHp = calculateMaxHp(newState.combatSkills);
+        newState = {
+          ...newState,
+          playerCurrentHp: maxHp,
+          playerMaxHp: maxHp,
+          totalDeaths: newState.totalDeaths + 1,
+          activeCombat: null,
+        };
+        break;
+      }
     }
+
+    steps += 1;
   }
 
   return { state: newState, events };

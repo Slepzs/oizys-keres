@@ -47,7 +47,8 @@ export function evaluateCondition(
 export function isQuestAvailable(
   questId: string,
   state: GameState,
-  questsState: QuestsState
+  questsState: QuestsState,
+  now: number
 ): boolean {
   const definition = getQuestDefinition(questId);
   if (!definition) return false;
@@ -65,7 +66,7 @@ export function isQuestAvailable(
   // Check cooldown for repeatables
   if (definition.repeatable && definition.cooldownMs) {
     const lastCompleted = questsState.lastCompletedAt[questId];
-    if (lastCompleted && Date.now() - lastCompleted < definition.cooldownMs) {
+    if (lastCompleted && now - lastCompleted < definition.cooldownMs) {
       return false;
     }
   }
@@ -82,10 +83,11 @@ export function isQuestAvailable(
 
 export function getAvailableQuests(
   state: GameState,
-  questsState: QuestsState
+  questsState: QuestsState,
+  now: number
 ): QuestDefinition[] {
   return Object.values(QUEST_DEFINITIONS).filter((def) =>
-    isQuestAvailable(def.id, state, questsState)
+    isQuestAvailable(def.id, state, questsState, now)
   );
 }
 
@@ -102,9 +104,10 @@ export interface StartQuestResult {
 export function startQuest(
   questId: string,
   state: GameState,
-  questsState: QuestsState
+  questsState: QuestsState,
+  now: number
 ): StartQuestResult {
-  if (!isQuestAvailable(questId, state, questsState)) {
+  if (!isQuestAvailable(questId, state, questsState, now)) {
     return {
       quests: questsState,
       success: false,
@@ -131,7 +134,7 @@ export function startQuest(
     questId,
     progress,
     completed: false,
-    startedAt: Date.now(),
+    startedAt: now,
   };
 
   return {
@@ -275,7 +278,8 @@ export interface ApplyRewardsResult {
 export function applyQuestRewards(
   gameState: GameState,
   questsState: QuestsState,
-  questId: string
+  questId: string,
+  now: number
 ): ApplyRewardsResult {
   const definition = getQuestDefinition(questId);
   if (!definition) {
@@ -305,7 +309,7 @@ export function applyQuestRewards(
 
   const newLastCompletedAt = {
     ...questsState.lastCompletedAt,
-    [questId]: Date.now(),
+    [questId]: now,
   };
 
   const newQuestsState: QuestsState = {
@@ -386,7 +390,8 @@ export function getActiveIncompleteQuests(questsState: QuestsState): PlayerQuest
 
 export function getCooldownRemaining(
   questId: string,
-  questsState: QuestsState
+  questsState: QuestsState,
+  now: number
 ): number {
   const definition = getQuestDefinition(questId);
   if (!definition || !definition.repeatable || !definition.cooldownMs) {
@@ -396,7 +401,7 @@ export function getCooldownRemaining(
   const lastCompleted = questsState.lastCompletedAt[questId];
   if (!lastCompleted) return 0;
 
-  const elapsed = Date.now() - lastCompleted;
+  const elapsed = now - lastCompleted;
   return Math.max(0, definition.cooldownMs - elapsed);
 }
 

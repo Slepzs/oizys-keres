@@ -11,21 +11,21 @@ import { checkAchievements, updateAchievementProgress } from '../logic/achieveme
 export function registerAchievementHandlers(): void {
   registerOnce('achievement-handlers', () => {
     // Check achievements on skill level up
-    eventBus.on('SKILL_LEVEL_UP', (event, state) => {
-      return checkAchievements(state, event);
+    eventBus.on('SKILL_LEVEL_UP', (event, state, ctx) => {
+      return checkAchievements(state, event, ctx);
     }, 100);
 
     // Check achievements on player level up
-    eventBus.on('PLAYER_LEVEL_UP', (event, state) => {
-      return checkAchievements(state, event);
+    eventBus.on('PLAYER_LEVEL_UP', (event, state, ctx) => {
+      return checkAchievements(state, event, ctx);
     }, 100);
 
     // Track item collection and check achievements on item drops
-    eventBus.on('ITEM_DROPPED', (event, state) => {
+    eventBus.on('ITEM_DROPPED', (event, state, ctx) => {
       // Update cumulative progress for item collection achievements
       const progressKey = `items_${event.itemId}`;
       const newState = updateAchievementProgress(state, progressKey, event.quantity);
-      return checkAchievements(newState, event);
+      return checkAchievements(newState, event, ctx);
     }, 100);
 
     // Note: QUEST_COMPLETED achievements are handled directly in quest-handler.ts

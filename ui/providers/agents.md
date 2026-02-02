@@ -29,7 +29,7 @@ Prevents rendering until game state is loaded from MMKV storage.
 
 ### Why Needed
 
-MMKV is synchronous, but Zustand's persist middleware still uses an async rehydration pattern. Without the gate, components would briefly see initial state before saved state loads.
+MMKV is synchronous, but we still gate the UI until the store finishes its boot-time load + offline progress application.
 
 ## TickManager
 
@@ -43,8 +43,9 @@ Runs the game tick loop. Renders nothing (returns `null`).
 
 1. Sets up `setInterval` at `TICK_RATE_MS` (100ms)
 2. Calculates `deltaMs` since last tick
-3. Calls store's `tick(deltaMs)` action
+3. Calls store's `tick(deltaMs, now)` action
 4. Cleans up interval on unmount
+5. Listens to `AppState` and applies offline progress on resume
 
 ### Why a Component?
 
@@ -78,5 +79,5 @@ Previously used `GameProvider` with React Context + useReducer. Now replaced by:
 ## Notes
 
 - No Context needed - Zustand provides global state via hooks
-- Offline progress processed in store's `onRehydrateStorage` callback
+- Offline progress is applied on resume via `AppState` listener (and on cold start during store boot)
 - Tick loop is external to store for React lifecycle management

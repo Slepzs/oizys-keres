@@ -89,7 +89,7 @@ export function useQuestsHook(): UseQuestsReturn {
 
   // Memoized available quests
   const availableQuests = useMemo((): QuestDefinition[] => {
-    return getAvailableQuests(gameState, questsState);
+    return getAvailableQuests(gameState, questsState, Date.now());
   }, [gameState, questsState]);
 
   // Memoized completed quests
@@ -120,7 +120,7 @@ export function useQuestsHook(): UseQuestsReturn {
   );
 
   const getCooldown = useCallback(
-    (questId: string) => getCooldownRemaining(questId, questsState),
+    (questId: string) => getCooldownRemaining(questId, questsState, Date.now()),
     [questsState]
   );
 

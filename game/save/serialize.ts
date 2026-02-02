@@ -2,18 +2,23 @@ import type { GameState } from '../types';
 import type { SaveBlob } from './schema';
 import { CURRENT_SAVE_VERSION } from './schema';
 
+export interface SerializeOptions {
+  now?: number;
+}
+
 /**
  * Serialize game state to a save blob.
  */
-export function serializeState(state: GameState): SaveBlob {
+export function serializeState(state: GameState, options: SerializeOptions = {}): SaveBlob {
+  const now = options.now ?? Date.now();
   return {
     version: CURRENT_SAVE_VERSION,
-    savedAt: Date.now(),
+    savedAt: now,
     state: {
       ...state,
       timestamps: {
         ...state.timestamps,
-        lastSave: Date.now(),
+        lastSave: now,
       },
     },
   };

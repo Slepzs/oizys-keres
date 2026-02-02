@@ -14,9 +14,10 @@ export interface OfflineProgressResult extends TickResult {
  */
 export function processOfflineProgress(
   state: GameState,
-  currentTime: number
+  now: number
 ): OfflineProgressResult {
-  const elapsedMs = currentTime - state.timestamps.lastActive;
+  const startNow = state.timestamps.lastActive;
+  const elapsedMs = now - startNow;
 
   if (elapsedMs <= 0) {
     return {
@@ -34,14 +35,14 @@ export function processOfflineProgress(
 
   // Process ticks with larger chunks for efficiency
   // Use 10-second chunks for offline to reduce computation
-  const result = processMultipleTicks(state, cappedMs, 10_000);
+  const result = processMultipleTicks(state, cappedMs, startNow, 10_000);
 
   // Update timestamps
   const newState: GameState = {
     ...result.state,
     timestamps: {
       ...result.state.timestamps,
-      lastActive: currentTime,
+      lastActive: now,
     },
   };
 

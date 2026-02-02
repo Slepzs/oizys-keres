@@ -19,7 +19,7 @@ Pure functions that process game state. The heart of the game engine.
 ## Core Function: processTick
 
 ```typescript
-function processTick(state: GameState, deltaMs: number): TickResult {
+function processTick(state: GameState, deltaMs: number, ctx: GameContext): TickResult {
   // 1. Calculate ticks elapsed
   // 2. Process active skill (if any)
   // 3. Process automated skills at 50% efficiency
@@ -55,9 +55,9 @@ Achievements are checked via event bus after game events:
 
 ```typescript
 // In achievements.ts:
-checkAchievements(state, event)  // Check all unlockable achievements
+checkAchievements(state, event, ctx)  // Check all unlockable achievements
 evaluateAchievementCondition(condition, state)  // Test single condition
-unlockAchievement(state, definition)  // Unlock and apply rewards
+unlockAchievement(state, definition, ctx)  // Unlock and apply rewards
 ```
 
 Achievement conditions include:

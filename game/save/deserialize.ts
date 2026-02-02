@@ -10,6 +10,10 @@ export interface DeserializeResult {
   error?: string;
 }
 
+export interface DeserializeOptions {
+  now?: number;
+}
+
 /**
  * Parse JSON string to save blob.
  */
@@ -40,7 +44,7 @@ export function jsonToSave(json: string): SaveBlob | null {
  * Deserialize a save blob to game state.
  * Handles migrations and validation.
  */
-export function deserializeSave(save: SaveBlob): DeserializeResult {
+export function deserializeSave(save: SaveBlob, options: DeserializeOptions = {}): DeserializeResult {
   try {
     let processedSave = save;
     let wasMigrated = false;
@@ -52,7 +56,7 @@ export function deserializeSave(save: SaveBlob): DeserializeResult {
     }
 
     // Validate state structure
-    const state = validateAndRepairState(processedSave.state);
+    const state = repairGameState(processedSave.state, options);
 
     return {
       success: true,
@@ -62,7 +66,7 @@ export function deserializeSave(save: SaveBlob): DeserializeResult {
   } catch (error) {
     return {
       success: false,
-      state: createInitialGameState(),
+      state: createInitialGameState({ now: options.now }),
       wasMigrated: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
@@ -72,26 +76,30 @@ export function deserializeSave(save: SaveBlob): DeserializeResult {
 /**
  * Convenience function to deserialize directly from JSON.
  */
-export function jsonToState(json: string): DeserializeResult {
+export function jsonToState(json: string, options: DeserializeOptions = {}): DeserializeResult {
   const save = jsonToSave(json);
 
   if (!save) {
     return {
       success: false,
-      state: createInitialGameState(),
+      state: createInitialGameState({ now: options.now }),
       wasMigrated: false,
       error: 'Invalid JSON or save format',
     };
   }
 
-  return deserializeSave(save);
+  return deserializeSave(save, options);
 }
 
 /**
  * Validate state and repair any missing fields with defaults.
  */
-function validateAndRepairState(state: Partial<GameState>): GameState {
-  const initial = createInitialGameState();
+export function repairGameState(state: Partial<GameState>, options: DeserializeOptions = {}): GameState {
+  const now = options.now ?? Date.now();
+  const initial = createInitialGameState({
+    now,
+    rngSeed: state.rngSeed ?? ((now & 0x7fffffff) || 1),
+  });
 
   return {
     player: {
@@ -126,7 +134,7 @@ function validateAndRepairState(state: Partial<GameState>): GameState {
     timestamps: {
       lastActive: state.timestamps?.lastActive ?? initial.timestamps.lastActive,
       lastSave: state.timestamps?.lastSave ?? initial.timestamps.lastSave,
-      sessionStart: Date.now(), // Always reset session start
+      sessionStart: now, // Always reset session start
     },
     activeSkill: state.activeSkill ?? null,
     rngSeed: state.rngSeed ?? initial.rngSeed,

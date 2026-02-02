@@ -1,9 +1,10 @@
 import type { GameState } from '../types';
+import type { GameContext } from '../types/context';
 import type { GameEvent, EventHandler, EventHandlerResult } from './events.types';
 
 interface Listener {
   type: GameEvent['type'];
-  handler: (event: GameEvent, state: GameState) => EventHandlerResult;
+  handler: (event: GameEvent, state: GameState, ctx: GameContext) => EventHandlerResult;
   priority: number;
 }
 
@@ -31,7 +32,7 @@ class EventBus {
   ): () => void {
     const listener: Listener = {
       type,
-      handler: handler as (event: GameEvent, state: GameState) => EventHandlerResult,
+      handler: handler as (event: GameEvent, state: GameState, ctx: GameContext) => EventHandlerResult,
       priority,
     };
     this.listeners.push(listener);
@@ -58,7 +59,7 @@ class EventBus {
    * @param state - Current game state
    * @returns Updated game state after all listeners have processed
    */
-  dispatch(events: GameEvent[], state: GameState): GameState {
+  dispatch(events: GameEvent[], state: GameState, ctx: GameContext): GameState {
     let currentState = state;
     const queue: GameEvent[] = [...events];
 
@@ -66,7 +67,7 @@ class EventBus {
       const event = queue[index];
       for (const listener of this.listeners) {
         if (listener.type === event.type) {
-          const result = listener.handler(event, currentState);
+          const result = listener.handler(event, currentState, ctx);
           if (isHandlerResult(result)) {
             currentState = result.state;
             if (result.events && result.events.length > 0) {

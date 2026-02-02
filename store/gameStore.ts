@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
-import type { GameState, SkillId, ItemId, TrainingMode, EquipmentSlot } from '@/game/types';
-import { createInitialGameState } from '@/game/save';
+import type { GameState, SkillId, ItemId, TrainingMode, EquipmentSlot, SortMode, NotificationType, GameContext } from '@/game/types';
+import { AUTO_SAVE_INTERVAL_MS, WOODCUTTING_TREES } from '@/game/data';
+import { createInitialGameState, createInitialNotificationsState, jsonToState, repairGameState, serializeState, saveToJson } from '@/game/save';
 import {
   processTick,
   processOfflineProgress,
@@ -23,15 +23,28 @@ import {
   equipItem as equipItemLogic,
   unequipSlot as unequipSlotLogic,
   selectZone as selectZoneLogic,
-  WOODCUTTING_TREES,
   createNotification,
   addNotification,
   removeNotification,
   clearNotifications,
 } from '@/game/logic';
-import { eventBus, registerQuestHandlers, registerAchievementHandlers, registerNotificationHandlers, setNotificationCallback } from '@/game/systems';
-import type { SortMode, NotificationType } from '@/game/types';
-import { zustandStorage } from '@/services/mmkv-storage';
+import {
+  eventBus,
+  registerQuestHandlers,
+  registerAchievementHandlers,
+  registerNotificationHandlers,
+  setNotificationCallback,
+} from '@/game/systems';
+import { storage } from '@/services/mmkv-storage';
+
+const AUTO_SAVE_KEY = 'game-save';
+const LEGACY_ZUSTAND_PERSIST_KEY = 'game-storage';
+let notificationIdCounter = 0;
+
+function nextNotificationId(now: number): string {
+  notificationIdCounter = (notificationIdCounter + 1) % 1_000_000;
+  return `${now}-${notificationIdCounter}`;
+}
 
 // Register event handlers once at module load
 registerQuestHandlers();
@@ -39,7 +52,9 @@ registerAchievementHandlers();
 registerNotificationHandlers();
 
 interface GameActions {
-  tick: (deltaMs: number) => void;
+  tick: (deltaMs: number, now: number) => void;
+  applyOfflineProgress: (now: number) => void;
+  flushSave: (now: number) => void;
   setActiveSkill: (skillId: SkillId | null) => void;
   toggleAutomation: (skillId: SkillId) => void;
   addItem: (itemId: ItemId, quantity: number) => { added: number; overflow: number };
@@ -77,394 +92,425 @@ interface HydrationState {
 
 export type GameStore = GameState & GameActions & HydrationState;
 
-// Capture the set function during store creation to avoid circular reference
-// when calling setState in onRehydrateStorage callback
-let storeSet: any;
+function createRngSeed(): number {
+  return Math.floor(Math.random() * 2147483647) || 1;
+}
 
-export const useGameStore = create<GameStore>()(
-  persist(
-    (set, get) => {
-      // Capture set function for use in rehydration callback
-      storeSet = set;
-
-      // Set the notification callback to use this store instance's addNotification
-      // This is called after store creation to avoid circular dependencies
-      setTimeout(() => {
-        const store = useGameStore.getState();
-        if (store) {
-          setNotificationCallback((type, title, message, options) => {
-            store.addNotification(type, title, message, options);
-          });
-        }
-      }, 0);
-
-      return {
-        // Initial state
-        ...createInitialGameState(),
-
-        // Hydration tracking (will be set true after rehydration)
-        isHydrated: false,
-
-      // Actions
-      tick: (deltaMs: number) => {
-        const state = get();
-        const result = processTick(state, deltaMs);
-
-        // Dispatch events through event bus (handles quests, achievements, etc.)
-        const finalState = eventBus.dispatch(result.events, result.state);
-        const currentNotifications = get().notifications;
-
-        set({
-          ...finalState,
-          // Preserve any notifications added during event dispatch
-          notifications: currentNotifications,
-          timestamps: {
-            ...finalState.timestamps,
-            lastActive: Date.now(),
-          },
-        });
-      },
-
-      setActiveSkill: (skillId: SkillId | null) => {
-        set({ activeSkill: skillId });
-      },
-
-      toggleAutomation: (skillId: SkillId) => {
-        const state = get();
-        const skill = state.skills[skillId];
-        if (!skill || !skill.automationUnlocked) {
-          return;
-        }
-        set({
-          skills: {
-            ...state.skills,
-            [skillId]: {
-              ...skill,
-              automationEnabled: !skill.automationEnabled,
-            },
-          },
-        });
-      },
-
-      addItem: (itemId: ItemId, quantity: number) => {
-        const state = get();
-        const result = addItemToBag(state.bag, itemId, quantity);
-        set({ bag: result.bag });
-        return { added: result.added, overflow: result.overflow };
-      },
-
-      removeItem: (itemId: ItemId, quantity: number) => {
-        const state = get();
-        const result = removeItemFromBag(state.bag, itemId, quantity);
-        set({ bag: result.bag });
-        return { removed: result.removed, remaining: result.remaining };
-      },
-
-      discardSlot: (slotIndex: number) => {
-        const state = get();
-        const newBag = discardSlot(state.bag, slotIndex);
-        set({ bag: newBag });
-      },
-
-      sortBag: (mode: SortMode) => {
-        const state = get();
-        const newBag = sortBag(state.bag, mode);
-        set({ bag: newBag });
-      },
-
-      consolidateBag: () => {
-        const state = get();
-        const newBag = consolidateStacks(state.bag);
-        set({ bag: newBag });
-      },
-
-      toggleAutoSort: () => {
-        const state = get();
-        set({
-          bagSettings: {
-            ...state.bagSettings,
-            autoSort: !state.bagSettings.autoSort,
-          },
-        });
-      },
-
-      setSortMode: (mode: SortMode) => {
-        const state = get();
-        set({
-          bagSettings: {
-            ...state.bagSettings,
-            sortMode: mode,
-          },
-        });
-      },
-
-      toggleSlotLock: (slotIndex: number) => {
-        const state = get();
-        const newBag = toggleSlotLock(state.bag, slotIndex);
-        set({ bag: newBag });
-      },
-
-      expandBag: (additionalSlots: number) => {
-        const state = get();
-        const newBag = expandBag(state.bag, additionalSlots);
-        set({ bag: newBag });
-      },
-
-      startQuest: (questId: string) => {
-        const state = get();
-        const gameState: GameState = {
-          player: state.player,
-          skills: state.skills,
-          attributes: state.attributes,
-          skillStats: state.skillStats,
-          resources: state.resources,
-          bag: state.bag,
-          bagSettings: state.bagSettings,
-          quests: state.quests,
-          achievements: state.achievements,
-          multipliers: state.multipliers,
-          combat: state.combat,
-          timestamps: state.timestamps,
-          activeSkill: state.activeSkill,
-          rngSeed: state.rngSeed,
-          notifications: state.notifications,
-        };
-        const result = startQuestLogic(questId, gameState, state.quests);
-        if (result.success) {
-          set({ quests: result.quests });
-        }
-        return { success: result.success, error: result.error };
-      },
-
-      abandonQuest: (questId: string) => {
-        const state = get();
-        const newQuests = abandonQuestLogic(questId, state.quests);
-        set({ quests: newQuests });
-      },
-
-      claimQuestRewards: (questId: string) => {
-        const state = get();
-        const gameState: GameState = {
-          player: state.player,
-          skills: state.skills,
-          attributes: state.attributes,
-          skillStats: state.skillStats,
-          resources: state.resources,
-          bag: state.bag,
-          bagSettings: state.bagSettings,
-          quests: state.quests,
-          achievements: state.achievements,
-          multipliers: state.multipliers,
-          combat: state.combat,
-          timestamps: state.timestamps,
-          activeSkill: state.activeSkill,
-          rngSeed: state.rngSeed,
-          notifications: state.notifications,
-        };
-        const result = applyQuestRewards(gameState, state.quests, questId);
-        set({
-          player: result.state.player,
-          skills: result.state.skills,
-          resources: result.state.resources,
-          bag: result.state.bag,
-          quests: result.quests,
-        });
-      },
-
-      // Combat actions
-      startCombat: (zoneId: string) => {
-        const state = get();
-        const now = Date.now();
-        const newCombat = startCombatLogic(state.combat, zoneId, now);
-        set({ combat: newCombat });
-      },
-
-      fleeCombat: () => {
-        const state = get();
-        const newCombat = fleeCombatLogic(state.combat);
-        set({ combat: newCombat });
-      },
-
-      setTrainingMode: (mode: TrainingMode) => {
-        const state = get();
-        const newCombat = setTrainingModeLogic(state.combat, mode);
-        set({ combat: newCombat });
-      },
-
-      toggleAutoFight: () => {
-        const state = get();
-        const newCombat = toggleAutoFightLogic(state.combat);
-        set({ combat: newCombat });
-      },
-
-      equipItem: (itemId: ItemId) => {
-        const state = get();
-        const result = equipItemLogic(state.combat, itemId);
-        set({ combat: result.state });
-        return { unequippedItemId: result.unequippedItemId };
-      },
-
-      unequipSlot: (slot: EquipmentSlot) => {
-        const state = get();
-        const result = unequipSlotLogic(state.combat, slot);
-        set({ combat: result.state });
-        return { unequippedItemId: result.unequippedItemId };
-      },
-
-      selectZone: (zoneId: string | null) => {
-        const state = get();
-        const newCombat = selectZoneLogic(state.combat, zoneId);
-        set({ combat: newCombat });
-      },
-
-      loadSave: (newState: GameState) => {
-        set(newState);
-      },
-
-      reset: () => {
-        set(createInitialGameState());
-      },
-
-      setActiveTree: (treeId: string) => {
-        const state = get();
-        const woodcuttingSkill = state.skills.woodcutting;
-        const tree = WOODCUTTING_TREES[treeId];
-
-        if (!tree || woodcuttingSkill.level < tree.levelRequired) {
-          return;
-        }
-
-        set({
-          skills: {
-            ...state.skills,
-            woodcutting: {
-              ...woodcuttingSkill,
-              activeTreeId: treeId,
-            },
-          },
-        });
-      },
-
-      // Notification actions
-      addNotification: (type: NotificationType, title: string, message: string, options?: { icon?: string; duration?: number }) => {
-        const state = get();
-        // Prevent adding notifications if store isn't hydrated yet (avoid duplicate offline notifications)
-        if (!state.isHydrated) {
-          return;
-        }
-        const notification = createNotification(type, title, message, options);
-        const newNotifications = addNotification(state.notifications, notification);
-        set({ notifications: newNotifications });
-
-        // Auto-remove after duration
-        setTimeout(() => {
-          const currentState = get();
-          const cleared = removeNotification(currentState.notifications, notification.id);
-          set({ notifications: cleared });
-        }, notification.duration);
-      },
-
-      removeNotification: (id: string) => {
-        const state = get();
-        const newNotifications = removeNotification(state.notifications, id);
-        set({ notifications: newNotifications });
-      },
-
-      clearNotifications: () => {
-        const state = get();
-        const newNotifications = clearNotifications(state.notifications);
-        set({ notifications: newNotifications });
-      },
-      };
-    },
-    {
-      name: 'game-storage',
-      storage: createJSONStorage(() => zustandStorage),
-      partialize: (state) => ({
-        // Only persist game state, not actions or hydration flag
-        player: state.player,
-        skills: state.skills,
-        attributes: state.attributes,
-        skillStats: state.skillStats,
-        resources: state.resources,
-        bag: state.bag,
-        bagSettings: state.bagSettings,
-        quests: state.quests,
-        achievements: state.achievements,
-        multipliers: state.multipliers,
-        combat: state.combat,
-        timestamps: state.timestamps,
-        activeSkill: state.activeSkill,
-        rngSeed: state.rngSeed,
-      }),
-      onRehydrateStorage: () => (state, error) => {
-        if (error) {
-          console.error('Failed to rehydrate game state:', error);
-          // Still mark as hydrated so UI can proceed with initial state
-          storeSet({ isHydrated: true });
-          return;
-        }
-
-        // Process offline progress if we have stored state
-        if (state && state.timestamps) {
-          const now = Date.now();
-          const initial = createInitialGameState();
-          const currentState: GameState = {
-            player: state.player,
-            skills: { ...initial.skills, ...state.skills },
-            attributes: { ...initial.attributes, ...state.attributes },
-            skillStats: { ...initial.skillStats, ...state.skillStats },
-            resources: { ...initial.resources, ...state.resources },
-            bag: state.bag ?? initial.bag,
-            bagSettings: {
-              autoSort: state.bagSettings?.autoSort ?? initial.bagSettings.autoSort,
-              sortMode: state.bagSettings?.sortMode ?? initial.bagSettings.sortMode,
-            },
-            quests: state.quests ?? initial.quests,
-            achievements: state.achievements ?? initial.achievements,
-            multipliers: state.multipliers ?? initial.multipliers,
-            combat: state.combat ?? initial.combat,
-            timestamps: state.timestamps,
-            activeSkill: state.activeSkill ?? null,
-            rngSeed: state.rngSeed ?? initial.rngSeed,
-            notifications: initial.notifications,
-          };
-
-          const result = processOfflineProgress(currentState, now);
-
-          if (result.elapsedMs > 60_000) {
-            console.log(
-              `Processed ${Math.floor(result.elapsedMs / 1000)}s of offline progress`
-            );
-          }
-
-          // Update store with offline progress and mark as hydrated
-          storeSet({
-            player: result.state.player,
-            skills: result.state.skills,
-            attributes: result.state.attributes,
-            skillStats: result.state.skillStats,
-            resources: result.state.resources,
-            bag: result.state.bag,
-            bagSettings: result.state.bagSettings,
-            quests: result.state.quests,
-            achievements: result.state.achievements,
-            multipliers: result.state.multipliers,
-            combat: result.state.combat,
-            timestamps: result.state.timestamps,
-            activeSkill: result.state.activeSkill,
-            rngSeed: result.state.rngSeed,
-            notifications: initial.notifications,
-            isHydrated: true,
-          });
-        } else {
-          // No stored state, just mark as hydrated with initial state
-          storeSet({ isHydrated: true });
-        }
-      },
+function loadPersistedGameState(now: number, fallback: GameState): GameState {
+  const json = storage.getString(AUTO_SAVE_KEY);
+  if (json) {
+    const result = jsonToState(json, { now });
+    if (result.success) {
+      return result.state;
     }
-  )
-);
+  }
+
+  const legacyJson = storage.getString(LEGACY_ZUSTAND_PERSIST_KEY);
+  if (legacyJson) {
+    try {
+      const parsed = JSON.parse(legacyJson) as { state?: Partial<GameState> } | null;
+      if (parsed?.state && typeof parsed.state === 'object') {
+        return repairGameState(parsed.state, { now });
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return fallback;
+}
+
+function persistGameState(gameState: GameState, now: number): void {
+  const persistable: GameState = {
+    ...gameState,
+    notifications: createInitialNotificationsState(),
+  };
+  const save = serializeState(persistable, { now });
+  storage.set(AUTO_SAVE_KEY, saveToJson(save));
+}
+
+function maybeAutoSave(gameState: GameState, now: number): GameState {
+  if (now - gameState.timestamps.lastSave < AUTO_SAVE_INTERVAL_MS) {
+    return gameState;
+  }
+
+  persistGameState(gameState, now);
+  return {
+    ...gameState,
+    timestamps: {
+      ...gameState.timestamps,
+      lastSave: now,
+    },
+  };
+}
+
+function getGameContext(now: number): GameContext {
+  return { now };
+}
+
+function getGameStateSnapshot(store: GameStore): GameState {
+  return {
+    player: store.player,
+    skills: store.skills,
+    attributes: store.attributes,
+    skillStats: store.skillStats,
+    resources: store.resources,
+    bag: store.bag,
+    bagSettings: store.bagSettings,
+    quests: store.quests,
+    achievements: store.achievements,
+    multipliers: store.multipliers,
+    combat: store.combat,
+    timestamps: store.timestamps,
+    activeSkill: store.activeSkill,
+    rngSeed: store.rngSeed,
+    notifications: store.notifications,
+  };
+}
+
+export function getCurrentGameState(): GameState {
+  return getGameStateSnapshot(useGameStore.getState());
+}
+
+export const useGameStore = create<GameStore>()((set, get) => {
+  const bootNow = Date.now();
+  const fresh = createInitialGameState({ now: bootNow, rngSeed: createRngSeed() });
+  const loaded = loadPersistedGameState(bootNow, fresh);
+
+  const offlineResult = processOfflineProgress(loaded, bootNow);
+  const afterOffline = eventBus.dispatch(
+    offlineResult.events,
+    offlineResult.state,
+    getGameContext(bootNow)
+  );
+
+  // Wire notifications to this store instance after it exists to avoid circular deps.
+  setTimeout(() => {
+    const store = useGameStore.getState();
+    if (store) {
+      setNotificationCallback((type, title, message, options) => {
+        store.addNotification(type, title, message, options);
+      });
+    }
+  }, 0);
+
+  return {
+    ...afterOffline,
+    isHydrated: true,
+
+    tick: (deltaMs: number, now: number) => {
+      const state = get();
+      const ctx = getGameContext(now);
+      const gameState = getGameStateSnapshot(state);
+      const result = processTick(gameState, deltaMs, ctx);
+
+      // Dispatch events through event bus (quests, achievements, etc.)
+      const finalState = eventBus.dispatch(result.events, result.state, ctx);
+
+      // Preserve any notifications added during event dispatch
+      const currentNotifications = get().notifications;
+
+      let nextState: GameState = {
+        ...finalState,
+        notifications: currentNotifications,
+        timestamps: {
+          ...finalState.timestamps,
+          lastActive: now,
+        },
+      };
+
+      nextState = maybeAutoSave(nextState, now);
+
+      set(nextState);
+    },
+
+    applyOfflineProgress: (now: number) => {
+      const state = get();
+      const ctx = getGameContext(now);
+      const gameState = getGameStateSnapshot(state);
+
+      const result = processOfflineProgress(gameState, now);
+      const finalState = eventBus.dispatch(result.events, result.state, ctx);
+
+      // Preserve any existing notifications; offline progress is summarized elsewhere.
+      const currentNotifications = get().notifications;
+
+      let nextState: GameState = {
+        ...finalState,
+        notifications: currentNotifications,
+        timestamps: {
+          ...finalState.timestamps,
+          lastActive: now,
+        },
+      };
+
+      nextState = maybeAutoSave(nextState, now);
+
+      set(nextState);
+    },
+
+    flushSave: (now: number) => {
+      const state = get();
+      const gameState = getGameStateSnapshot(state);
+      persistGameState(gameState, now);
+      set({
+        timestamps: {
+          ...state.timestamps,
+          lastSave: now,
+        },
+      });
+    },
+
+    setActiveSkill: (skillId: SkillId | null) => {
+      set({ activeSkill: skillId });
+    },
+
+    toggleAutomation: (skillId: SkillId) => {
+      const state = get();
+      const skill = state.skills[skillId];
+      if (!skill || !skill.automationUnlocked) {
+        return;
+      }
+      set({
+        skills: {
+          ...state.skills,
+          [skillId]: {
+            ...skill,
+            automationEnabled: !skill.automationEnabled,
+          },
+        },
+      });
+    },
+
+    addItem: (itemId: ItemId, quantity: number) => {
+      const state = get();
+      const result = addItemToBag(state.bag, itemId, quantity);
+      set({ bag: result.bag });
+      return { added: result.added, overflow: result.overflow };
+    },
+
+    removeItem: (itemId: ItemId, quantity: number) => {
+      const state = get();
+      const result = removeItemFromBag(state.bag, itemId, quantity);
+      set({ bag: result.bag });
+      return { removed: result.removed, remaining: result.remaining };
+    },
+
+    discardSlot: (slotIndex: number) => {
+      const state = get();
+      const newBag = discardSlot(state.bag, slotIndex);
+      set({ bag: newBag });
+    },
+
+    sortBag: (mode: SortMode) => {
+      const state = get();
+      const newBag = sortBag(state.bag, mode);
+      set({ bag: newBag });
+    },
+
+    consolidateBag: () => {
+      const state = get();
+      const newBag = consolidateStacks(state.bag);
+      set({ bag: newBag });
+    },
+
+    toggleAutoSort: () => {
+      const state = get();
+      set({
+        bagSettings: {
+          ...state.bagSettings,
+          autoSort: !state.bagSettings.autoSort,
+        },
+      });
+    },
+
+    setSortMode: (mode: SortMode) => {
+      const state = get();
+      set({
+        bagSettings: {
+          ...state.bagSettings,
+          sortMode: mode,
+        },
+      });
+    },
+
+    toggleSlotLock: (slotIndex: number) => {
+      const state = get();
+      const newBag = toggleSlotLock(state.bag, slotIndex);
+      set({ bag: newBag });
+    },
+
+    expandBag: (additionalSlots: number) => {
+      const state = get();
+      const newBag = expandBag(state.bag, additionalSlots);
+      set({ bag: newBag });
+    },
+
+    startQuest: (questId: string) => {
+      const state = get();
+      const now = Date.now();
+      const gameState = getGameStateSnapshot(state);
+      const result = startQuestLogic(questId, gameState, state.quests, now);
+      if (result.success) {
+        set({ quests: result.quests });
+      }
+      return { success: result.success, error: result.error };
+    },
+
+    abandonQuest: (questId: string) => {
+      const state = get();
+      const newQuests = abandonQuestLogic(questId, state.quests);
+      set({ quests: newQuests });
+    },
+
+    claimQuestRewards: (questId: string) => {
+      const state = get();
+      const now = Date.now();
+      const gameState = getGameStateSnapshot(state);
+      const result = applyQuestRewards(gameState, state.quests, questId, now);
+      set({
+        player: result.state.player,
+        skills: result.state.skills,
+        attributes: result.state.attributes,
+        skillStats: result.state.skillStats,
+        resources: result.state.resources,
+        bag: result.state.bag,
+        quests: result.quests,
+        multipliers: result.state.multipliers,
+        combat: result.state.combat,
+      });
+    },
+
+    // Combat actions
+    startCombat: (zoneId: string) => {
+      const state = get();
+      const now = Date.now();
+      const newCombat = startCombatLogic(state.combat, zoneId, now);
+      set({ combat: newCombat });
+    },
+
+    fleeCombat: () => {
+      const state = get();
+      const newCombat = fleeCombatLogic(state.combat);
+      set({ combat: newCombat });
+    },
+
+    setTrainingMode: (mode: TrainingMode) => {
+      const state = get();
+      const newCombat = setTrainingModeLogic(state.combat, mode);
+      set({ combat: newCombat });
+    },
+
+    toggleAutoFight: () => {
+      const state = get();
+      const newCombat = toggleAutoFightLogic(state.combat);
+      set({ combat: newCombat });
+    },
+
+    equipItem: (itemId: ItemId) => {
+      const state = get();
+      const result = equipItemLogic(state.combat, itemId);
+      set({ combat: result.state });
+      return { unequippedItemId: result.unequippedItemId };
+    },
+
+    unequipSlot: (slot: EquipmentSlot) => {
+      const state = get();
+      const result = unequipSlotLogic(state.combat, slot);
+      set({ combat: result.state });
+      return { unequippedItemId: result.unequippedItemId };
+    },
+
+    selectZone: (zoneId: string | null) => {
+      const state = get();
+      const newCombat = selectZoneLogic(state.combat, zoneId);
+      set({ combat: newCombat });
+    },
+
+    loadSave: (newState: GameState) => {
+      const now = Date.now();
+      const repaired = repairGameState(newState, { now });
+      persistGameState(repaired, now);
+      set({
+        ...repaired,
+        isHydrated: true,
+      });
+    },
+
+    reset: () => {
+      const now = Date.now();
+      const fresh = createInitialGameState({ now, rngSeed: createRngSeed() });
+      persistGameState(fresh, now);
+      set(fresh);
+    },
+
+    setActiveTree: (treeId: string) => {
+      const state = get();
+      const woodcuttingSkill = state.skills.woodcutting;
+      const tree = WOODCUTTING_TREES[treeId];
+
+      if (!tree || woodcuttingSkill.level < tree.levelRequired) {
+        return;
+      }
+
+      set({
+        skills: {
+          ...state.skills,
+          woodcutting: {
+            ...woodcuttingSkill,
+            activeTreeId: treeId,
+          },
+        },
+      });
+    },
+
+    // Notification actions
+    addNotification: (
+      type: NotificationType,
+      title: string,
+      message: string,
+      options?: { icon?: string; duration?: number }
+    ) => {
+      const state = get();
+      const now = Date.now();
+
+      // Prevent adding notifications if store isn't hydrated yet (avoid duplicate offline notifications)
+      if (!state.isHydrated) {
+        return;
+      }
+
+      const notification = createNotification({
+        id: nextNotificationId(now),
+        now,
+        type,
+        title,
+        message,
+        options,
+      });
+      const newNotifications = addNotification(state.notifications, notification);
+      set({ notifications: newNotifications });
+
+      // Auto-remove after duration
+      setTimeout(() => {
+        const currentState = get();
+        const cleared = removeNotification(currentState.notifications, notification.id);
+        set({ notifications: cleared });
+      }, notification.duration);
+    },
+
+    removeNotification: (id: string) => {
+      const state = get();
+      const newNotifications = removeNotification(state.notifications, id);
+      set({ notifications: newNotifications });
+    },
+
+    clearNotifications: () => {
+      const state = get();
+      const newNotifications = clearNotifications(state.notifications);
+      set({ notifications: newNotifications });
+    },
+  };
+});
 
 // Selector hooks for performance optimization
 export const usePlayer = () => useGameStore((state) => state.player);
@@ -485,6 +531,8 @@ export const useGameActions = () =>
   useGameStore(
     useShallow((state) => ({
       tick: state.tick,
+      applyOfflineProgress: state.applyOfflineProgress,
+      flushSave: state.flushSave,
       setActiveSkill: state.setActiveSkill,
       toggleAutomation: state.toggleAutomation,
       addItem: state.addItem,

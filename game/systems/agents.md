@@ -42,12 +42,12 @@ type GameEvent =
 
 ```typescript
 // Register handler (lower priority = runs first)
-eventBus.on('SKILL_LEVEL_UP', (event, state) => {
-  return checkAchievements(state, event);
+eventBus.on('SKILL_LEVEL_UP', (event, state, ctx) => {
+  return checkAchievements(state, event, ctx);
 }, 100);
 
 // Dispatch events (in gameStore tick action)
-const finalState = eventBus.dispatch(result.events, result.state);
+const finalState = eventBus.dispatch(result.events, result.state, { now });
 ```
 
 ### Handler Priorities

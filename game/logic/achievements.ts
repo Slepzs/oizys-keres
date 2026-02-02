@@ -1,4 +1,4 @@
-import type { GameState, SkillId } from '../types';
+import type { GameContext, GameState, SkillId } from '../types';
 import type {
   AchievementCondition,
   AchievementDefinition,
@@ -63,7 +63,8 @@ export function evaluateAchievementCondition(
  */
 export function checkAchievements(
   state: GameState,
-  triggerEvent: GameEvent
+  triggerEvent: GameEvent,
+  ctx: GameContext
 ): GameState {
   let newState = state;
   const newlyUnlocked: string[] = [];
@@ -76,7 +77,7 @@ export function checkAchievements(
 
     // Check condition
     if (evaluateAchievementCondition(definition.condition, newState)) {
-      newState = unlockAchievement(newState, definition);
+      newState = unlockAchievement(newState, definition, ctx);
       newlyUnlocked.push(definition.id);
     }
   }
@@ -89,9 +90,10 @@ export function checkAchievements(
  */
 export function unlockAchievement(
   state: GameState,
-  definition: AchievementDefinition
+  definition: AchievementDefinition,
+  ctx: GameContext
 ): GameState {
-  const now = Date.now();
+  const now = ctx.now;
 
   let newState: GameState = {
     ...state,

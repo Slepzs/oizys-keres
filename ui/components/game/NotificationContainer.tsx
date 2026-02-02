@@ -15,9 +15,11 @@ export function NotificationContainer() {
   }, [removeNotification]);
 
   // Get notifications to display (limited and sorted)
+  const now = Date.now();
   const displayNotifications = getDisplayNotifications(
     notifications,
-    MAX_NOTIFICATIONS_QUEUE
+    MAX_NOTIFICATIONS_QUEUE,
+    now
   );
 
   if (displayNotifications.length === 0) {

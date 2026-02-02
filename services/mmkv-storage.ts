@@ -31,7 +31,7 @@ export const zustandStorage: StateStorage = {
  * Check if a save exists (sync).
  */
 export function hasSaveSync(): boolean {
-  return storage.contains('game-storage');
+  return storage.contains('game-save') || storage.contains('game-storage');
 }
 
 /**

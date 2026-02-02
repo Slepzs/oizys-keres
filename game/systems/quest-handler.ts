@@ -1,4 +1,4 @@
-import type { GameState } from '../types';
+import type { GameContext, GameState } from '../types';
 import type { GameEvent, EventHandlerResult } from './events.types';
 import type { QuestsState, PlayerQuestState, Objective } from '../types/quests';
 import { getQuestDefinition } from '../data/quests.data';
@@ -10,7 +10,7 @@ import { eventBus, registerOnce } from './events';
  * Process quest progress for events that contribute to objectives.
  * Returns updated game state with quest progress applied.
  */
-function processQuestProgress(event: GameEvent, state: GameState): EventHandlerResult {
+function processQuestProgress(event: GameEvent, state: GameState, ctx: GameContext): EventHandlerResult {
   const { quests } = state;
 
   // Skip if no active quests
@@ -56,7 +56,7 @@ function processQuestProgress(event: GameEvent, state: GameState): EventHandlerR
       return {
         ...updatedQuestState,
         completed: true,
-        completedAt: Date.now(),
+        completedAt: ctx.now,
       };
     }
 
@@ -77,12 +77,12 @@ function processQuestProgress(event: GameEvent, state: GameState): EventHandlerR
   };
 
   for (const questId of completedQuests) {
-    const rewardResult = applyQuestRewards(newState, newState.quests, questId);
+    const rewardResult = applyQuestRewards(newState, newState.quests, questId, ctx.now);
     newState = { ...rewardResult.state, quests: rewardResult.quests };
 
     // Check achievements for quest completion
     const questCompletedEvent: GameEvent = { type: 'QUEST_COMPLETED', questId };
-    newState = checkAchievements(newState, questCompletedEvent);
+    newState = checkAchievements(newState, questCompletedEvent, ctx);
     emittedEvents.push(questCompletedEvent);
   }
 

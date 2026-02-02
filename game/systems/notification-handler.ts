@@ -54,7 +54,7 @@ function formatQuestRewards(questId: string): string {
 export function registerNotificationHandlers(): void {
   registerOnce('notification-handlers', () => {
     // Quest completed notification
-    eventBus.on('QUEST_COMPLETED', (event, state) => {
+    eventBus.on('QUEST_COMPLETED', (event, state, _ctx) => {
       if (notificationCallback) {
         const definition = getQuestDefinition(event.questId);
         if (definition) {
@@ -70,7 +70,7 @@ export function registerNotificationHandlers(): void {
     }, 200);
 
     // Achievement unlocked notification
-    eventBus.on('ACHIEVEMENT_UNLOCKED', (event, state) => {
+    eventBus.on('ACHIEVEMENT_UNLOCKED', (event, state, _ctx) => {
       if (notificationCallback) {
         const definition = getAchievementDefinition(event.achievementId);
         if (definition) {
@@ -86,7 +86,7 @@ export function registerNotificationHandlers(): void {
     }, 200);
 
     // Skill level up notification (for milestones - every 10 levels)
-    eventBus.on('SKILL_LEVEL_UP', (event, state) => {
+    eventBus.on('SKILL_LEVEL_UP', (event, state, _ctx) => {
       if (notificationCallback) {
         // Only notify on milestone levels (every 10)
         if (event.newLevel % 10 === 0) {
@@ -105,7 +105,7 @@ export function registerNotificationHandlers(): void {
     }, 200);
 
     // Player level up notification (every level)
-    eventBus.on('PLAYER_LEVEL_UP', (event, state) => {
+    eventBus.on('PLAYER_LEVEL_UP', (event, state, _ctx) => {
       if (notificationCallback) {
         notificationCallback(
           'player_level_up',
@@ -117,7 +117,7 @@ export function registerNotificationHandlers(): void {
     }, 200);
 
     // Combat notifications
-    eventBus.on('COMBAT_ENEMY_KILLED', (event, state) => {
+    eventBus.on('COMBAT_ENEMY_KILLED', (event, state, _ctx) => {
       if (notificationCallback) {
         notificationCallback(
           'combat',
@@ -128,7 +128,7 @@ export function registerNotificationHandlers(): void {
       return state;
     }, 200);
 
-    eventBus.on('COMBAT_PLAYER_DIED', (_event, state) => {
+    eventBus.on('COMBAT_PLAYER_DIED', (_event, state, _ctx) => {
       if (notificationCallback) {
         notificationCallback(
           'combat',

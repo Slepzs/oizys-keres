@@ -6,8 +6,8 @@ Zustand store for game state management.
 
 - **Single source of truth** for game state
 - **Zustand** over Context for simpler API and selector-based subscriptions
-- **MMKV persistence** via Zustand persist middleware
-- **Offline progress** processed on rehydration
+- **MMKV persistence** as versioned `SaveBlob` JSON (single blob)
+- **Offline progress** applied on app resume and cold start
 
 ## Files
 
@@ -28,13 +28,13 @@ registerQuestHandlers();      // Priority 50
 registerAchievementHandlers(); // Priority 100
 ```
 
-The tick action dispatches events through the event bus:
+The tick action dispatches events through the event bus (with a `GameContext` containing `now`):
 
 ```typescript
-tick: (deltaMs: number) => {
-  const result = processTick(state, deltaMs);
-  const finalState = eventBus.dispatch(result.events, result.state);
-  set({ ...finalState, timestamps: { ...finalState.timestamps, lastActive: Date.now() } });
+tick: (deltaMs: number, now: number) => {
+  const result = processTick(state, deltaMs, { now });
+  const finalState = eventBus.dispatch(result.events, result.state, { now });
+  set({ ...finalState, timestamps: { ...finalState.timestamps, lastActive: now } });
 }
 ```
 
@@ -60,7 +60,8 @@ interface GameState {
 
 // Actions
 interface GameActions {
-  tick: (deltaMs: number) => void;
+  tick: (deltaMs: number, now: number) => void;
+  applyOfflineProgress: (now: number) => void;
   setActiveSkill: (skillId: SkillId | null) => void;
   toggleAutomation: (skillId: SkillId) => void;
   addItem / removeItem / discardSlot: // Bag management
@@ -140,22 +141,7 @@ useGameStore.getState().setActiveSkill('woodcutting');
 
 ## Persistence
 
-Handled automatically by Zustand persist middleware:
-
-```typescript
-persist(storeConfig, {
-  name: 'game-storage',
-  storage: createJSONStorage(() => zustandStorage), // MMKV adapter
-  partialize: (state) => ({
-    // Only persist game state, not actions or hydration flag
-    player, skills, resources, timestamps, activeSkill, rngSeed
-  }),
-  onRehydrateStorage: () => (state) => {
-    // Process offline progress here
-    // Mark isHydrated = true when done
-  },
-})
-```
+Handled by saving a single `SaveBlob` JSON to MMKV (key: `game-save`), using `@/game/save` for serialization + migrations.
 
 ### What Gets Persisted
 
@@ -175,13 +161,8 @@ persist(storeConfig, {
 
 ## Offline Progress
 
-Processed in `onRehydrateStorage` callback:
-
-1. Store rehydrates from MMKV
-2. Calculate elapsed time since `timestamps.lastActive`
-3. Call `processOfflineProgress()` from game logic
-4. Update store with new state
-5. Set `isHydrated = true`
+- Cold start: store loads from `game-save` and applies `processOfflineProgress(...)`
+- Resume: `TickManager` listens to `AppState` and calls `applyOfflineProgress(now)`
 
 ## Usage Patterns
 

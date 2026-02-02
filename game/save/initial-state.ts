@@ -27,8 +27,14 @@ export function createInitialNotificationsState(): NotificationsState {
 /**
  * Create a fresh game state for new players.
  */
-export function createInitialGameState(): GameState {
-	const now = Date.now();
+export interface CreateInitialGameStateParams {
+	now?: number;
+	rngSeed?: number;
+}
+
+export function createInitialGameState(params: CreateInitialGameStateParams = {}): GameState {
+	const now = params.now ?? Date.now();
+	const rngSeed = params.rngSeed ?? Math.floor(Math.random() * 2147483647);
 
 	return {
 		player: {
@@ -51,7 +57,7 @@ export function createInitialGameState(): GameState {
 			sessionStart: now,
 		},
 		activeSkill: null,
-		rngSeed: Math.floor(Math.random() * 2147483647),
+		rngSeed,
 		notifications: createInitialNotificationsState(),
 	};
 }

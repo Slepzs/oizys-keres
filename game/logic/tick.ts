@@ -1,4 +1,4 @@
-import type { GameState, SkillId, SkillDefinition } from '../types';
+import type { GameContext, GameState, SkillId, SkillDefinition } from '../types';
 import type { GameEvent } from '../systems/events.types';
 import { SKILL_DEFINITIONS } from '../data/skills.data';
 import { SKILL_DROP_TABLES } from '../data/skill-drops.data';
@@ -26,7 +26,7 @@ export type TickEvent = GameEvent;
  * Process a single game tick.
  * This is the core game loop function - pure and deterministic.
  */
-export function processTick(state: GameState, deltaMs: number): TickResult {
+export function processTick(state: GameState, deltaMs: number, ctx: GameContext): TickResult {
   const events: GameEvent[] = [];
   let newState = { ...state };
 
@@ -53,8 +53,7 @@ export function processTick(state: GameState, deltaMs: number): TickResult {
 
   // Process combat if active
   if (newState.combat.activeCombat) {
-    const now = Date.now();
-    const combatResult = processCombatTick(newState.combat, now, ticksElapsed);
+    const combatResult = processCombatTick(newState.combat, ctx.now, ticksElapsed);
     newState = { ...newState, combat: combatResult.state };
     events.push(...combatResult.events);
   }
@@ -276,16 +275,19 @@ function processSkillDrops(
 export function processMultipleTicks(
   state: GameState,
   totalMs: number,
+  startNow: number,
   chunkMs: number = 1000
 ): TickResult {
   let currentState = state;
   const allEvents: GameEvent[] = [];
 
   let remainingMs = totalMs;
+  let elapsedMs = 0;
 
   while (remainingMs > 0) {
     const chunkDuration = Math.min(remainingMs, chunkMs);
-    const result = processTick(currentState, chunkDuration);
+    elapsedMs += chunkDuration;
+    const result = processTick(currentState, chunkDuration, { now: startNow + elapsedMs });
     currentState = result.state;
     allEvents.push(...result.events);
     remainingMs -= chunkDuration;
