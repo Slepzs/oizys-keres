@@ -5,3 +5,4 @@ export * from './skills.data';
 export * from './items.data';
 export * from './skill-drops.data';
 export * from './quests.data';
+export * from './stats.data';

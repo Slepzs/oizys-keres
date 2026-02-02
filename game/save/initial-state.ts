@@ -3,6 +3,10 @@ import { createInitialSkillsState } from '../data/skills.data';
 import { createInitialResourcesState } from '../data/resources.data';
 import { createInitialBagState } from '../data/items.data';
 import { createInitialQuestsState } from '../data/quests.data';
+import {
+  createInitialAttributesState,
+  createInitialSkillStatsState,
+} from '../data/stats.data';
 
 export function createInitialBagSettings(): BagSettings {
   return {
@@ -23,6 +27,8 @@ export function createInitialGameState(): GameState {
       xp: 0,
     },
     skills: createInitialSkillsState(),
+    attributes: createInitialAttributesState(),
+    skillStats: createInitialSkillStatsState(),
     resources: createInitialResourcesState(),
     bag: createInitialBagState(),
     bagSettings: createInitialBagSettings(),
