@@ -11,3 +11,4 @@ export {
   useGameActions,
   type GameStore,
 } from './gameStore';
+export { usePlayerSummary, useSkillSummaries } from './selectors';
