@@ -73,7 +73,7 @@ getAvailableSkills(level)     // Skills unlocked at player level
 2. Export `register[Name]Handlers()` function
 3. Register handlers with `eventBus.on()`
 4. Export from `systems/index.ts`
-5. Call register function in `gameStore.ts`
+5. Create `game/modules/[feature]/register.ts` and add it to `game/modules/registry.ts`
 
 ## Pattern
 

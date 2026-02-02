@@ -18,7 +18,8 @@ Pure functions that process game state. The heart of the game engine.
 | `bag.ts` | Inventory management (add/remove items, sorting) |
 | `quests/commands.ts` | Quest state transitions (start/abandon/claim rewards) |
 | `quests/queries.ts` | Quest availability/progress (cooldowns, completion, etc.) |
-| `achievements.ts` | Achievement condition evaluation and unlocking |
+| `achievements/commands.ts` | Achievement progression + unlock rewards |
+| `achievements/queries.ts` | Achievement conditions + listing helpers |
 | `multipliers.ts` | Bonus calculation from achievements/upgrades |
 
 ## Core Function: processTick

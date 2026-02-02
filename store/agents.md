@@ -18,14 +18,13 @@ Zustand store for game state management.
 
 ## Event Bus Integration
 
-Event handlers are registered at module load:
+Game modules register their event handlers at module load:
 
 ```typescript
-import { eventBus, registerQuestHandlers, registerAchievementHandlers } from '@/game/systems';
+import { registerGameModules } from '@/game/modules';
 
-// Register event handlers once at module load
-registerQuestHandlers();      // Priority 50
-registerAchievementHandlers(); // Priority 100
+// Register game modules once at module load
+registerGameModules();
 ```
 
 The tick action dispatches events through the event bus (with a `GameContext` containing `now`):

@@ -11,13 +11,8 @@ import {
   saveToJson,
 } from '@/game/save';
 import { processOfflineProgress } from '@/game/logic';
-import {
-  eventBus,
-  registerAchievementHandlers,
-  registerNotificationHandlers,
-  registerQuestHandlers,
-  setNotificationCallback,
-} from '@/game/systems';
+import { registerGameModules } from '@/game/modules';
+import { eventBus, setNotificationCallback } from '@/game/systems';
 import { storage } from '@/services/mmkv-storage';
 import type { StoreHelpers } from './slices/types';
 import { createTickSlice, type TickSlice } from './slices/tickSlice';
@@ -39,10 +34,8 @@ function nextNotificationId(now: number): string {
   return `${now}-${notificationIdCounter}`;
 }
 
-// Register event handlers once at module load
-registerQuestHandlers();
-registerAchievementHandlers();
-registerNotificationHandlers();
+// Register game modules (quests, achievements, notifications, etc.)
+registerGameModules();
 
 interface HydrationState {
   isHydrated: boolean;
@@ -245,4 +238,3 @@ export const useGameActions = () =>
       maxAllSkills: state.maxAllSkills,
     }))
   );
-
