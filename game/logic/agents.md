@@ -7,6 +7,7 @@ Pure functions that process game state. The heart of the game engine.
 | File | Purpose |
 |------|---------|
 | `tick.ts` | Main tick processor - runs every 100ms |
+| `skills/tick.ts` | Skill processing + drops (active + automation) |
 | `xp.ts` | XP gain and level-up calculations |
 | `resources.ts` | Add/remove resources with cap handling |
 | `offline.ts` | Process elapsed time when app resumes |
