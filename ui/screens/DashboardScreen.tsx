@@ -8,15 +8,15 @@ import { SkillCard } from '../components/game/SkillCard';
 import { useGame } from '@/hooks/useGame';
 import { useSave } from '@/hooks/useSave';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
-import { xpForPlayerLevel, SKILL_IDS } from '@/game/data';
+import { SKILL_IDS } from '@/game/data';
+import { playerXpProgress } from '@/game/logic';
 import type { SkillId, ResourceId } from '@/game/types';
 
 export function DashboardScreen() {
   const { state, setActiveSkill } = useGame();
   useSave(); // Enable auto-save
 
-  const playerXpRequired = xpForPlayerLevel(state.player.level + 1);
-  const playerProgress = playerXpRequired > 0 ? state.player.xp / playerXpRequired : 1;
+  const playerProgress = playerXpProgress(state.player);
 
   const handleSkillPress = (skillId: SkillId) => {
     if (state.activeSkill === skillId) {

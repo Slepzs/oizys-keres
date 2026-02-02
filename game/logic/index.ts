@@ -5,3 +5,4 @@ export * from './resources';
 export * from './rng';
 export * from './bag';
 export * from './quests';
+export * from './stats/selectors';
