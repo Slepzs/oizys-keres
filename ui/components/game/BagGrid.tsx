@@ -6,6 +6,7 @@ import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants
 import type { BagState, ItemRarity } from '@/game/types';
 import { ITEM_DEFINITIONS } from '@/game/data';
 import { useGameActions } from '@/store/gameStore';
+import { isEquipment } from '@/game/types';
 
 interface BagGridProps {
   bag: BagState;
@@ -27,7 +28,7 @@ const RARITY_LABELS: Record<ItemRarity, string> = {
 
 export function BagGrid({ bag }: BagGridProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const { discardSlot, toggleSlotLock } = useGameActions();
+  const { discardSlot, toggleSlotLock, addItem, removeItem, equipItem } = useGameActions();
 
   const selectedSlot = selectedIndex !== null ? bag.slots[selectedIndex] : null;
   const selectedItem = selectedSlot ? ITEM_DEFINITIONS[selectedSlot.itemId] : null;
@@ -68,6 +69,28 @@ export function BagGrid({ bag }: BagGridProps) {
   const handleToggleLock = () => {
     if (selectedIndex === null) return;
     toggleSlotLock(selectedIndex);
+  };
+
+  const handleEquip = () => {
+    if (selectedIndex === null || !selectedSlot) return;
+
+    const itemId = selectedSlot.itemId;
+    const itemDef = ITEM_DEFINITIONS[itemId];
+
+    if (!isEquipment(itemDef)) return;
+
+    // Remove item from bag first
+    removeItem(itemId, 1);
+
+    // Equip the item (this returns any previously equipped item)
+    const result = equipItem(itemId);
+
+    // If there was an item already equipped, add it back to bag
+    if (result.unequippedItemId) {
+      addItem(result.unequippedItemId, 1);
+    }
+
+    setSelectedIndex(null);
   };
 
   // Render slots in a 4-column grid
@@ -127,8 +150,43 @@ export function BagGrid({ bag }: BagGridProps) {
             Stack: {selectedSlot.quantity}/{selectedItem.maxStack}
           </Text>
 
+          {/* Equipment Stats */}
+          {isEquipment(selectedItem) && (
+            <View style={styles.equipmentStats}>
+              <Text style={styles.equipmentSlotLabel}>Slot: {selectedItem.slot}</Text>
+              {selectedItem.stats.attackBonus > 0 && (
+                <Text style={styles.statText}>Attack: +{selectedItem.stats.attackBonus}</Text>
+              )}
+              {selectedItem.stats.strengthBonus > 0 && (
+                <Text style={styles.statText}>Strength: +{selectedItem.stats.strengthBonus}</Text>
+              )}
+              {selectedItem.stats.defenseBonus > 0 && (
+                <Text style={styles.statText}>Defense: +{selectedItem.stats.defenseBonus}</Text>
+              )}
+              {selectedItem.stats.attackSpeed && (
+                <Text style={styles.statText}>Speed: {selectedItem.stats.attackSpeed}s</Text>
+              )}
+              {selectedItem.levelRequired && (
+                <Text style={styles.levelRequired}>Requires Combat Level {selectedItem.levelRequired}</Text>
+              )}
+            </View>
+          )}
+
           {/* Action Buttons */}
           <View style={styles.actionRow}>
+            {isEquipment(selectedItem) && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  styles.equipButton,
+                  pressed && styles.actionButtonPressed,
+                ]}
+                onPress={handleEquip}
+              >
+                <Text style={[styles.actionButtonText, styles.equipButtonText]}>Equip</Text>
+              </Pressable>
+            )}
+
             <Pressable
               style={({ pressed }) => [
                 styles.actionButton,
@@ -276,5 +334,33 @@ const styles = StyleSheet.create({
   },
   discardButtonText: {
     color: colors.error,
+  },
+  equipmentStats: {
+    backgroundColor: colors.surfaceLight,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  equipmentSlotLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+    marginBottom: spacing.xs,
+    textTransform: 'capitalize',
+  },
+  statText: {
+    fontSize: fontSize.sm,
+    color: colors.text,
+  },
+  levelRequired: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+  equipButton: {
+    backgroundColor: colors.primary,
+  },
+  equipButtonText: {
+    color: colors.text,
   },
 });

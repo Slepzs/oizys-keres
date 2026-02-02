@@ -13,6 +13,18 @@ export const ENEMY_DEFINITIONS: Record<string, EnemyDefinition> = {
     xpReward: 10,
     combatLevelRequired: 1,
   },
+  wolf: {
+    id: 'wolf',
+    name: 'Dire Wolf',
+    icon: '🐺',
+    maxHp: 18,
+    attack: 3,
+    strength: 3,
+    defense: 1,
+    attackSpeed: 2.2,
+    xpReward: 18,
+    combatLevelRequired: 3,
+  },
   goblin: {
     id: 'goblin',
     name: 'Goblin',
