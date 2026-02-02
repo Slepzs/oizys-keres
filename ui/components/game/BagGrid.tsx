@@ -79,11 +79,16 @@ export function BagGrid({ bag }: BagGridProps) {
 
     if (!isEquipment(itemDef)) return;
 
-    // Remove item from bag first
-    removeItem(itemId, 1);
-
-    // Equip the item (this returns any previously equipped item)
+    // Try to equip first
     const result = equipItem(itemId);
+
+    // If equip failed, don't remove from bag
+    if (!result.success) {
+      return;
+    }
+
+    // Equip succeeded - remove from bag
+    removeItem(itemId, 1);
 
     // If there was an item already equipped, add it back to bag
     if (result.unequippedItemId) {

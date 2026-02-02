@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
@@ -11,6 +12,7 @@ import { formatTime } from '@/utils/format';
 export function SettingsScreen() {
   const { save, reset } = useSave();
   const { state } = useGame();
+  const router = useRouter();
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
   const handleSave = async () => {
@@ -69,6 +71,18 @@ export function SettingsScreen() {
             <Text style={styles.statLabel}>Player Level</Text>
             <Text style={styles.statValue}>{state.player.level}</Text>
           </View>
+        </Card>
+
+        {/* Developer Tools Section */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Developer Tools</Text>
+          <Text style={styles.sectionDescription}>
+            Admin features for testing and debugging.
+          </Text>
+          <Button
+            title="Open Developer Tools"
+            onPress={() => router.push('/settings/admin')}
+          />
         </Card>
 
         {/* Danger Zone */}

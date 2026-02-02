@@ -8,12 +8,16 @@ Pure functions that process game state. The heart of the game engine.
 |------|---------|
 | `tick.ts` | Main tick processor - runs every 100ms |
 | `skills/tick.ts` | Skill processing + drops (active + automation) |
+| `combat/tick.ts` | Combat catch-up processing (time-based) |
+| `combat/commands.ts` | Combat state transitions (start/flee/equip/etc.) |
+| `combat/queries.ts` | Combat derived stats (levels, DPS, etc.) |
 | `xp.ts` | XP gain and level-up calculations |
 | `resources.ts` | Add/remove resources with cap handling |
 | `offline.ts` | Process elapsed time when app resumes |
 | `rng.ts` | Seeded random number generator |
 | `bag.ts` | Inventory management (add/remove items, sorting) |
-| `quests.ts` | Quest progress, rewards, availability checks |
+| `quests/commands.ts` | Quest state transitions (start/abandon/claim rewards) |
+| `quests/queries.ts` | Quest availability/progress (cooldowns, completion, etc.) |
 | `achievements.ts` | Achievement condition evaluation and unlocking |
 | `multipliers.ts` | Bonus calculation from achievements/upgrades |
 

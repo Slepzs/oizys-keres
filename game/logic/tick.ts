@@ -2,7 +2,7 @@ import type { GameContext, GameState } from '../types';
 import type { GameEvent } from '../systems/events.types';
 import { TICKS_PER_SECOND } from '../data/constants';
 import { advanceSeed } from './rng';
-import { processCombatTick } from './combat';
+import { processCombatTick } from './combat/tick';
 import { processSkillsTick } from './skills/tick';
 
 export interface TickResult {

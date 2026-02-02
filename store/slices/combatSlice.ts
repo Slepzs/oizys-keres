@@ -15,7 +15,7 @@ export interface CombatSlice {
   fleeCombat: () => void;
   setTrainingMode: (mode: TrainingMode) => void;
   toggleAutoFight: () => void;
-  equipItem: (itemId: ItemId) => { unequippedItemId: ItemId | null };
+  equipItem: (itemId: ItemId) => { unequippedItemId: ItemId | null; success: boolean };
   unequipSlot: (slot: EquipmentSlot) => { unequippedItemId: ItemId | null };
   selectZone: (zoneId: string | null) => void;
 }
@@ -51,7 +51,7 @@ export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
       const state = get();
       const result = equipItemLogic(state.combat, itemId);
       set({ combat: result.state });
-      return { unequippedItemId: result.unequippedItemId };
+      return { unequippedItemId: result.unequippedItemId, success: result.success };
     },
 
     unequipSlot: (slot: EquipmentSlot) => {

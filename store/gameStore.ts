@@ -27,6 +27,7 @@ import { createQuestsSlice, type QuestsSlice } from './slices/questsSlice';
 import { createCombatSlice, type CombatSlice } from './slices/combatSlice';
 import { createNotificationsSlice, type NotificationsSlice } from './slices/notificationsSlice';
 import { createSkillsSlice, type SkillsSlice } from './slices/skillsSlice';
+import { createAdminSlice, type AdminSlice } from './slices/adminSlice';
 
 const AUTO_SAVE_KEY = 'game-save';
 const LEGACY_ZUSTAND_PERSIST_KEY = 'game-storage';
@@ -54,7 +55,8 @@ export type GameActions =
   & QuestsSlice
   & CombatSlice
   & NotificationsSlice
-  & SkillsSlice;
+  & SkillsSlice
+  & AdminSlice;
 
 export type GameStore = GameState & GameActions & HydrationState;
 
@@ -175,6 +177,7 @@ export const useGameStore = create<GameStore>()((set, get) => {
     ...createQuestsSlice(set, get, helpers),
     ...createCombatSlice(set, get, helpers),
     ...createNotificationsSlice(set, get, helpers),
+    ...createAdminSlice(set, get, helpers),
   };
 });
 
@@ -228,6 +231,18 @@ export const useGameActions = () =>
       addNotification: state.addNotification,
       removeNotification: state.removeNotification,
       clearNotifications: state.clearNotifications,
+      // Admin actions
+      addItemToBag: state.addItemToBag,
+      clearBag: state.clearBag,
+      setPlayerLevel: state.setPlayerLevel,
+      setPlayerXp: state.setPlayerXp,
+      setSkillLevel: state.setSkillLevel,
+      setSkillXp: state.setSkillXp,
+      unlockSkillAutomation: state.unlockSkillAutomation,
+      setCombatSkillXp: state.setCombatSkillXp,
+      setPlayerHealth: state.setPlayerHealth,
+      unlockAllAutomation: state.unlockAllAutomation,
+      maxAllSkills: state.maxAllSkills,
     }))
   );
 
