@@ -61,6 +61,11 @@ export interface ItemDefinition {
   category: ItemCategory;
   rarity: ItemRarity;
   maxStack: number;
+  /**
+   * Vendor sell price in coins (per item).
+   * Keep this data-driven to make economy tuning straightforward.
+   */
+  sellPrice: number;
 }
 
 export interface EquipmentDefinition extends ItemDefinition {

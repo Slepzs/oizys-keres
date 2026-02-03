@@ -17,7 +17,7 @@ export function ProgressBar({
   height = 8,
   style,
 }: ProgressBarProps) {
-  const clampedProgress = Math.max(0, Math.min(1, progress));
+  const clampedProgress = Math.max(0, Math.min(1, Number.isFinite(progress) ? progress : 0));
 
   return (
     <View style={[styles.container, { height, backgroundColor }, style]}>

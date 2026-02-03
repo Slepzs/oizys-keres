@@ -51,19 +51,21 @@ export function BagGrid({ bag, slotOffset = 0, slotCount }: BagGridProps) {
   const selectedItem = selectedSlot ? ITEM_DEFINITIONS[selectedSlot.itemId] : null;
 
   const handleSlotPress = (index: number) => {
-    if (selectedIndex === index) {
-      setSelectedIndex(null);
-    } else {
-      setSelectedIndex(index);
-    }
+    onSelectIndex(selectedIndex === index ? null : index);
   };
 
-  const handleDiscard = () => {
-    if (selectedIndex === null || !selectedSlot) return;
+  const columns = useMemo(() => {
+    const slotOuterSize = SLOT_SIZE + spacing.xs * 2;
+    const possible = gridWidth > 0 ? Math.floor(gridWidth / slotOuterSize) : 4;
+    if (possible >= 6) return 6;
+    if (possible >= 5) return 5;
+    return 4;
+  }, [gridWidth]);
 
-    if (selectedSlot.locked) {
-      Alert.alert('Locked', 'Unlock this slot before discarding.');
-      return;
+  const rows = useMemo(() => {
+    const nextRows: (typeof bag.slots)[] = [];
+    for (let i = 0; i < bag.slots.length; i += columns) {
+      nextRows.push(bag.slots.slice(i, i + columns));
     }
 
     Alert.alert(
@@ -123,7 +125,15 @@ export function BagGrid({ bag, slotOffset = 0, slotCount }: BagGridProps) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.grid}>
+      <View
+        style={styles.grid}
+        onLayout={(event) => {
+          const { width } = event.nativeEvent.layout;
+          if (width !== gridWidth) {
+            setGridWidth(width);
+          }
+        }}
+      >
         {rows.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
             {row.map((slot, colIndex) => {
@@ -140,116 +150,6 @@ export function BagGrid({ bag, slotOffset = 0, slotCount }: BagGridProps) {
           </View>
         ))}
       </View>
-
-      {/* Item Details Panel */}
-      {selectedItem && selectedSlot && (
-        <Card style={styles.detailsCard}>
-          <View style={styles.detailsHeader}>
-            <Text style={styles.detailsIcon}>{selectedItem.icon}</Text>
-            <View style={styles.detailsInfo}>
-              <Text style={styles.detailsName}>{selectedItem.name}</Text>
-              <View style={styles.rarityBadge}>
-                <View
-                  style={[
-                    styles.rarityDot,
-                    { backgroundColor: RARITY_COLORS[selectedItem.rarity] },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.rarityText,
-                    { color: RARITY_COLORS[selectedItem.rarity] },
-                  ]}
-                >
-                  {RARITY_LABELS[selectedItem.rarity]}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.quantity}>x{selectedSlot.quantity}</Text>
-          </View>
-          <Text style={styles.description}>{selectedItem.description}</Text>
-          <Text style={styles.stackInfo}>
-            Stack: {selectedSlot.quantity}/{selectedItem.maxStack}
-          </Text>
-
-          {/* Equipment Stats */}
-          {isEquipment(selectedItem) && (
-            <View style={styles.equipmentStats}>
-              <Text style={styles.equipmentSlotLabel}>Slot: {selectedItem.slot}</Text>
-              {selectedItem.stats.attackBonus > 0 && (
-                <Text style={styles.statText}>Attack: +{selectedItem.stats.attackBonus}</Text>
-              )}
-              {selectedItem.stats.strengthBonus > 0 && (
-                <Text style={styles.statText}>Strength: +{selectedItem.stats.strengthBonus}</Text>
-              )}
-              {selectedItem.stats.defenseBonus > 0 && (
-                <Text style={styles.statText}>Defense: +{selectedItem.stats.defenseBonus}</Text>
-              )}
-              {selectedItem.stats.attackSpeed && (
-                <Text style={styles.statText}>Speed: {selectedItem.stats.attackSpeed}s</Text>
-              )}
-              {selectedItem.levelRequired && (
-                <Text style={styles.levelRequired}>Requires Combat Level {selectedItem.levelRequired}</Text>
-              )}
-            </View>
-          )}
-
-          {/* Action Buttons */}
-          <View style={styles.actionRow}>
-            {isEquipment(selectedItem) && (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.actionButton,
-                  styles.equipButton,
-                  pressed && styles.actionButtonPressed,
-                ]}
-                onPress={handleEquip}
-              >
-                <Text style={[styles.actionButtonText, styles.equipButtonText]}>Equip</Text>
-              </Pressable>
-            )}
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.actionButton,
-                selectedSlot.locked && styles.actionButtonActive,
-                pressed && styles.actionButtonPressed,
-              ]}
-              onPress={handleToggleLock}
-            >
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  selectedSlot.locked && styles.actionButtonTextActive,
-                ]}
-              >
-                {selectedSlot.locked ? 'Unlock' : 'Lock'}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.actionButton,
-                styles.discardButton,
-                selectedSlot.locked && styles.actionButtonDisabled,
-                pressed && !selectedSlot.locked && styles.actionButtonPressed,
-              ]}
-              onPress={handleDiscard}
-              disabled={selectedSlot.locked}
-            >
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  styles.discardButtonText,
-                  selectedSlot.locked && styles.actionButtonTextDisabled,
-                ]}
-              >
-                Discard
-              </Text>
-            </Pressable>
-          </View>
-        </Card>
-      )}
     </View>
   );
 }
@@ -266,123 +166,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  detailsCard: {
-    marginTop: spacing.md,
-    marginHorizontal: spacing.xs,
-  },
-  detailsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  detailsIcon: {
-    fontSize: 36,
-    marginRight: spacing.md,
-  },
-  detailsInfo: {
-    flex: 1,
-  },
-  detailsName: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  rarityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rarityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: spacing.xs,
-  },
-  rarityText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  quantity: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
-  description: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    lineHeight: 20,
-  },
-  stackInfo: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginBottom: spacing.md,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  actionButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-  },
-  actionButtonActive: {
-    backgroundColor: colors.primary,
-  },
-  actionButtonDisabled: {
-    opacity: 0.5,
-  },
-  actionButtonPressed: {
-    opacity: 0.7,
-  },
-  actionButtonText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    color: colors.textSecondary,
-  },
-  actionButtonTextActive: {
-    color: colors.text,
-  },
-  actionButtonTextDisabled: {
-    color: colors.textMuted,
-  },
-  discardButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.error,
-  },
-  discardButtonText: {
-    color: colors.error,
-  },
-  equipmentStats: {
-    backgroundColor: colors.surfaceLight,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  equipmentSlotLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.primary,
-    marginBottom: spacing.xs,
-    textTransform: 'capitalize',
-  },
-  statText: {
-    fontSize: fontSize.sm,
-    color: colors.text,
-  },
-  levelRequired: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-  },
-  equipButton: {
-    backgroundColor: colors.primary,
-  },
-  equipButtonText: {
-    color: colors.text,
-  },
 });
+

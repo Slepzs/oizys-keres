@@ -203,6 +203,7 @@ export const useGameActions = () =>
       addItem: state.addItem,
       removeItem: state.removeItem,
       discardSlot: state.discardSlot,
+      sellSlot: state.sellSlot,
       sortBag: state.sortBag,
       consolidateBag: state.consolidateBag,
       toggleAutoSort: state.toggleAutoSort,
