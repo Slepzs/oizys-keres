@@ -30,6 +30,9 @@ export function getCombatSkillLevel(xp: number): number {
  * Get XP progress within current level.
  */
 export function getCombatSkillXpProgress(xp: number): { current: number; required: number; progress: number } {
+  if (!Number.isFinite(xp)) {
+    return { current: 0, required: 1, progress: 0 };
+  }
   const level = getCombatSkillLevel(xp);
   const xpForCurrent = totalXpForCombatSkillLevel(level);
   const xpForNext = xpForCombatSkillLevel(level + 1);

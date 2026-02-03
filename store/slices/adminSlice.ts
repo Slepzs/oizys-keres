@@ -1,3 +1,4 @@
+import { createInitialBagState } from '@/game/data/items.data';
 import type { ItemId, SkillId, CombatSkillId } from '@/game/types';
 import type { SliceGet, SliceSet, StoreHelpers } from './types';
 
@@ -25,10 +26,7 @@ export function createAdminSlice(set: SliceSet, get: SliceGet, _helpers: StoreHe
 
     clearBag: () => {
       set({
-        bag: {
-          slots: Array(20).fill(null),
-          maxSlots: 20,
-        },
+        bag: createInitialBagState(),
       });
     },
 
@@ -103,13 +101,14 @@ export function createAdminSlice(set: SliceSet, get: SliceGet, _helpers: StoreHe
 
     setCombatSkillXp: (skillId: CombatSkillId, xp: number) => {
       const state = get();
+      const validXp = isNaN(xp) ? 0 : Math.max(0, xp);
       set({
         combat: {
           ...state.combat,
           combatSkills: {
             ...state.combat.combatSkills,
             [skillId]: {
-              xp: Math.max(0, xp),
+              xp: validXp,
             },
           },
         },

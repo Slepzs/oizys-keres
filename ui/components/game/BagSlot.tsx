@@ -53,7 +53,7 @@ export function BagSlot({ slot, isSelected, onPress }: BagSlotProps) {
   );
 }
 
-const SLOT_SIZE = 60;
+export const SLOT_SIZE = 60;
 
 const styles = StyleSheet.create({
   slot: {

@@ -73,6 +73,9 @@ export function totalXpForCombatSkillLevel(level: number): number {
  * Returns the highest level achieved.
  */
 export function combatSkillLevelFromXp(xp: number): number {
+  if (!Number.isFinite(xp) || xp < 0) {
+    return 1;
+  }
   let level = 1;
   let totalRequired = 0;
   while (level < 99) {

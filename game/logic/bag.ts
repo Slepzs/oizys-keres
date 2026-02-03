@@ -386,3 +386,62 @@ export function discardSlot(bag: BagState, slotIndex: number): BagState {
 
   return { ...bag, slots: newSlots };
 }
+
+export interface SellItemFromSlotResult {
+  bag: BagState;
+  itemId: ItemId | null;
+  sold: number;
+  coinsEarned: number;
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Sell items from a specific slot for coins.
+ * Respects slot locks (locked slots cannot be sold).
+ */
+export function sellItemFromSlot(
+  bag: BagState,
+  slotIndex: number,
+  quantity: number
+): SellItemFromSlotResult {
+  if (!Number.isFinite(slotIndex) || slotIndex < 0 || slotIndex >= bag.slots.length) {
+    return { bag, itemId: null, sold: 0, coinsEarned: 0, success: false, error: 'Invalid slot' };
+  }
+
+  const slot = bag.slots[slotIndex];
+  if (!slot) {
+    return { bag, itemId: null, sold: 0, coinsEarned: 0, success: false, error: 'Empty slot' };
+  }
+
+  if (slot.locked) {
+    return { bag, itemId: slot.itemId, sold: 0, coinsEarned: 0, success: false, error: 'Slot locked' };
+  }
+
+  const qty = Math.floor(quantity);
+  if (!Number.isFinite(qty) || qty <= 0) {
+    return { bag, itemId: slot.itemId, sold: 0, coinsEarned: 0, success: false, error: 'Invalid quantity' };
+  }
+
+  const definition = ITEM_DEFINITIONS[slot.itemId];
+  if (!definition) {
+    return { bag, itemId: slot.itemId, sold: 0, coinsEarned: 0, success: false, error: 'Unknown item' };
+  }
+
+  const unitPrice = definition.sellPrice;
+  if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+    return { bag, itemId: slot.itemId, sold: 0, coinsEarned: 0, success: false, error: 'Item not sellable' };
+  }
+
+  const toSell = Math.min(qty, slot.quantity);
+  const removeResult = removeItemFromSlot(bag, slotIndex, toSell);
+  const sold = removeResult.removed;
+
+  return {
+    bag: removeResult.bag,
+    itemId: slot.itemId,
+    sold,
+    coinsEarned: sold * unitPrice,
+    success: sold > 0,
+  };
+}

@@ -1,6 +1,6 @@
 import type { ItemDefinition, EquipmentDefinition, ItemId, BagState } from '../types/items';
 
-export const DEFAULT_BAG_SIZE = 20;
+export const DEFAULT_BAG_SIZE = 99;
 
 export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefinition> = {
   // Smithing products
@@ -12,6 +12,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'material',
     rarity: 'common',
     maxStack: 100,
+    sellPrice: 5,
   },
   iron_ingot: {
     id: 'iron_ingot',
@@ -21,6 +22,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'material',
     rarity: 'uncommon',
     maxStack: 100,
+    sellPrice: 12,
   },
   bronze_pickaxe: {
     id: 'bronze_pickaxe',
@@ -30,6 +32,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'tool',
     rarity: 'common',
     maxStack: 1,
+    sellPrice: 40,
   },
   bronze_hatchet: {
     id: 'bronze_hatchet',
@@ -39,6 +42,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'tool',
     rarity: 'common',
     maxStack: 1,
+    sellPrice: 40,
   },
 
   // Combat drops
@@ -50,6 +54,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'common',
     maxStack: 200,
+    sellPrice: 1,
   },
   wolf_pelt: {
     id: 'wolf_pelt',
@@ -59,6 +64,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'uncommon',
     maxStack: 100,
+    sellPrice: 4,
   },
   nerd_notes: {
     id: 'nerd_notes',
@@ -68,6 +74,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'common',
     maxStack: 200,
+    sellPrice: 1,
   },
   goblin_ear: {
     id: 'goblin_ear',
@@ -77,6 +84,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'uncommon',
     maxStack: 200,
+    sellPrice: 4,
   },
   bone_shard: {
     id: 'bone_shard',
@@ -86,6 +94,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'common',
     maxStack: 500,
+    sellPrice: 1,
   },
   orc_tusk: {
     id: 'orc_tusk',
@@ -95,6 +104,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'rare',
     maxStack: 100,
+    sellPrice: 20,
   },
   troll_toe: {
     id: 'troll_toe',
@@ -104,6 +114,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'rare',
     maxStack: 50,
+    sellPrice: 25,
   },
   demon_essence: {
     id: 'demon_essence',
@@ -113,6 +124,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'epic',
     maxStack: 50,
+    sellPrice: 100,
   },
 
   // Woodcutting drops
@@ -124,6 +136,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'uncommon',
     maxStack: 50,
+    sellPrice: 6,
   },
   bird_nest: {
     id: 'bird_nest',
@@ -133,6 +146,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'rare',
     maxStack: 20,
+    sellPrice: 30,
   },
 
   // Mining drops
@@ -144,6 +158,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'rare',
     maxStack: 50,
+    sellPrice: 60,
   },
   sapphire: {
     id: 'sapphire',
@@ -153,6 +168,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'rare',
     maxStack: 50,
+    sellPrice: 55,
   },
   geode: {
     id: 'geode',
@@ -162,6 +178,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'misc',
     rarity: 'epic',
     maxStack: 10,
+    sellPrice: 120,
   },
 
   // Equipment - Weapons
@@ -173,6 +190,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'common',
     maxStack: 1,
+    sellPrice: 50,
     slot: 'weapon',
     stats: { attackBonus: 4, strengthBonus: 3, defenseBonus: 0, attackSpeed: 2.4 },
     levelRequired: 1,
@@ -185,6 +203,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'uncommon',
     maxStack: 1,
+    sellPrice: 120,
     slot: 'weapon',
     stats: { attackBonus: 8, strengthBonus: 6, defenseBonus: 0, attackSpeed: 2.4 },
     levelRequired: 10,
@@ -197,6 +216,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'rare',
     maxStack: 1,
+    sellPrice: 300,
     slot: 'weapon',
     stats: { attackBonus: 14, strengthBonus: 11, defenseBonus: 0, attackSpeed: 2.4 },
     levelRequired: 20,
@@ -209,6 +229,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'epic',
     maxStack: 1,
+    sellPrice: 1200,
     slot: 'weapon',
     stats: { attackBonus: 22, strengthBonus: 18, defenseBonus: 0, attackSpeed: 2.2 },
     levelRequired: 40,
@@ -223,6 +244,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'common',
     maxStack: 1,
+    sellPrice: 40,
     slot: 'helmet',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 3 },
     levelRequired: 1,
@@ -235,6 +257,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'uncommon',
     maxStack: 1,
+    sellPrice: 100,
     slot: 'helmet',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 6 },
     levelRequired: 10,
@@ -247,6 +270,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'rare',
     maxStack: 1,
+    sellPrice: 250,
     slot: 'helmet',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 10 },
     levelRequired: 20,
@@ -261,6 +285,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'common',
     maxStack: 1,
+    sellPrice: 60,
     slot: 'chest',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 5 },
     levelRequired: 1,
@@ -273,6 +298,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'uncommon',
     maxStack: 1,
+    sellPrice: 150,
     slot: 'chest',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 10 },
     levelRequired: 10,
@@ -285,6 +311,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'rare',
     maxStack: 1,
+    sellPrice: 400,
     slot: 'chest',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 16 },
     levelRequired: 20,
@@ -299,6 +326,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'common',
     maxStack: 1,
+    sellPrice: 50,
     slot: 'legs',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 4 },
     levelRequired: 1,
@@ -311,6 +339,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'uncommon',
     maxStack: 1,
+    sellPrice: 130,
     slot: 'legs',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 8 },
     levelRequired: 10,
@@ -323,6 +352,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'rare',
     maxStack: 1,
+    sellPrice: 350,
     slot: 'legs',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 13 },
     levelRequired: 20,
@@ -337,6 +367,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'common',
     maxStack: 1,
+    sellPrice: 30,
     slot: 'boots',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 2 },
     levelRequired: 1,
@@ -349,6 +380,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'uncommon',
     maxStack: 1,
+    sellPrice: 80,
     slot: 'boots',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 4 },
     levelRequired: 10,
@@ -361,6 +393,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'rare',
     maxStack: 1,
+    sellPrice: 200,
     slot: 'boots',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 7 },
     levelRequired: 20,
@@ -375,6 +408,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'rare',
     maxStack: 1,
+    sellPrice: 500,
     slot: 'accessory',
     stats: { attackBonus: 3, strengthBonus: 5, defenseBonus: 0 },
     levelRequired: 15,
@@ -387,6 +421,7 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     category: 'equipment',
     rarity: 'rare',
     maxStack: 1,
+    sellPrice: 500,
     slot: 'accessory',
     stats: { attackBonus: 0, strengthBonus: 0, defenseBonus: 8 },
     levelRequired: 15,

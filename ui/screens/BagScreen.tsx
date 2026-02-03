@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { BagGrid } from '../components/game/BagGrid';
+import { BagItemDetailsSheet } from '../components/game/BagItemDetailsSheet';
 import { useBag, useBagSettings, useGameActions, useGameStore } from '@/store/gameStore';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
 import { getUsedSlotCount } from '@/game/logic';
@@ -22,10 +24,28 @@ export function BagScreen() {
   const bagSettings = useBagSettings();
   const { sortBag, consolidateBag, toggleAutoSort, setSortMode } = useGameActions();
   const coins = useGameStore((state) => state.player.coins);
+  const insets = useSafeAreaInsets();
   const [showSortModal, setShowSortModal] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [detailsHeight, setDetailsHeight] = useState(0);
 
   const usedSlots = getUsedSlotCount(bag);
   const isEmpty = usedSlots === 0;
+
+  const selectedSlot = selectedIndex !== null ? bag.slots[selectedIndex] : null;
+
+  useEffect(() => {
+    if (selectedIndex === null) return;
+    if (!bag.slots[selectedIndex]) {
+      setSelectedIndex(null);
+    }
+  }, [bag.slots, selectedIndex]);
+
+  useEffect(() => {
+    if (!selectedSlot) {
+      setDetailsHeight(0);
+    }
+  }, [selectedSlot]);
 
   const handleSort = (mode: SortMode) => {
     sortBag(mode);
@@ -34,8 +54,13 @@ export function BagScreen() {
   };
 
   return (
-    <SafeContainer padTop={false}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <SafeContainer padTop={false} padBottom={false} style={styles.safe}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: Math.max(detailsHeight, insets.bottom + spacing.md) + spacing.lg,
+        }}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Bag</Text>
           <View style={styles.headerRight}>
@@ -101,9 +126,33 @@ export function BagScreen() {
             </Text>
           </View>
         ) : (
-          <BagGrid bag={bag} />
+          <BagGrid bag={bag} selectedIndex={selectedIndex} onSelectIndex={setSelectedIndex} />
         )}
       </ScrollView>
+
+      {/* Sticky Item Details */}
+      {selectedSlot && selectedIndex !== null && (
+        <View
+          style={[
+            styles.stickyDetails,
+            {
+              paddingBottom: insets.bottom + spacing.md,
+            },
+          ]}
+          onLayout={(event) => {
+            const next = event.nativeEvent.layout.height;
+            if (next !== detailsHeight) {
+              setDetailsHeight(next);
+            }
+          }}
+        >
+          <BagItemDetailsSheet
+            slotIndex={selectedIndex}
+            slot={selectedSlot}
+            onClose={() => setSelectedIndex(null)}
+          />
+        </View>
+      )}
 
       {/* Sort Mode Modal */}
       <Modal
@@ -146,6 +195,9 @@ export function BagScreen() {
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    position: 'relative',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -259,5 +311,20 @@ const styles = StyleSheet.create({
   modalOptionTextActive: {
     color: colors.primary,
     fontWeight: fontWeight.medium,
+  },
+  stickyDetails: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingTop: spacing.sm,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 10,
   },
 });

@@ -1,4 +1,5 @@
 import type { GameState } from '../types';
+import { DEFAULT_BAG_SIZE } from '../data/items.data';
 import type { SaveBlob } from './schema';
 import { migrateSave, needsMigration } from './migrations';
 import { createInitialGameState, createInitialNotificationsState } from './initial-state';
@@ -12,6 +13,21 @@ export interface DeserializeResult {
 
 export interface DeserializeOptions {
   now?: number;
+}
+
+function normalizeBag(bag: GameState['bag']): GameState['bag'] {
+  const slots = Array.isArray(bag.slots) ? [...bag.slots] : [];
+  const maxSlots = Math.max(DEFAULT_BAG_SIZE, bag.maxSlots ?? 0, slots.length);
+
+  if (slots.length > maxSlots) {
+    slots.length = maxSlots;
+  } else {
+    while (slots.length < maxSlots) {
+      slots.push(null);
+    }
+  }
+
+  return { ...bag, maxSlots, slots };
 }
 
 /**
@@ -123,7 +139,7 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...initial.resources,
       ...state.resources,
     },
-    bag: state.bag ?? initial.bag,
+    bag: normalizeBag(state.bag ?? initial.bag),
     combat: {
       ...initial.combat,
       ...(state.combat ?? {}),

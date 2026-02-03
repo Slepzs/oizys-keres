@@ -7,6 +7,7 @@ import {
   expandBag,
   toggleSlotLock,
   discardSlot,
+  sellItemFromSlot,
 } from '@/game/logic';
 import type { SliceGet, SliceSet, StoreHelpers } from './types';
 
@@ -14,6 +15,7 @@ export interface InventorySlice {
   addItem: (itemId: ItemId, quantity: number) => { added: number; overflow: number };
   removeItem: (itemId: ItemId, quantity: number) => { removed: number; remaining: number };
   discardSlot: (slotIndex: number) => void;
+  sellSlot: (slotIndex: number, quantity: number) => { sold: number; coinsEarned: number; success: boolean; error?: string };
   sortBag: (mode: SortMode) => void;
   consolidateBag: () => void;
   toggleAutoSort: () => void;
@@ -42,6 +44,25 @@ export function createInventorySlice(set: SliceSet, get: SliceGet, _helpers: Sto
       const state = get();
       const newBag = discardSlot(state.bag, slotIndex);
       set({ bag: newBag });
+    },
+
+    sellSlot: (slotIndex: number, quantity: number) => {
+      const state = get();
+      const result = sellItemFromSlot(state.bag, slotIndex, quantity);
+
+      if (!result.success) {
+        return { sold: 0, coinsEarned: 0, success: false, error: result.error };
+      }
+
+      set({
+        bag: result.bag,
+        player: {
+          ...state.player,
+          coins: state.player.coins + result.coinsEarned,
+        },
+      });
+
+      return { sold: result.sold, coinsEarned: result.coinsEarned, success: true };
     },
 
     sortBag: (mode: SortMode) => {
@@ -89,4 +110,3 @@ export function createInventorySlice(set: SliceSet, get: SliceGet, _helpers: Sto
     },
   };
 }
-
