@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { BagSlot } from './BagSlot';
 import { Card } from '../common/Card';
@@ -10,6 +10,8 @@ import { isEquipment } from '@/game/types';
 
 interface BagGridProps {
   bag: BagState;
+  slotOffset?: number;
+  slotCount?: number;
 }
 
 const RARITY_COLORS: Record<ItemRarity, string> = {
@@ -26,9 +28,24 @@ const RARITY_LABELS: Record<ItemRarity, string> = {
   epic: 'Epic',
 };
 
-export function BagGrid({ bag }: BagGridProps) {
+export function BagGrid({ bag, slotOffset = 0, slotCount }: BagGridProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { discardSlot, toggleSlotLock, addItem, removeItem, equipItem } = useGameActions();
+
+  const clampedOffset = Math.max(0, Math.min(slotOffset, bag.slots.length));
+  const effectiveSlotCount = Math.max(
+    0,
+    Math.min(slotCount ?? bag.slots.length, bag.slots.length - clampedOffset)
+  );
+
+  const visibleSlots = useMemo(() => {
+    const end = clampedOffset + effectiveSlotCount;
+    return bag.slots.slice(clampedOffset, end);
+  }, [bag.slots, clampedOffset, effectiveSlotCount]);
+
+  useEffect(() => {
+    setSelectedIndex(null);
+  }, [clampedOffset, effectiveSlotCount]);
 
   const selectedSlot = selectedIndex !== null ? bag.slots[selectedIndex] : null;
   const selectedItem = selectedSlot ? ITEM_DEFINITIONS[selectedSlot.itemId] : null;
@@ -99,9 +116,9 @@ export function BagGrid({ bag }: BagGridProps) {
   };
 
   // Render slots in a 4-column grid
-  const rows: (typeof bag.slots)[] = [];
-  for (let i = 0; i < bag.slots.length; i += 4) {
-    rows.push(bag.slots.slice(i, i + 4));
+  const rows: (typeof visibleSlots)[] = [];
+  for (let i = 0; i < visibleSlots.length; i += 4) {
+    rows.push(visibleSlots.slice(i, i + 4));
   }
 
   return (
@@ -110,7 +127,7 @@ export function BagGrid({ bag }: BagGridProps) {
         {rows.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
             {row.map((slot, colIndex) => {
-              const index = rowIndex * 4 + colIndex;
+              const index = clampedOffset + rowIndex * 4 + colIndex;
               return (
                 <BagSlot
                   key={index}

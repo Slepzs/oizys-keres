@@ -7,5 +7,6 @@ export * from "./notifications";
 export * from "./quests";
 export * from "./resources";
 export * from "./skills";
+export * from "./shop";
 export * from "./state";
 export * from "./stats";

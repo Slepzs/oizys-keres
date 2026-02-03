@@ -3,6 +3,7 @@ export { SkillProgressBar } from './SkillProgressBar';
 export { SkillCard } from './SkillCard';
 export { QuestCard } from './QuestCard';
 export { QuestSummaryCard } from './QuestSummaryCard';
+export { ShopSummaryCard } from './ShopSummaryCard';
 export { TreeSelector } from './TreeSelector';
 export { NotificationToast } from './NotificationToast';
 export { NotificationContainer } from './NotificationContainer';

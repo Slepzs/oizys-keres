@@ -15,6 +15,7 @@ export function createInitialBagSettings(): BagSettings {
 	return {
 		autoSort: false,
 		sortMode: "rarity",
+		activeTabIndex: 0,
 	};
 }
 

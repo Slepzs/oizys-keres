@@ -8,6 +8,7 @@ export * from "./offline";
 export * from "./quests";
 export * from "./resources";
 export * from "./rng";
+export * from "./shop";
 export * from "./stats/selectors";
 export * from "./tick";
 export * from "./woodcutting";

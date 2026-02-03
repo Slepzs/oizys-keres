@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { BagGrid } from '../components/game/BagGrid';
@@ -7,6 +7,7 @@ import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants
 import { getUsedSlotCount } from '@/game/logic';
 import { formatNumber } from '@/utils/format';
 import type { SortMode } from '@/game/types';
+import { DEFAULT_BAG_SIZE } from '@/game/data';
 
 const SORT_MODE_LABELS: Record<SortMode, string> = {
   rarity: 'Rarity',
@@ -20,12 +21,23 @@ const SORT_MODES: SortMode[] = ['rarity', 'category', 'quantity', 'name'];
 export function BagScreen() {
   const bag = useBag();
   const bagSettings = useBagSettings();
-  const { sortBag, consolidateBag, toggleAutoSort, setSortMode } = useGameActions();
+  const { sortBag, consolidateBag, toggleAutoSort, setSortMode, setActiveBagTab } = useGameActions();
   const coins = useGameStore((state) => state.player.coins);
   const [showSortModal, setShowSortModal] = useState(false);
 
   const usedSlots = getUsedSlotCount(bag);
   const isEmpty = usedSlots === 0;
+
+  const tabSize = DEFAULT_BAG_SIZE;
+  const tabCount = useMemo(() => Math.max(1, Math.ceil(bag.maxSlots / tabSize)), [bag.maxSlots, tabSize]);
+  const activeTabIndex = Math.max(0, Math.min(bagSettings.activeTabIndex, tabCount - 1));
+  const slotOffset = activeTabIndex * tabSize;
+
+  useEffect(() => {
+    if (activeTabIndex !== bagSettings.activeTabIndex) {
+      setActiveBagTab(activeTabIndex);
+    }
+  }, [activeTabIndex, bagSettings.activeTabIndex, setActiveBagTab]);
 
   const handleSort = (mode: SortMode) => {
     sortBag(mode);
@@ -92,6 +104,30 @@ export function BagScreen() {
           </Pressable>
         </View>
 
+        {/* Tabs */}
+        {tabCount > 1 && (
+          <View style={styles.tabsRow}>
+            {Array.from({ length: tabCount }, (_, i) => i).map((tabIndex) => {
+              const isActive = tabIndex === activeTabIndex;
+              return (
+                <Pressable
+                  key={tabIndex}
+                  style={({ pressed }) => [
+                    styles.tabButton,
+                    isActive && styles.tabButtonActive,
+                    pressed && styles.tabButtonPressed,
+                  ]}
+                  onPress={() => setActiveBagTab(tabIndex)}
+                >
+                  <Text style={[styles.tabButtonText, isActive && styles.tabButtonTextActive]}>
+                    Tab {tabIndex + 1}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
         {isEmpty ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>🎒</Text>
@@ -101,7 +137,7 @@ export function BagScreen() {
             </Text>
           </View>
         ) : (
-          <BagGrid bag={bag} />
+          <BagGrid bag={bag} slotOffset={slotOffset} slotCount={tabSize} />
         )}
       </ScrollView>
 
@@ -174,6 +210,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.md,
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  tabButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+  },
+  tabButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  tabButtonPressed: {
+    opacity: 0.7,
+  },
+  tabButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    color: colors.textSecondary,
+  },
+  tabButtonTextActive: {
+    color: colors.text,
   },
   actionButton: {
     paddingHorizontal: spacing.md,

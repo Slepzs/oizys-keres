@@ -108,6 +108,19 @@ const migrations: Record<number, MigrationFn> = {
       },
     },
   }),
+
+  // Migration from v8 to v9: Add bag tab state
+  8: (save) => ({
+    ...save,
+    version: 9,
+    state: {
+      ...save.state,
+      bagSettings: {
+        ...save.state.bagSettings,
+        activeTabIndex: (save.state.bagSettings as any)?.activeTabIndex ?? 0,
+      },
+    },
+  }),
 };
 
 /**

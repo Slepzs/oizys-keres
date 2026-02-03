@@ -23,6 +23,7 @@ import { createCombatSlice, type CombatSlice } from './slices/combatSlice';
 import { createNotificationsSlice, type NotificationsSlice } from './slices/notificationsSlice';
 import { createSkillsSlice, type SkillsSlice } from './slices/skillsSlice';
 import { createAdminSlice, type AdminSlice } from './slices/adminSlice';
+import { createShopSlice, type ShopSlice } from './slices/shopSlice';
 
 const AUTO_SAVE_KEY = 'game-save';
 const LEGACY_ZUSTAND_PERSIST_KEY = 'game-storage';
@@ -49,6 +50,7 @@ export type GameActions =
   & CombatSlice
   & NotificationsSlice
   & SkillsSlice
+  & ShopSlice
   & AdminSlice;
 
 export type GameStore = GameState & GameActions & HydrationState;
@@ -170,6 +172,7 @@ export const useGameStore = create<GameStore>()((set, get) => {
     ...createQuestsSlice(set, get, helpers),
     ...createCombatSlice(set, get, helpers),
     ...createNotificationsSlice(set, get, helpers),
+    ...createShopSlice(set, get, helpers),
     ...createAdminSlice(set, get, helpers),
   };
 });
@@ -204,8 +207,10 @@ export const useGameActions = () =>
       consolidateBag: state.consolidateBag,
       toggleAutoSort: state.toggleAutoSort,
       setSortMode: state.setSortMode,
+      setActiveBagTab: state.setActiveBagTab,
       toggleSlotLock: state.toggleSlotLock,
       expandBag: state.expandBag,
+      buyShopOffer: state.buyShopOffer,
       startQuest: state.startQuest,
       abandonQuest: state.abandonQuest,
       claimQuestRewards: state.claimQuestRewards,
