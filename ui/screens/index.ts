@@ -6,3 +6,4 @@ export { QuestsScreen } from './QuestsScreen';
 export { StatsScreen } from './StatsScreen';
 export { SettingsScreen } from './SettingsScreen';
 export { AdminScreen } from './AdminScreen';
+export { ShopScreen } from './ShopScreen';

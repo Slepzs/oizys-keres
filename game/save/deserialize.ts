@@ -156,6 +156,7 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
     bagSettings: {
       autoSort: state.bagSettings?.autoSort ?? initial.bagSettings.autoSort,
       sortMode: state.bagSettings?.sortMode ?? initial.bagSettings.sortMode,
+      activeTabIndex: (state.bagSettings as any)?.activeTabIndex ?? initial.bagSettings.activeTabIndex,
     },
     quests: state.quests ?? initial.quests,
     achievements: state.achievements ?? initial.achievements,

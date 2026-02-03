@@ -1,17 +1,54 @@
-import React, { useMemo, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { BagSlot, SLOT_SIZE } from './BagSlot';
-import { spacing } from '@/constants/theme';
-import type { BagState } from '@/game/types';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { BagSlot } from './BagSlot';
+import { Card } from '../common/Card';
+import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
+import type { BagState, ItemRarity } from '@/game/types';
+import { ITEM_DEFINITIONS } from '@/game/data';
+import { useGameActions } from '@/store/gameStore';
+import { isEquipment } from '@/game/types';
 
 interface BagGridProps {
   bag: BagState;
-  selectedIndex: number | null;
-  onSelectIndex: (index: number | null) => void;
+  slotOffset?: number;
+  slotCount?: number;
 }
 
-export function BagGrid({ bag, selectedIndex, onSelectIndex }: BagGridProps) {
-  const [gridWidth, setGridWidth] = useState(0);
+const RARITY_COLORS: Record<ItemRarity, string> = {
+  common: colors.rarityCommon,
+  uncommon: colors.rarityUncommon,
+  rare: colors.rarityRare,
+  epic: colors.rarityEpic,
+};
+
+const RARITY_LABELS: Record<ItemRarity, string> = {
+  common: 'Common',
+  uncommon: 'Uncommon',
+  rare: 'Rare',
+  epic: 'Epic',
+};
+
+export function BagGrid({ bag, slotOffset = 0, slotCount }: BagGridProps) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const { discardSlot, toggleSlotLock, addItem, removeItem, equipItem } = useGameActions();
+
+  const clampedOffset = Math.max(0, Math.min(slotOffset, bag.slots.length));
+  const effectiveSlotCount = Math.max(
+    0,
+    Math.min(slotCount ?? bag.slots.length, bag.slots.length - clampedOffset)
+  );
+
+  const visibleSlots = useMemo(() => {
+    const end = clampedOffset + effectiveSlotCount;
+    return bag.slots.slice(clampedOffset, end);
+  }, [bag.slots, clampedOffset, effectiveSlotCount]);
+
+  useEffect(() => {
+    setSelectedIndex(null);
+  }, [clampedOffset, effectiveSlotCount]);
+
+  const selectedSlot = selectedIndex !== null ? bag.slots[selectedIndex] : null;
+  const selectedItem = selectedSlot ? ITEM_DEFINITIONS[selectedSlot.itemId] : null;
 
   const handleSlotPress = (index: number) => {
     onSelectIndex(selectedIndex === index ? null : index);
@@ -30,8 +67,61 @@ export function BagGrid({ bag, selectedIndex, onSelectIndex }: BagGridProps) {
     for (let i = 0; i < bag.slots.length; i += columns) {
       nextRows.push(bag.slots.slice(i, i + columns));
     }
-    return nextRows;
-  }, [bag.slots, columns]);
+
+    Alert.alert(
+      'Discard Item',
+      `Are you sure you want to discard ${selectedSlot.quantity}x ${selectedItem?.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Discard',
+          style: 'destructive',
+          onPress: () => {
+            discardSlot(selectedIndex);
+            setSelectedIndex(null);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleToggleLock = () => {
+    if (selectedIndex === null) return;
+    toggleSlotLock(selectedIndex);
+  };
+
+  const handleEquip = () => {
+    if (selectedIndex === null || !selectedSlot) return;
+
+    const itemId = selectedSlot.itemId;
+    const itemDef = ITEM_DEFINITIONS[itemId];
+
+    if (!isEquipment(itemDef)) return;
+
+    // Try to equip first
+    const result = equipItem(itemId);
+
+    // If equip failed, don't remove from bag
+    if (!result.success) {
+      return;
+    }
+
+    // Equip succeeded - remove from bag
+    removeItem(itemId, 1);
+
+    // If there was an item already equipped, add it back to bag
+    if (result.unequippedItemId) {
+      addItem(result.unequippedItemId, 1);
+    }
+
+    setSelectedIndex(null);
+  };
+
+  // Render slots in a 4-column grid
+  const rows: (typeof visibleSlots)[] = [];
+  for (let i = 0; i < visibleSlots.length; i += 4) {
+    rows.push(visibleSlots.slice(i, i + 4));
+  }
 
   return (
     <View style={styles.container}>
@@ -47,7 +137,7 @@ export function BagGrid({ bag, selectedIndex, onSelectIndex }: BagGridProps) {
         {rows.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
             {row.map((slot, colIndex) => {
-              const index = rowIndex * columns + colIndex;
+              const index = clampedOffset + rowIndex * 4 + colIndex;
               return (
                 <BagSlot
                   key={index}

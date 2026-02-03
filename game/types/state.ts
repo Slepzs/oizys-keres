@@ -10,6 +10,7 @@ import type { NotificationsState } from './notifications';
 export interface BagSettings {
   autoSort: boolean;
   sortMode: SortMode;
+  activeTabIndex: number;
 }
 
 export interface PlayerState {

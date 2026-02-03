@@ -7,6 +7,7 @@ import { ProgressBar } from '../components/common/ProgressBar';
 import { ResourceCounter } from '../components/game/ResourceCounter';
 import { SkillCard } from '../components/game/SkillCard';
 import { QuestSummaryCard } from '../components/game/QuestSummaryCard';
+import { ShopSummaryCard } from '../components/game/ShopSummaryCard';
 import { useGame } from '@/hooks/useGame';
 import { useSave } from '@/hooks/useSave';
 import { usePlayerSummary, useTotalSkillLevels } from '@/store';
@@ -72,6 +73,9 @@ export function DashboardScreen() {
             </Card>
           ))}
         </View>
+
+        {/* Shopkeeper */}
+        <ShopSummaryCard />
 
         {/* Quest Summary Card */}
         <QuestSummaryCard />

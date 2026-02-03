@@ -9,6 +9,7 @@ export * from "./quests.data";
 export * from "./resources.data";
 export * from "./skill-drops.data";
 export * from "./skills.data";
+export * from "./shop.data";
 export * from "./stats.data";
 export * from "./tree-tiers.data";
 export * from "./zones.data";

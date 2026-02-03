@@ -20,6 +20,7 @@ export interface InventorySlice {
   consolidateBag: () => void;
   toggleAutoSort: () => void;
   setSortMode: (mode: SortMode) => void;
+  setActiveBagTab: (tabIndex: number) => void;
   toggleSlotLock: (slotIndex: number) => void;
   expandBag: (additionalSlots: number) => void;
 }
@@ -93,6 +94,16 @@ export function createInventorySlice(set: SliceSet, get: SliceGet, _helpers: Sto
         bagSettings: {
           ...state.bagSettings,
           sortMode: mode,
+        },
+      });
+    },
+
+    setActiveBagTab: (tabIndex: number) => {
+      const state = get();
+      set({
+        bagSettings: {
+          ...state.bagSettings,
+          activeTabIndex: Math.max(0, Math.floor(tabIndex)),
         },
       });
     },
