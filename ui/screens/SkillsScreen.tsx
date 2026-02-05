@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
+import { router } from 'expo-router';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { Card } from '../components/common/Card';
+import { Button } from '../components/common/Button';
 import { SkillProgressBar } from '../components/game/SkillProgressBar';
 import { TreeSelector } from '../components/game/TreeSelector';
 import { useGame } from '@/hooks/useGame';
@@ -9,6 +11,12 @@ import { useGameActions } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { SKILL_DEFINITIONS, SKILL_IDS, WOODCUTTING_TREES } from '@/game/data';
 import type { SkillId } from '@/game/types';
+
+const SKILL_CRAFTING_PLACEHOLDER: Record<SkillId, string> = {
+  woodcutting: 'Use gathered materials for tools and infrastructure.',
+  mining: 'Mining crafting pipeline placeholder.',
+  smithing: 'Smithing crafting pipeline placeholder.',
+};
 
 export function SkillsScreen() {
   const { state, setActiveSkill, toggleAutomation } = useGame();
@@ -37,6 +45,7 @@ export function SkillsScreen() {
           const skill = state.skills[skillId];
           const definition = SKILL_DEFINITIONS[skillId];
           const isActive = state.activeSkill === skillId;
+          const hasCraftingSystem = skillId === 'woodcutting';
 
           const cardStyle = isActive
             ? { ...styles.skillCard, ...styles.activeCard }
@@ -64,6 +73,20 @@ export function SkillsScreen() {
               </View>
 
               <SkillProgressBar skill={skill} skillId={skillId} isActive={isActive} />
+
+              <View style={styles.craftingRow}>
+                <View style={styles.craftingInfo}>
+                  <Text style={styles.craftingLabel}>Crafting</Text>
+                  <Text style={styles.craftingHint}>{SKILL_CRAFTING_PLACEHOLDER[skillId]}</Text>
+                </View>
+                <Button
+                  title={hasCraftingSystem ? 'Open' : 'Soon'}
+                  onPress={() => router.push('/crafting')}
+                  disabled={!hasCraftingSystem}
+                  size="sm"
+                  style={styles.craftingButton}
+                />
+              </View>
 
               {/* Tree Selector for Woodcutting */}
               {skillId === 'woodcutting' && (
@@ -210,5 +233,30 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.primary,
     fontWeight: fontWeight.medium,
+  },
+  craftingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+  },
+  craftingInfo: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  craftingLabel: {
+    fontSize: fontSize.md,
+    color: colors.text,
+    fontWeight: fontWeight.semibold,
+  },
+  craftingHint: {
+    marginTop: spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+  },
+  craftingButton: {
+    minWidth: 66,
   },
 });
