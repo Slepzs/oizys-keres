@@ -27,25 +27,42 @@ export type ItemId =
   | 'iron_sword'
   | 'steel_sword'
   | 'mithril_sword'
+  | 'rune_sword'
+  | 'elderwood_blade'
+  | 'arcane_warblade'
   // Equipment - Helmets
   | 'bronze_helmet'
   | 'iron_helmet'
   | 'steel_helmet'
+  | 'mithril_helmet'
+  | 'runic_helmet'
+  | 'arcane_helmet'
   // Equipment - Chestplates
   | 'bronze_chestplate'
   | 'iron_chestplate'
   | 'steel_chestplate'
+  | 'mithril_chestplate'
+  | 'runic_chestplate'
+  | 'arcane_chestplate'
   // Equipment - Legs
   | 'bronze_platelegs'
   | 'iron_platelegs'
   | 'steel_platelegs'
+  | 'mithril_platelegs'
+  | 'runic_platelegs'
+  | 'arcane_platelegs'
   // Equipment - Boots
   | 'leather_boots'
   | 'iron_boots'
   | 'steel_boots'
+  | 'mithril_boots'
+  | 'runic_boots'
+  | 'arcane_boots'
   // Equipment - Accessories
   | 'power_amulet'
-  | 'defense_ring';
+  | 'defense_ring'
+  | 'berserker_charm'
+  | 'runed_war_ring';
 
 export type ItemCategory = 'material' | 'tool' | 'equipment' | 'misc';
 

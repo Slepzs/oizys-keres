@@ -18,6 +18,9 @@ export type CraftingRecipeId =
   | 'craft_iron_sword'
   | 'craft_steel_sword'
   | 'craft_mithril_sword'
+  | 'craft_rune_sword'
+  | 'craft_elderwood_blade'
+  | 'craft_arcane_warblade'
   | 'craft_bronze_helmet'
   | 'craft_bronze_chestplate'
   | 'craft_bronze_platelegs'
@@ -29,7 +32,21 @@ export type CraftingRecipeId =
   | 'craft_steel_helmet'
   | 'craft_steel_chestplate'
   | 'craft_steel_platelegs'
-  | 'craft_steel_boots';
+  | 'craft_steel_boots'
+  | 'craft_mithril_helmet'
+  | 'craft_mithril_chestplate'
+  | 'craft_mithril_platelegs'
+  | 'craft_mithril_boots'
+  | 'craft_runic_helmet'
+  | 'craft_runic_chestplate'
+  | 'craft_runic_platelegs'
+  | 'craft_runic_boots'
+  | 'craft_arcane_helmet'
+  | 'craft_arcane_chestplate'
+  | 'craft_arcane_platelegs'
+  | 'craft_arcane_boots'
+  | 'craft_berserker_charm'
+  | 'craft_runed_war_ring';
 
 export type CraftingRequirement =
   | { type: 'skill_level'; skillId: SkillId; level: number }
