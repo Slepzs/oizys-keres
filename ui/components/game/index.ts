@@ -1,6 +1,7 @@
 export { ResourceCounter } from './ResourceCounter';
 export { SkillProgressBar } from './SkillProgressBar';
 export { SkillCard } from './SkillCard';
+export { GachaSummaryCard } from './GachaSummaryCard';
 export { QuestCard } from './QuestCard';
 export { QuestSummaryCard } from './QuestSummaryCard';
 export { ShopSummaryCard } from './ShopSummaryCard';

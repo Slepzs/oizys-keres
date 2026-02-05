@@ -19,6 +19,7 @@ export type ItemId =
   | 'tree_seed'
   | 'bird_nest'
   // Mining drops
+  | 'rock'
   | 'ruby'
   | 'sapphire'
   | 'geode'

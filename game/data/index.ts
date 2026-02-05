@@ -5,6 +5,7 @@ export * from "./constants";
 export * from "./crafting.data";
 export * from "./curves";
 export * from "./enemies.data";
+export * from "./gacha.data";
 export * from "./items.data";
 export * from "./quests.data";
 export * from "./resources.data";

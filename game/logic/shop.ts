@@ -1,15 +1,25 @@
 import type { GameState } from '../types/state';
-import type { ShopOffer, ShopOfferId } from '../types/shop';
-import { DEFAULT_BAG_SIZE } from '../data/items.data';
+import type { ItemId } from '../types/items';
+import type { GachaPackDefinition, GachaPackId, ShopOffer, ShopOfferId } from '../types/shop';
+import { DEFAULT_BAG_SIZE, ITEM_DEFINITIONS } from '../data/items.data';
+import { GACHA_PACKS } from '../data/gacha.data';
 import { SHOP_OFFERS } from '../data/shop.data';
 import { addItemToBag, expandBag, hasSpaceForItem } from './bag';
+import { advanceSeed, createRng } from './rng';
 
 export const MAX_BAG_TABS = 12;
+
+export interface OpenedShopPack {
+  packId: GachaPackId;
+  itemsPerPack: number;
+  rolls: ItemId[];
+}
 
 export interface BuyShopOfferResult {
   success: boolean;
   error?: string;
   state: GameState;
+  openedPacks?: OpenedShopPack[];
   purchase?: {
     offerId: ShopOfferId;
     quantity: number;
@@ -63,6 +73,106 @@ export function getShopOfferTotalPriceCoins(
   return unit * q;
 }
 
+interface RollFromPackResult {
+  itemId: ItemId;
+  nextSeed: number;
+}
+
+function rollFromPack(pack: GachaPackDefinition, seed: number): RollFromPackResult | null {
+  const validDrops = pack.drops.filter((drop) => {
+    return drop.weight > 0 && ITEM_DEFINITIONS[drop.itemId] !== undefined;
+  });
+
+  if (validDrops.length === 0) {
+    return null;
+  }
+
+  const totalWeight = validDrops.reduce((sum, drop) => sum + drop.weight, 0);
+  if (totalWeight <= 0) {
+    return null;
+  }
+
+  const nextSeed = advanceSeed(seed) || 1;
+  const rng = createRng(nextSeed);
+  const roll = rng() * totalWeight;
+
+  let cumulativeWeight = 0;
+  for (const drop of validDrops) {
+    cumulativeWeight += drop.weight;
+    if (roll < cumulativeWeight) {
+      return { itemId: drop.itemId, nextSeed };
+    }
+  }
+
+  const fallbackDrop = validDrops[validDrops.length - 1];
+  return { itemId: fallbackDrop.itemId, nextSeed };
+}
+
+interface OpenPacksResult {
+  success: boolean;
+  bag: GameState['bag'];
+  openedPacks: OpenedShopPack[];
+  nextSeed: number;
+  error?: string;
+}
+
+function openGachaPacks(
+  bag: GameState['bag'],
+  pack: GachaPackDefinition,
+  quantity: number,
+  seed: number
+): OpenPacksResult {
+  let workingBag = bag;
+  let workingSeed = seed;
+  const openedPacks: OpenedShopPack[] = [];
+
+  for (let packIndex = 0; packIndex < quantity; packIndex++) {
+    const rolls: ItemId[] = [];
+
+    for (let itemIndex = 0; itemIndex < pack.itemsPerPack; itemIndex++) {
+      const rollResult = rollFromPack(pack, workingSeed);
+      if (!rollResult) {
+        return {
+          success: false,
+          bag,
+          openedPacks: [],
+          nextSeed: seed,
+          error: 'Pack drop table is invalid',
+        };
+      }
+
+      workingSeed = rollResult.nextSeed;
+      rolls.push(rollResult.itemId);
+
+      const bagResult = addItemToBag(workingBag, rollResult.itemId, 1);
+      if (bagResult.overflow > 0) {
+        return {
+          success: false,
+          bag,
+          openedPacks: [],
+          nextSeed: seed,
+          error: 'Not enough bag space',
+        };
+      }
+
+      workingBag = bagResult.bag;
+    }
+
+    openedPacks.push({
+      packId: pack.id,
+      itemsPerPack: pack.itemsPerPack,
+      rolls,
+    });
+  }
+
+  return {
+    success: true,
+    bag: workingBag,
+    openedPacks,
+    nextSeed: workingSeed,
+  };
+}
+
 export function buyShopOffer(state: GameState, offerId: ShopOfferId, quantity: number): BuyShopOfferResult {
   const offer = getShopOffer(offerId);
   if (!offer) {
@@ -87,6 +197,7 @@ export function buyShopOffer(state: GameState, offerId: ShopOfferId, quantity: n
       coins: state.player.coins - totalCostCoins,
     },
   };
+  let openedPacks: OpenedShopPack[] | undefined;
 
   switch (offer.effect.kind) {
     case 'grant_item': {
@@ -125,11 +236,32 @@ export function buyShopOffer(state: GameState, offerId: ShopOfferId, quantity: n
       };
       break;
     }
+
+    case 'open_gacha_pack': {
+      const pack = GACHA_PACKS[offer.effect.packId];
+      if (!pack) {
+        return { success: false, error: 'Pack not found', state };
+      }
+
+      const opened = openGachaPacks(newState.bag, pack, q, newState.rngSeed);
+      if (!opened.success) {
+        return { success: false, error: opened.error ?? 'Pack opening failed', state };
+      }
+
+      openedPacks = opened.openedPacks;
+      newState = {
+        ...newState,
+        bag: opened.bag,
+        rngSeed: opened.nextSeed,
+      };
+      break;
+    }
   }
 
   return {
     success: true,
     state: newState,
+    openedPacks,
     purchase: {
       offerId,
       quantity: q,
