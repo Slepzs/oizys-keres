@@ -150,6 +150,16 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
   },
 
   // Mining drops
+  rock: {
+    id: 'rock',
+    name: 'Rock',
+    description: 'A plain rock. Not very exciting.',
+    icon: '🪨',
+    category: 'misc',
+    rarity: 'common',
+    maxStack: 999,
+    sellPrice: 1,
+  },
   ruby: {
     id: 'ruby',
     name: 'Ruby',

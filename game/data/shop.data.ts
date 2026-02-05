@@ -2,6 +2,7 @@ import type { ShopOffer, ShopOfferId } from '../types/shop';
 
 export const SHOP_OFFER_IDS: ShopOfferId[] = [
   'premium_bag_tab',
+  'supply_mystery_pack',
   'supply_bronze_pickaxe',
   'supply_bronze_hatchet',
   'supply_bronze_sword',
@@ -24,6 +25,23 @@ export const SHOP_OFFERS: Record<ShopOfferId, ShopOffer> = {
     effect: {
       kind: 'bag_tab',
       tabs: 1,
+    },
+  },
+
+  supply_mystery_pack: {
+    id: 'supply_mystery_pack',
+    tier: 'normal',
+    name: 'Prospector Pack',
+    description: 'Open 1 pack for 5 items. 80% of pulls are rocks, but rare weapon upgrades can drop.',
+    icon: '🎁',
+    pricing: {
+      kind: 'fixed',
+      currency: 'coins',
+      amount: 300,
+    },
+    effect: {
+      kind: 'open_gacha_pack',
+      packId: 'shopkeeper_starter_pack',
     },
   },
 
@@ -81,4 +99,3 @@ export const SHOP_OFFERS: Record<ShopOfferId, ShopOffer> = {
     },
   },
 };
-

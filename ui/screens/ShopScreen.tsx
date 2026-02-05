@@ -6,11 +6,27 @@ import { SafeContainer } from '../components/layout/SafeContainer';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
-import { DEFAULT_BAG_SIZE, SHOP_OFFER_IDS, SHOP_OFFERS } from '@/game/data';
+import { DEFAULT_BAG_SIZE, ITEM_DEFINITIONS, SHOP_OFFER_IDS, SHOP_OFFERS } from '@/game/data';
 import { getBagTabCount, getShopOfferUnitPriceCoinsFromBagSlots, MAX_BAG_TABS } from '@/game/logic';
 import { useGameActions, useGameStore } from '@/store';
 import { formatNumber } from '@/utils/format';
 import type { ShopOfferId } from '@/game/types/shop';
+import type { ItemId } from '@/game/types/items';
+
+function summarizePackRolls(rolls: ItemId[]): string {
+  const counts = new Map<ItemId, number>();
+
+  for (const itemId of rolls) {
+    counts.set(itemId, (counts.get(itemId) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .map(([itemId, quantity]) => {
+      const item = ITEM_DEFINITIONS[itemId];
+      return `${item?.icon ?? ''} ${item?.name ?? itemId} x${quantity}`.trim();
+    })
+    .join('\n');
+}
 
 export function ShopScreen() {
   const { coins, bagMaxSlots } = useGameStore(
@@ -38,6 +54,12 @@ export function ShopScreen() {
     const result = buyShopOffer(offerId, 1);
     if (!result.success) {
       Alert.alert('Purchase failed', result.error ?? 'Unknown error');
+      return;
+    }
+
+    if (result.openedPacks && result.openedPacks.length > 0) {
+      const firstPack = result.openedPacks[0];
+      Alert.alert('Pack opened', summarizePackRolls(firstPack.rolls));
     }
   };
 
@@ -114,6 +136,9 @@ export function ShopScreen() {
                 <View style={styles.offerInfo}>
                   <Text style={styles.offerName}>{offer.name}</Text>
                   <Text style={styles.offerDesc}>{offer.description}</Text>
+                  {offer.effect.kind === 'open_gacha_pack' && (
+                    <Text style={styles.offerMeta}>Contains 5 item pulls</Text>
+                  )}
                 </View>
               </View>
 

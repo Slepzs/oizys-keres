@@ -8,6 +8,7 @@ import { ResourceCounter } from '../components/game/ResourceCounter';
 import { SkillCard } from '../components/game/SkillCard';
 import { QuestSummaryCard } from '../components/game/QuestSummaryCard';
 import { ShopSummaryCard } from '../components/game/ShopSummaryCard';
+import { GachaSummaryCard } from '../components/game/GachaSummaryCard';
 import { useGame } from '@/hooks/useGame';
 import { useSave } from '@/hooks/useSave';
 import { usePlayerSummary, useTotalSkillLevels } from '@/store';
@@ -76,6 +77,7 @@ export function DashboardScreen() {
 
         {/* Shopkeeper */}
         <ShopSummaryCard />
+        <GachaSummaryCard />
 
         {/* Quest Summary Card */}
         <QuestSummaryCard />
