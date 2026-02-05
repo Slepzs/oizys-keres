@@ -2,6 +2,7 @@ export * from "./achievements";
 export * from "./bag";
 export * from "./combat";
 export * from "./combat/tick";
+export * from "./crafting";
 export * from "./multipliers";
 export * from "./notifications";
 export * from "./offline";

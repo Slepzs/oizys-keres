@@ -1,4 +1,5 @@
 export * from "./achievements";
+export * from "./crafting";
 export * from "./combat";
 export * from "./context";
 export * from "./items";

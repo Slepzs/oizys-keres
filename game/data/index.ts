@@ -2,6 +2,7 @@ export * from "./achievements.data";
 export * from "./combat-skills.data";
 export * from "./combat-drops.data";
 export * from "./constants";
+export * from "./crafting.data";
 export * from "./curves";
 export * from "./enemies.data";
 export * from "./items.data";

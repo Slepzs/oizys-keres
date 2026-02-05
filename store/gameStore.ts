@@ -24,6 +24,7 @@ import { createNotificationsSlice, type NotificationsSlice } from './slices/noti
 import { createSkillsSlice, type SkillsSlice } from './slices/skillsSlice';
 import { createAdminSlice, type AdminSlice } from './slices/adminSlice';
 import { createShopSlice, type ShopSlice } from './slices/shopSlice';
+import { createCraftingSlice, type CraftingSlice } from './slices/craftingSlice';
 
 const AUTO_SAVE_KEY = 'game-save';
 const LEGACY_ZUSTAND_PERSIST_KEY = 'game-storage';
@@ -51,6 +52,7 @@ export type GameActions =
   & NotificationsSlice
   & SkillsSlice
   & ShopSlice
+  & CraftingSlice
   & AdminSlice;
 
 export type GameStore = GameState & GameActions & HydrationState;
@@ -123,6 +125,7 @@ function getGameStateSnapshot(store: GameStore): GameState {
     quests: store.quests,
     achievements: store.achievements,
     multipliers: store.multipliers,
+    crafting: store.crafting,
     combat: store.combat,
     timestamps: store.timestamps,
     activeSkill: store.activeSkill,
@@ -173,6 +176,7 @@ export const useGameStore = create<GameStore>()((set, get) => {
     ...createCombatSlice(set, get, helpers),
     ...createNotificationsSlice(set, get, helpers),
     ...createShopSlice(set, get, helpers),
+    ...createCraftingSlice(set, get, helpers),
     ...createAdminSlice(set, get, helpers),
   };
 });
@@ -186,6 +190,7 @@ export const useBagSettings = () => useGameStore((state) => state.bagSettings);
 export const useQuests = () => useGameStore((state) => state.quests);
 export const useAchievements = () => useGameStore((state) => state.achievements);
 export const useMultipliers = () => useGameStore((state) => state.multipliers);
+export const useCrafting = () => useGameStore((state) => state.crafting);
 export const useCombat = () => useGameStore((state) => state.combat);
 export const useActiveSkill = () => useGameStore((state) => state.activeSkill);
 export const useIsHydrated = () => useGameStore((state) => state.isHydrated);
@@ -212,6 +217,7 @@ export const useGameActions = () =>
       toggleSlotLock: state.toggleSlotLock,
       expandBag: state.expandBag,
       buyShopOffer: state.buyShopOffer,
+      craftRecipe: state.craftRecipe,
       startQuest: state.startQuest,
       abandonQuest: state.abandonQuest,
       claimQuestRewards: state.claimQuestRewards,

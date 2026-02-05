@@ -6,6 +6,7 @@ import type { QuestsState } from './quests';
 import type { AchievementsState } from './achievements';
 import type { MultipliersState } from './multipliers';
 import type { NotificationsState } from './notifications';
+import type { CraftingState } from './crafting';
 
 export interface BagSettings {
   autoSort: boolean;
@@ -54,6 +55,7 @@ export interface GameState {
   quests: QuestsState;
   achievements: AchievementsState;
   multipliers: MultipliersState;
+  crafting: CraftingState;
   combat: CombatState;
   timestamps: TimestampsState;
   activeSkill: string | null;

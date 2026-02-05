@@ -3,6 +3,7 @@ import { createInitialBagState } from "../data/items.data";
 import { createInitialQuestsState } from "../data/quests.data";
 import { createInitialResourcesState } from "../data/resources.data";
 import { createInitialSkillsState } from "../data/skills.data";
+import { createInitialCraftingState } from "../data/crafting.data";
 import {
 	createInitialAttributesState,
 	createInitialSkillStatsState,
@@ -52,6 +53,7 @@ export function createInitialGameState(params: CreateInitialGameStateParams = {}
 		quests: createInitialQuestsState(),
 		achievements: createInitialAchievementsState(),
 		multipliers: createInitialMultipliersState(),
+		crafting: createInitialCraftingState(),
 		combat: createInitialCombatState(),
 		timestamps: {
 			lastActive: now,

@@ -2,7 +2,13 @@
  * Notification types for the toast notification system.
  */
 
-export type NotificationType = 'quest' | 'achievement' | 'skill_level_up' | 'player_level_up' | 'combat';
+export type NotificationType =
+  | 'quest'
+  | 'achievement'
+  | 'skill_level_up'
+  | 'player_level_up'
+  | 'combat'
+  | 'system';
 
 export interface Notification {
   id: string;
@@ -25,6 +31,7 @@ export const NOTIFICATION_DURATIONS: Record<NotificationType, number> = {
   skill_level_up: 4000,
   player_level_up: 5000,
   combat: 4000,
+  system: 3500,
 };
 
 export const NOTIFICATION_PRIORITIES: Record<NotificationType, Notification['priority']> = {
@@ -33,6 +40,7 @@ export const NOTIFICATION_PRIORITIES: Record<NotificationType, Notification['pri
   skill_level_up: 'normal',
   player_level_up: 'high',
   combat: 'low',
+  system: 'normal',
 };
 
 export const MAX_NOTIFICATIONS_DISPLAYED = 4;

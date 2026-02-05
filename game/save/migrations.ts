@@ -3,6 +3,7 @@ import { CURRENT_SAVE_VERSION } from './schema';
 import { createInitialBagState } from '../data/items.data';
 import { createInitialQuestsState } from '../data/quests.data';
 import { createInitialAchievementsState } from '../data/achievements.data';
+import { createInitialCraftingState } from '../data/crafting.data';
 import { createInitialMultipliersState } from '../logic/multipliers';
 import { createInitialCombatState } from '../logic/combat';
 
@@ -40,6 +41,7 @@ const migrations: Record<number, MigrationFn> = {
       bagSettings: {
         autoSort: false,
         sortMode: 'rarity' as const,
+        activeTabIndex: 0,
       },
     },
   }),
@@ -119,6 +121,16 @@ const migrations: Record<number, MigrationFn> = {
         ...save.state.bagSettings,
         activeTabIndex: (save.state.bagSettings as any)?.activeTabIndex ?? 0,
       },
+    },
+  }),
+
+  // Migration from v9 to v10: Add crafting progression state
+  9: (save) => ({
+    ...save,
+    version: 10,
+    state: {
+      ...save.state,
+      crafting: createInitialCraftingState(),
     },
   }),
 };

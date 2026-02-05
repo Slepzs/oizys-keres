@@ -1,4 +1,5 @@
 import type { GameContext, GameState, SkillId, ItemId, CombatSkillId } from '../types';
+import type { CraftingCategory, CraftingRecipeId, InfrastructureId } from '../types/crafting';
 
 /**
  * Game events emitted by the tick system and other game logic.
@@ -14,6 +15,8 @@ export type GameEvent =
   | { type: 'BAG_FULL'; itemId: ItemId; quantity: number }
   | { type: 'ACTIONS_PAUSED_BAG_FULL' }
   | { type: 'COINS_EARNED'; source: 'combat'; enemyId: string; amount: number }
+  | { type: 'ITEM_CRAFTED'; recipeId: CraftingRecipeId; itemId: ItemId; quantity: number; category: CraftingCategory }
+  | { type: 'INFRASTRUCTURE_BUILT'; infrastructureId: InfrastructureId; newLevel: number }
   | { type: 'QUEST_COMPLETED'; questId: string }
   | { type: 'ACHIEVEMENT_UNLOCKED'; achievementId: string }
   // Combat events

@@ -1,6 +1,6 @@
 import type { SkillId } from './skills';
 
-export type MultiplierSource = 'achievement' | 'upgrade' | 'equipment' | 'perk';
+export type MultiplierSource = 'achievement' | 'upgrade' | 'equipment' | 'perk' | 'infrastructure';
 export type MultiplierTarget = SkillId | 'all_skills' | 'xp' | 'drops';
 
 /**

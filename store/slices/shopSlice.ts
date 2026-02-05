@@ -26,7 +26,7 @@ export function createShopSlice(set: SliceSet, get: SliceGet, helpers: StoreHelp
 
       const offerName = offerId === 'premium_bag_tab' ? 'Bag Tab Permit' : 'Purchase';
       get().addNotification(
-        'success',
+        'system',
         'Purchased',
         `${offerName} for ${result.purchase?.totalCostCoins ?? 0} gold`,
         { icon: '🧾' }
@@ -36,4 +36,3 @@ export function createShopSlice(set: SliceSet, get: SliceGet, helpers: StoreHelp
     },
   };
 }
-

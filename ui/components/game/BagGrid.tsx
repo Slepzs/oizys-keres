@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
-import { BagSlot } from './BagSlot';
+import { BagSlot, SLOT_SIZE } from './BagSlot';
 import { Card } from '../common/Card';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
 import type { BagState, ItemRarity } from '@/game/types';
@@ -12,6 +12,8 @@ interface BagGridProps {
   bag: BagState;
   slotOffset?: number;
   slotCount?: number;
+  selectedIndex: number | null;
+  onSelectIndex: (index: number | null) => void;
 }
 
 const RARITY_COLORS: Record<ItemRarity, string> = {
@@ -28,8 +30,8 @@ const RARITY_LABELS: Record<ItemRarity, string> = {
   epic: 'Epic',
 };
 
-export function BagGrid({ bag, slotOffset = 0, slotCount }: BagGridProps) {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+export function BagGrid({ bag, slotOffset = 0, slotCount, selectedIndex, onSelectIndex }: BagGridProps) {
+  const [gridWidth, setGridWidth] = useState(0);
   const { discardSlot, toggleSlotLock, addItem, removeItem, equipItem } = useGameActions();
 
   const clampedOffset = Math.max(0, Math.min(slotOffset, bag.slots.length));
@@ -44,7 +46,7 @@ export function BagGrid({ bag, slotOffset = 0, slotCount }: BagGridProps) {
   }, [bag.slots, clampedOffset, effectiveSlotCount]);
 
   useEffect(() => {
-    setSelectedIndex(null);
+    onSelectIndex(null);
   }, [clampedOffset, effectiveSlotCount]);
 
   const selectedSlot = selectedIndex !== null ? bag.slots[selectedIndex] : null;
@@ -62,15 +64,12 @@ export function BagGrid({ bag, slotOffset = 0, slotCount }: BagGridProps) {
     return 4;
   }, [gridWidth]);
 
-  const rows = useMemo(() => {
-    const nextRows: (typeof bag.slots)[] = [];
-    for (let i = 0; i < bag.slots.length; i += columns) {
-      nextRows.push(bag.slots.slice(i, i + columns));
-    }
+  const handleDiscard = () => {
+    if (selectedIndex === null || !selectedSlot || !selectedItem) return;
 
     Alert.alert(
       'Discard Item',
-      `Are you sure you want to discard ${selectedSlot.quantity}x ${selectedItem?.name}?`,
+      `Are you sure you want to discard ${selectedSlot.quantity}x ${selectedItem.name}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -78,7 +77,7 @@ export function BagGrid({ bag, slotOffset = 0, slotCount }: BagGridProps) {
           style: 'destructive',
           onPress: () => {
             discardSlot(selectedIndex);
-            setSelectedIndex(null);
+            onSelectIndex(null);
           },
         },
       ]
@@ -114,13 +113,13 @@ export function BagGrid({ bag, slotOffset = 0, slotCount }: BagGridProps) {
       addItem(result.unequippedItemId, 1);
     }
 
-    setSelectedIndex(null);
+    onSelectIndex(null);
   };
 
-  // Render slots in a 4-column grid
+  // Render slots in a grid based on calculated columns
   const rows: (typeof visibleSlots)[] = [];
-  for (let i = 0; i < visibleSlots.length; i += 4) {
-    rows.push(visibleSlots.slice(i, i + 4));
+  for (let i = 0; i < visibleSlots.length; i += columns) {
+    rows.push(visibleSlots.slice(i, i + columns));
   }
 
   return (
@@ -137,7 +136,7 @@ export function BagGrid({ bag, slotOffset = 0, slotCount }: BagGridProps) {
         {rows.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
             {row.map((slot, colIndex) => {
-              const index = clampedOffset + rowIndex * 4 + colIndex;
+              const index = clampedOffset + rowIndex * columns + colIndex;
               return (
                 <BagSlot
                   key={index}

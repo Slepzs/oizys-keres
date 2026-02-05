@@ -7,6 +7,7 @@ export {
   useBagSettings,
   useQuests,
   useCombat,
+  useCrafting,
   useActiveSkill,
   useIsHydrated,
   useGameActions,

@@ -36,6 +36,11 @@ const NOTIFICATION_COLORS: Record<NotificationType, { bg: string; border: string
     border: colors.error,
     icon: colors.error,
   },
+  system: {
+    bg: 'rgba(160, 160, 160, 0.15)',
+    border: colors.textSecondary,
+    icon: colors.textSecondary,
+  },
 };
 
 const TYPE_ICONS: Record<NotificationType, string> = {
@@ -44,6 +49,7 @@ const TYPE_ICONS: Record<NotificationType, string> = {
   skill_level_up: '⭐',
   player_level_up: '🌟',
   combat: '⚔️',
+  system: 'ℹ️',
 };
 
 export function NotificationToast({ notification, onDismiss, index }: NotificationToastProps) {

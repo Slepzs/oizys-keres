@@ -161,6 +161,14 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
     quests: state.quests ?? initial.quests,
     achievements: state.achievements ?? initial.achievements,
     multipliers: state.multipliers ?? initial.multipliers,
+    crafting: {
+      ...initial.crafting,
+      ...(state.crafting ?? {}),
+      infrastructureLevels: {
+        ...initial.crafting.infrastructureLevels,
+        ...(state.crafting?.infrastructureLevels ?? {}),
+      },
+    },
     timestamps: {
       lastActive: state.timestamps?.lastActive ?? initial.timestamps.lastActive,
       lastSave: state.timestamps?.lastSave ?? initial.timestamps.lastSave,

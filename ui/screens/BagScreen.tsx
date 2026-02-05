@@ -38,6 +38,8 @@ export function BagScreen() {
   const activeTabIndex = Math.max(0, Math.min(bagSettings.activeTabIndex, tabCount - 1));
   const slotOffset = activeTabIndex * tabSize;
 
+  const selectedSlot = selectedIndex !== null ? bag.slots[selectedIndex] : null;
+
   useEffect(() => {
     if (activeTabIndex !== bagSettings.activeTabIndex) {
       setActiveBagTab(activeTabIndex);
@@ -147,7 +149,13 @@ export function BagScreen() {
             </Text>
           </View>
         ) : (
-          <BagGrid bag={bag} slotOffset={slotOffset} slotCount={tabSize} />
+          <BagGrid
+            bag={bag}
+            slotOffset={slotOffset}
+            slotCount={tabSize}
+            selectedIndex={selectedIndex}
+            onSelectIndex={setSelectedIndex}
+          />
         )}
       </ScrollView>
 

@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
 import { colors, fontSize } from '@/constants/theme';
+import { RpgIcon } from '@/ui/components/common';
 
 export default function TabLayout() {
   return (
@@ -25,7 +25,7 @@ export default function TabLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>🏠</Text>
+            <RpgIcon name="player" fallback="🏠" size={18} color={color} />
           ),
         }}
       />
@@ -34,7 +34,16 @@ export default function TabLayout() {
         options={{
           title: 'Skills',
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>🔨</Text>
+            <RpgIcon name="axe" fallback="🪓" size={18} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="crafting"
+        options={{
+          title: 'Craft',
+          tabBarIcon: ({ color }) => (
+            <RpgIcon name="anvil" fallback="🛠️" size={18} color={color} />
           ),
         }}
       />
@@ -43,7 +52,7 @@ export default function TabLayout() {
         options={{
           title: 'Combat',
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>⚔️</Text>
+            <RpgIcon name="broadsword" fallback="⚔️" size={18} color={color} />
           ),
         }}
       />
@@ -52,7 +61,7 @@ export default function TabLayout() {
         options={{
           title: 'Bag',
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>🎒</Text>
+            <RpgIcon name="ammo-bag" fallback="🎒" size={18} color={color} />
           ),
         }}
       />
@@ -61,7 +70,7 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>⚙️</Text>
+            <RpgIcon name="cog" fallback="⚙️" size={18} color={color} />
           ),
         }}
       />
