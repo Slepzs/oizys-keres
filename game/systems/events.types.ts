@@ -1,4 +1,4 @@
-import type { GameContext, GameState, SkillId, ItemId, CombatSkillId } from '../types';
+import type { GameContext, GameState, SkillId, ItemId, CombatSkillId, ResourceId } from '../types';
 import type { CraftingCategory, CraftingRecipeId, InfrastructureId } from '../types/crafting';
 
 /**
@@ -6,7 +6,7 @@ import type { CraftingCategory, CraftingRecipeId, InfrastructureId } from '../ty
  * These events are consumed by various handlers (quests, achievements, etc.)
  */
 export type GameEvent =
-  | { type: 'SKILL_ACTION'; skillId: SkillId; xpGained: number; resourceGained: number }
+  | { type: 'SKILL_ACTION'; skillId: SkillId; xpGained: number; resourceId: ResourceId; resourceGained: number }
   | { type: 'SKILL_LEVEL_UP'; skillId: SkillId; newLevel: number }
   | { type: 'PLAYER_LEVEL_UP'; newLevel: number }
   | { type: 'AUTOMATION_UNLOCKED'; skillId: SkillId }

@@ -7,6 +7,7 @@ import type {
   Objective,
 } from '../../types/quests';
 import { QUEST_DEFINITIONS, getQuestDefinition } from '../../data/quests.data';
+import { countItemInBag } from '../bag';
 
 // ============================================================================
 // Condition Evaluation
@@ -96,6 +97,7 @@ export function getObjectiveProgress(
     case 'gain_xp':
     case 'gain_resource':
     case 'collect_item':
+    case 'have_item':
     case 'kill':
     case 'craft':
       target = objective.amount;
@@ -118,7 +120,8 @@ export function getObjectiveProgress(
 }
 
 export function getQuestProgress(
-  questState: PlayerQuestState
+  questState: PlayerQuestState,
+  gameState?: GameState
 ): { percentage: number; allComplete: boolean } {
   const definition = getQuestDefinition(questState.questId);
   if (!definition) {
@@ -129,7 +132,10 @@ export function getQuestProgress(
   let completedObjectives = 0;
 
   for (const objective of definition.objectives) {
-    const progress = questState.progress[objective.id] ?? 0;
+    const storedProgress = questState.progress[objective.id] ?? 0;
+    const progress = objective.type === 'have_item' && gameState
+      ? countItemInBag(gameState.bag, objective.target)
+      : storedProgress;
     const { current, target, complete } = getObjectiveProgress(objective, progress);
 
     totalProgress += target > 0 ? current / target : 0;
@@ -196,4 +202,3 @@ export function getCompletedQuests(questsState: QuestsState): CompletedQuestInfo
     .filter((q): q is CompletedQuestInfo => q !== null)
     .sort((a, b) => b.completedAt - a.completedAt);
 }
-

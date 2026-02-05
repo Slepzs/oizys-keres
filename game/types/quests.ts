@@ -10,6 +10,7 @@ export type ObjectiveType =
   | 'gain_xp'
   | 'gain_resource'
   | 'collect_item'
+  | 'have_item'
   | 'reach_level'
   | 'timer'
   | 'kill'
@@ -19,6 +20,7 @@ export type Objective =
   | { id: string; type: 'gain_xp'; target: SkillId; amount: number }
   | { id: string; type: 'gain_resource'; target: ResourceId; amount: number }
   | { id: string; type: 'collect_item'; target: ItemId; amount: number }
+  | { id: string; type: 'have_item'; target: ItemId; amount: number }
   | { id: string; type: 'reach_level'; target: SkillId; level: number }
   | { id: string; type: 'timer'; durationMs: number }
   | { id: string; type: 'kill'; target: string; amount: number }

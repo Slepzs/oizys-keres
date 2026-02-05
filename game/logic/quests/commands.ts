@@ -1,5 +1,6 @@
 import type { GameState } from '../../types';
 import type {
+  Objective,
   QuestsState,
   PlayerQuestState,
   QuestReward,
@@ -8,7 +9,7 @@ import { getQuestDefinition } from '../../data/quests.data';
 import { addSkillXp, addPlayerXp } from '../xp';
 import { addResource } from '../resources';
 import { addItemToBag } from '../bag';
-import { isQuestAvailable } from './queries';
+import { isQuestAvailable, getQuestProgress } from './queries';
 
 // ============================================================================
 // Quest Management
@@ -45,7 +46,7 @@ export function startQuest(
 
   const progress: Record<string, number> = {};
   for (const objective of definition.objectives) {
-    progress[objective.id] = 0;
+    progress[objective.id] = getInitialObjectiveProgress(objective, state);
   }
 
   const newQuestState: PlayerQuestState = {
@@ -91,15 +92,20 @@ export function applyQuestRewards(
     return { state: gameState, quests: questsState };
   }
 
+  const questState = questsState.active.find((q) => q.questId === questId);
+  if (!questState) {
+    return { state: gameState, quests: questsState };
+  }
+
+  const { allComplete } = getQuestProgress(questState, gameState);
+  if (!allComplete) {
+    return { state: gameState, quests: questsState };
+  }
+
   let newState = { ...gameState };
 
   for (const reward of definition.rewards) {
     newState = applyReward(newState, reward);
-  }
-
-  const questState = questsState.active.find((q) => q.questId === questId);
-  if (!questState) {
-    return { state: newState, quests: questsState };
   }
 
   const newCompleted = questsState.completed.includes(questId)
@@ -126,6 +132,25 @@ export function applyQuestRewards(
   };
 
   return { state: newState, quests: newQuestsState };
+}
+
+function getInitialObjectiveProgress(objective: Objective, state: GameState): number {
+  switch (objective.type) {
+    case 'reach_level': {
+      const skill = state.skills[objective.target];
+      return skill ? skill.level : 0;
+    }
+    case 'have_item': {
+      return state.bag.slots.reduce((total, slot) => {
+        if (slot && slot.itemId === objective.target) {
+          return total + slot.quantity;
+        }
+        return total;
+      }, 0);
+    }
+    default:
+      return 0;
+  }
 }
 
 function applyReward(state: GameState, reward: QuestReward): GameState {
@@ -179,4 +204,3 @@ function applyReward(state: GameState, reward: QuestReward): GameState {
       return state;
   }
 }
-

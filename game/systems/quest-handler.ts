@@ -1,9 +1,10 @@
 import type { GameContext, GameState } from '../types';
 import type { GameEvent, EventHandlerResult } from './events.types';
-import type { QuestsState, PlayerQuestState, Objective } from '../types/quests';
+import type { PlayerQuestState, Objective } from '../types/quests';
 import { getQuestDefinition } from '../data/quests.data';
 import { getQuestProgress, applyQuestRewards } from '../logic/quests';
 import { checkAchievements } from '../logic/achievements';
+import { countItemInBag } from '../logic/bag';
 import { eventBus, registerOnce } from './events';
 
 /**
@@ -34,9 +35,10 @@ function processQuestProgress(event: GameEvent, state: GameState, ctx: GameConte
 
     // Process event against objectives
     for (const objective of definition.objectives) {
-      const progressDelta = getEventProgressDelta(event, objective, state);
-      if (progressDelta > 0) {
-        newProgress[objective.id] = (newProgress[objective.id] ?? 0) + progressDelta;
+      const currentProgress = newProgress[objective.id] ?? 0;
+      const updatedProgress = getUpdatedObjectiveProgress(event, objective, state, currentProgress);
+      if (updatedProgress !== currentProgress) {
+        newProgress[objective.id] = updatedProgress;
         questHasChanges = true;
       }
     }
@@ -50,7 +52,7 @@ function processQuestProgress(event: GameEvent, state: GameState, ctx: GameConte
       progress: newProgress,
     };
 
-    const { allComplete } = getQuestProgress(updatedQuestState);
+    const { allComplete } = getQuestProgress(updatedQuestState, state);
     if (allComplete) {
       completedQuests.push(questState.questId);
       return {
@@ -90,52 +92,67 @@ function processQuestProgress(event: GameEvent, state: GameState, ctx: GameConte
 }
 
 /**
- * Calculate progress delta for a single event against a single objective.
+ * Calculate updated progress for a single event against a single objective.
  */
-function getEventProgressDelta(
+function getUpdatedObjectiveProgress(
   event: GameEvent,
   objective: Objective,
-  _gameState: GameState
+  gameState: GameState,
+  currentProgress: number
 ): number {
+  if (objective.type === 'have_item') {
+    return countItemInBag(gameState.bag, objective.target);
+  }
+
   switch (event.type) {
     case 'SKILL_ACTION':
       if (objective.type === 'gain_xp' && objective.target === event.skillId) {
-        return event.xpGained;
+        return currentProgress + event.xpGained;
       }
-      if (objective.type === 'gain_resource' && event.resourceGained > 0) {
-        return event.resourceGained;
+      if (
+        objective.type === 'gain_resource' &&
+        objective.target === event.resourceId &&
+        event.resourceGained > 0
+      ) {
+        return currentProgress + event.resourceGained;
       }
-      return 0;
+      return currentProgress;
 
     case 'SKILL_LEVEL_UP':
       if (objective.type === 'reach_level' && objective.target === event.skillId) {
-        return event.newLevel;
+        return Math.max(currentProgress, event.newLevel);
       }
-      return 0;
+      return currentProgress;
 
     case 'ITEM_DROPPED':
       if (objective.type === 'collect_item' && objective.target === event.itemId) {
-        return event.quantity;
+        return currentProgress + event.quantity;
       }
-      return 0;
+      return currentProgress;
 
     case 'COMBAT_ITEM_DROPPED':
       if (objective.type === 'collect_item' && objective.target === event.itemId) {
-        return event.quantity;
+        return currentProgress + event.quantity;
       }
-      return 0;
+      return currentProgress;
 
     case 'ITEM_CRAFTED':
       if (objective.type === 'craft' && objective.target === event.itemId) {
-        return event.quantity;
+        return currentProgress + event.quantity;
       }
       if (objective.type === 'collect_item' && objective.target === event.itemId) {
-        return event.quantity;
+        return currentProgress + event.quantity;
       }
-      return 0;
+      return currentProgress;
+
+    case 'COMBAT_ENEMY_KILLED':
+      if (objective.type === 'kill' && objective.target === event.enemyId) {
+        return currentProgress + 1;
+      }
+      return currentProgress;
 
     default:
-      return 0;
+      return currentProgress;
   }
 }
 
@@ -152,5 +169,6 @@ export function registerQuestHandlers(): void {
     eventBus.on('ITEM_DROPPED', processQuestProgress, 50);
     eventBus.on('COMBAT_ITEM_DROPPED', processQuestProgress, 50);
     eventBus.on('ITEM_CRAFTED', processQuestProgress, 50);
+    eventBus.on('COMBAT_ENEMY_KILLED', processQuestProgress, 50);
   });
 }
