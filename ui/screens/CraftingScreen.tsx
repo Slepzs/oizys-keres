@@ -14,6 +14,7 @@ import {
   ITEM_DEFINITIONS,
   RESOURCE_DEFINITIONS,
   SKILL_DEFINITIONS,
+  skillSpeedMultiplier,
 } from '@/game/data';
 import { countItemInBag, getCraftingRecipeStatus } from '@/game/logic';
 import type {
@@ -48,6 +49,8 @@ export function CraftingScreen() {
   );
 
   const craftRecipe = useGameStore((state) => state.craftRecipe);
+  const setAutoCraftRecipe = useGameStore((state) => state.setAutoCraftRecipe);
+  const clearAutoCraftRecipe = useGameStore((state) => state.clearAutoCraftRecipe);
 
   const recipeList = useMemo(() => {
     return CRAFTING_RECIPE_IDS
@@ -63,6 +66,24 @@ export function CraftingScreen() {
     () => ({ skills, resources, bag, crafting }),
     [skills, resources, bag, crafting]
   );
+  const autoRecipe = useMemo(() => {
+    const recipeId = crafting.automation.recipeId;
+    if (!recipeId) {
+      return null;
+    }
+
+    return CRAFTING_RECIPES[recipeId] ?? null;
+  }, [crafting.automation.recipeId]);
+  const autoProgress = useMemo(() => {
+    const craftingSkill = skills.crafting;
+    if (!crafting.automation.recipeId || !craftingSkill.automationEnabled) {
+      return 0;
+    }
+
+    const speedMult = skillSpeedMultiplier(Math.max(1, craftingSkill.level));
+    const ticksPerCraft = Math.max(1, SKILL_DEFINITIONS.crafting.ticksPerAction / speedMult);
+    return Math.min(1, (crafting.automation.tickProgress ?? 0) / ticksPerCraft);
+  }, [skills.crafting, crafting.automation.recipeId, crafting.automation.tickProgress]);
 
   return (
     <SafeContainer padTop={false}>
@@ -75,6 +96,17 @@ export function CraftingScreen() {
             <Text style={styles.summaryTitle}>Infrastructure Progress</Text>
             <Text style={styles.summaryValue}>{builtInfrastructureCount}/4 built</Text>
           </View>
+          <View style={styles.summaryAutoRow}>
+            <Text style={styles.summaryAutoLabel}>Auto Craft</Text>
+            <Text style={styles.summaryAutoValue}>
+              {skills.crafting.automationEnabled ? 'ON' : 'OFF'} · {autoRecipe ? `${autoRecipe.name} x${crafting.automation.quantity}` : 'No recipe selected'}
+            </Text>
+          </View>
+          {skills.crafting.automationEnabled && autoRecipe && (
+            <Text style={styles.summaryAutoHint}>
+              Progress: {Math.round(autoProgress * 100)}%
+            </Text>
+          )}
           <View style={styles.infrastructureGrid}>
             {Object.values(INFRASTRUCTURE_DEFINITIONS).map((infrastructure) => {
               const level = crafting.infrastructureLevels[infrastructure.id] ?? 0;
@@ -120,6 +152,7 @@ export function CraftingScreen() {
           const recommendedQuantity = recipe.output.type === 'infrastructure'
             ? 1
             : Math.min(5, Math.max(1, status.maxCraftable));
+          const isAutoSelected = crafting.automation.recipeId === recipe.id;
 
           const canCraft = status.maxCraftable > 0;
           const isDisabled = !status.unlocked || status.atInfrastructureCap || !canCraft;
@@ -193,12 +226,32 @@ export function CraftingScreen() {
                 <Text style={styles.completedText}>Infrastructure already built.</Text>
               )}
 
-              <Button
-                title={buttonLabel}
-                onPress={() => craftRecipe(recipe.id, recommendedQuantity)}
-                disabled={isDisabled}
-                size="sm"
-              />
+              <View style={styles.actionRow}>
+                <Button
+                  title={buttonLabel}
+                  onPress={() => craftRecipe(recipe.id, recommendedQuantity)}
+                  disabled={isDisabled}
+                  size="sm"
+                  style={styles.actionButton}
+                />
+                <Button
+                  title={isAutoSelected ? `Auto x${crafting.automation.quantity}` : `Set Auto x${recommendedQuantity}`}
+                  onPress={() => setAutoCraftRecipe(recipe.id, recommendedQuantity)}
+                  disabled={!status.unlocked || status.atInfrastructureCap}
+                  variant={isAutoSelected ? 'primary' : 'secondary'}
+                  size="sm"
+                  style={styles.actionButton}
+                />
+              </View>
+              {isAutoSelected && (
+                <Button
+                  title="Stop Auto"
+                  onPress={clearAutoCraftRecipe}
+                  variant="ghost"
+                  size="sm"
+                  style={styles.stopAutoButton}
+                />
+              )}
             </Card>
           );
         })}
@@ -306,6 +359,26 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
   },
+  summaryAutoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  summaryAutoLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  summaryAutoValue: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+  },
+  summaryAutoHint: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
   infrastructureGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -397,5 +470,16 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.success,
     marginBottom: spacing.sm,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  actionButton: {
+    flex: 1,
+  },
+  stopAutoButton: {
+    marginTop: spacing.xs,
+    alignSelf: 'flex-start',
   },
 });

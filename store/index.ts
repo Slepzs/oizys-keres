@@ -13,4 +13,13 @@ export {
   useGameActions,
   type GameStore,
 } from './gameStore';
-export { usePlayerSummary, useSkillSummaries, useTotalSkillLevels, useCombatSummary, useActiveCombat, useEquipment, useCombatActions } from './selectors';
+export {
+  usePlayerSummary,
+  useSkillSummaries,
+  useTotalSkillLevels,
+  useCombatSummary,
+  useActiveCombat,
+  useCombatTracker,
+  useEquipment,
+  useCombatActions,
+} from './selectors';

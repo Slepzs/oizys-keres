@@ -211,15 +211,19 @@ function formatReward(reward: {
   itemId?: string;
   quantity?: number;
 }): string {
+  const skillKey = reward.skill as keyof typeof SKILL_DEFINITIONS | undefined;
+  const resourceKey = reward.resource as keyof typeof RESOURCE_DEFINITIONS | undefined;
+  const itemKey = reward.itemId as keyof typeof ITEM_DEFINITIONS | undefined;
+
   switch (reward.type) {
     case 'xp':
-      return `+${reward.amount} ${(reward.skill && SKILL_DEFINITIONS[reward.skill]?.name) ?? reward.skill} XP`;
+      return `+${reward.amount} ${(skillKey && SKILL_DEFINITIONS[skillKey]?.name) ?? reward.skill} XP`;
     case 'player_xp':
       return `+${reward.amount} Player XP`;
     case 'resource':
-      return `+${reward.amount} ${(reward.resource && RESOURCE_DEFINITIONS[reward.resource]?.name) ?? reward.resource}`;
+      return `+${reward.amount} ${(resourceKey && RESOURCE_DEFINITIONS[resourceKey]?.name) ?? reward.resource}`;
     case 'item':
-      return `+${reward.quantity} ${(reward.itemId && ITEM_DEFINITIONS[reward.itemId]?.name) ?? reward.itemId}`;
+      return `+${reward.quantity} ${(itemKey && ITEM_DEFINITIONS[itemKey]?.name) ?? reward.itemId}`;
     default:
       return 'Unknown reward';
   }

@@ -5,33 +5,22 @@ import { SafeContainer } from '../components/layout/SafeContainer';
 import { Card } from '../components/common/Card';
 import { ProgressBar } from '../components/common/ProgressBar';
 import { ResourceCounter } from '../components/game/ResourceCounter';
-import { SkillCard } from '../components/game/SkillCard';
 import { QuestSummaryCard } from '../components/game/QuestSummaryCard';
 import { ShopSummaryCard } from '../components/game/ShopSummaryCard';
 import { GachaSummaryCard } from '../components/game/GachaSummaryCard';
 import { useGame } from '@/hooks/useGame';
 import { useSave } from '@/hooks/useSave';
-import { usePlayerSummary, useTotalSkillLevels } from '@/store';
+import { usePlayerSummary } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
-import { SKILL_IDS } from '@/game/data';
 import { playerXpProgress } from '@/game/logic';
-import type { SkillId, ResourceId } from '@/game/types';
+import type { ResourceId } from '@/game/types';
 
 export function DashboardScreen() {
-  const { state, setActiveSkill } = useGame();
+  const { state } = useGame();
   useSave(); // Enable auto-save
 
   const playerProgress = playerXpProgress(state.player);
   const playerSummary = usePlayerSummary();
-  const totalSkillLevels = useTotalSkillLevels();
-
-  const handleSkillPress = (skillId: SkillId) => {
-    if (state.activeSkill === skillId) {
-      setActiveSkill(null);
-    } else {
-      setActiveSkill(skillId);
-    }
-  };
 
   return (
     <SafeContainer>
@@ -56,7 +45,7 @@ export function DashboardScreen() {
                 {'\u2764\uFE0F'} {playerSummary.currentHealth}/{playerSummary.maxHealth}
               </Text>
               <Text style={styles.statText}>
-                Skills: {totalSkillLevels}
+                {'\u2728'} {playerSummary.currentMana}/{playerSummary.maxMana}
               </Text>
             </View>
           </Card>
@@ -81,22 +70,6 @@ export function DashboardScreen() {
 
         {/* Quest Summary Card */}
         <QuestSummaryCard />
-
-        {/* Skills Section */}
-        <Text style={styles.sectionTitle}>Skills</Text>
-        <Text style={styles.sectionSubtitle}>
-          Tap a skill to start training
-        </Text>
-
-        {SKILL_IDS.map((skillId) => (
-          <SkillCard
-            key={skillId}
-            skillId={skillId}
-            skill={state.skills[skillId]}
-            isActive={state.activeSkill === skillId}
-            onPress={() => handleSkillPress(skillId)}
-          />
-        ))}
       </ScrollView>
     </SafeContainer>
   );
@@ -149,16 +122,5 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  sectionSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
   },
 });

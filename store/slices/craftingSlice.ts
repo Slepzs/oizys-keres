@@ -8,6 +8,8 @@ export interface CraftingSlice {
     recipeId: CraftingRecipeId,
     quantity?: number
   ) => { success: boolean; crafted: number; error?: string };
+  setAutoCraftRecipe: (recipeId: CraftingRecipeId, quantity?: number) => void;
+  clearAutoCraftRecipe: () => void;
 }
 
 export function createCraftingSlice(set: SliceSet, get: SliceGet, helpers: StoreHelpers): CraftingSlice {
@@ -67,6 +69,74 @@ export function createCraftingSlice(set: SliceSet, get: SliceGet, helpers: Store
       );
 
       return { success: true, crafted: result.crafted };
+    },
+
+    setAutoCraftRecipe: (recipeId: CraftingRecipeId, quantity: number = 1) => {
+      const now = Date.now();
+      const state = get();
+      const normalizedQuantity = Math.max(1, Math.floor(quantity));
+      const gameState = helpers.getGameStateSnapshot(state);
+      const craftingSkill = gameState.skills.crafting;
+
+      let nextState: GameState = {
+        ...gameState,
+        crafting: {
+          ...gameState.crafting,
+          automation: {
+            ...gameState.crafting.automation,
+            recipeId,
+            quantity: normalizedQuantity,
+            tickProgress: 0,
+          },
+        },
+        skills: {
+          ...gameState.skills,
+          crafting: {
+            ...craftingSkill,
+            automationEnabled: craftingSkill.automationUnlocked ? true : craftingSkill.automationEnabled,
+            tickProgress: 0,
+          },
+        },
+        timestamps: {
+          ...gameState.timestamps,
+          lastActive: now,
+        },
+      };
+
+      nextState = helpers.maybeAutoSave(nextState, now);
+      set(nextState);
+    },
+
+    clearAutoCraftRecipe: () => {
+      const now = Date.now();
+      const state = get();
+      const gameState = helpers.getGameStateSnapshot(state);
+
+      let nextState: GameState = {
+        ...gameState,
+        crafting: {
+          ...gameState.crafting,
+          automation: {
+            ...gameState.crafting.automation,
+            recipeId: null,
+            tickProgress: 0,
+          },
+        },
+        skills: {
+          ...gameState.skills,
+          crafting: {
+            ...gameState.skills.crafting,
+            tickProgress: 0,
+          },
+        },
+        timestamps: {
+          ...gameState.timestamps,
+          lastActive: now,
+        },
+      };
+
+      nextState = helpers.maybeAutoSave(nextState, now);
+      set(nextState);
     },
   };
 }

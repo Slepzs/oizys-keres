@@ -1,5 +1,7 @@
 import type { GameState } from '../types';
 import { DEFAULT_BAG_SIZE } from '../data/items.data';
+import { SKILL_IDS } from '../data/skills.data';
+import { normalizePlayerVitals } from '../logic/player';
 import type { SaveBlob } from './schema';
 import { migrateSave, needsMigration } from './migrations';
 import { createInitialGameState, createInitialNotificationsState } from './initial-state';
@@ -116,25 +118,81 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
     now,
     rngSeed: state.rngSeed ?? ((now & 0x7fffffff) || 1),
   });
+  const repairedPlayer = normalizePlayerVitals({
+    level: state.player?.level ?? initial.player.level,
+    xp: state.player?.xp ?? initial.player.xp,
+    coins: (state.player as any)?.coins ?? initial.player.coins,
+    health: (state.player as any)?.health ?? initial.player.health,
+    maxHealth: (state.player as any)?.maxHealth ?? initial.player.maxHealth,
+    mana: (state.player as any)?.mana ?? initial.player.mana,
+    maxMana: (state.player as any)?.maxMana ?? initial.player.maxMana,
+  });
+  const rawSkills = (state.skills ?? {}) as Record<string, Partial<GameState['skills']['woodcutting']>>;
+  const rawSkillStats = (state.skillStats ?? {}) as Record<string, Partial<GameState['skillStats']['woodcutting']>>;
+  const repairedSkills = {
+    woodcutting: {
+      ...initial.skills.woodcutting,
+      ...(rawSkills.woodcutting ?? {}),
+    },
+    mining: {
+      ...initial.skills.mining,
+      ...(rawSkills.mining ?? {}),
+    },
+    crafting: {
+      ...initial.skills.crafting,
+      ...(rawSkills.crafting ?? rawSkills.smithing ?? {}),
+      automationUnlocked: true,
+    },
+  };
+  const repairedSkillStats = {
+    woodcutting: {
+      ...initial.skillStats.woodcutting,
+      ...(rawSkillStats.woodcutting ?? {}),
+    },
+    mining: {
+      ...initial.skillStats.mining,
+      ...(rawSkillStats.mining ?? {}),
+    },
+    crafting: {
+      ...initial.skillStats.crafting,
+      ...(rawSkillStats.crafting ?? rawSkillStats.smithing ?? {}),
+    },
+  };
+  const repairedMultipliers = {
+    ...initial.multipliers,
+    ...(state.multipliers ?? {}),
+    active: ((state.multipliers?.active ?? initial.multipliers.active) as Array<any>).map((multiplier) => (
+      multiplier.target === 'smithing'
+        ? { ...multiplier, target: 'crafting' }
+        : multiplier
+    )),
+  };
+  const activeSkill = state.activeSkill === 'smithing' ? 'crafting' : state.activeSkill ?? null;
+  const knownSkillIds = new Set<string>(SKILL_IDS);
+  const normalizedActiveSkill = (
+    activeSkill
+    && activeSkill !== 'crafting'
+    && knownSkillIds.has(activeSkill)
+  ) ? activeSkill : null;
+  const automationQuantity = Math.max(
+    1,
+    Math.floor((state.crafting as any)?.automation?.quantity ?? initial.crafting.automation.quantity)
+  );
+  const automationTickProgress = Math.max(
+    0,
+    Number((state.crafting as any)?.automation?.tickProgress ?? initial.crafting.automation.tickProgress)
+  );
+  const rawAutomationRecipeId = (state.crafting as any)?.automation?.recipeId ?? initial.crafting.automation.recipeId;
+  const automationRecipeId = typeof rawAutomationRecipeId === 'string' ? rawAutomationRecipeId : null;
 
   return {
-    player: {
-      level: state.player?.level ?? initial.player.level,
-      xp: state.player?.xp ?? initial.player.xp,
-      coins: (state.player as any)?.coins ?? initial.player.coins,
-    },
-    skills: {
-      ...initial.skills,
-      ...state.skills,
-    },
+    player: repairedPlayer,
+    skills: repairedSkills,
     attributes: {
       ...initial.attributes,
       ...state.attributes,
     },
-    skillStats: {
-      ...initial.skillStats,
-      ...state.skillStats,
-    },
+    skillStats: repairedSkillStats,
     resources: {
       ...initial.resources,
       ...state.resources,
@@ -160,7 +218,7 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
     },
     quests: state.quests ?? initial.quests,
     achievements: state.achievements ?? initial.achievements,
-    multipliers: state.multipliers ?? initial.multipliers,
+    multipliers: repairedMultipliers,
     crafting: {
       ...initial.crafting,
       ...(state.crafting ?? {}),
@@ -168,13 +226,20 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
         ...initial.crafting.infrastructureLevels,
         ...(state.crafting?.infrastructureLevels ?? {}),
       },
+      automation: {
+        ...initial.crafting.automation,
+        ...((state.crafting as any)?.automation ?? {}),
+        recipeId: automationRecipeId,
+        quantity: automationQuantity,
+        tickProgress: automationTickProgress,
+      },
     },
     timestamps: {
       lastActive: state.timestamps?.lastActive ?? initial.timestamps.lastActive,
       lastSave: state.timestamps?.lastSave ?? initial.timestamps.lastSave,
       sessionStart: now, // Always reset session start
     },
-    activeSkill: state.activeSkill ?? null,
+    activeSkill: normalizedActiveSkill,
     rngSeed: state.rngSeed ?? initial.rngSeed,
     // Notifications are transient UI state - always reset to empty on load
     notifications: createInitialNotificationsState(),

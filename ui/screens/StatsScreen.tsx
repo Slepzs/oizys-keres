@@ -35,6 +35,10 @@ export function StatsScreen() {
         return playerSummary.xpRequired > 0
           ? `${playerSummary.xp} / ${playerSummary.xpRequired} XP`
           : `${playerSummary.xp} XP`;
+      case 'player_health':
+        return `${playerSummary.currentHealth} / ${playerSummary.maxHealth}`;
+      case 'player_mana':
+        return `${playerSummary.currentMana} / ${playerSummary.maxMana}`;
       default:
         return '—';
     }
@@ -53,7 +57,11 @@ export function StatsScreen() {
         {SHOW_SUMMARY && (
           <Card style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
-              <Text style={styles.summaryTitle}>Health</Text>
+              <Text style={styles.summaryTitle}>Vitals</Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Health</Text>
               <Text style={styles.summaryValue}>
                 {playerSummary.currentHealth} / {playerSummary.maxHealth}
               </Text>
@@ -62,6 +70,19 @@ export function StatsScreen() {
               progress={playerSummary.healthProgress}
               color={colors.healthBar}
               backgroundColor={colors.healthBarBg}
+              height={10}
+            />
+
+            <View style={[styles.summaryRow, styles.secondarySummaryRow]}>
+              <Text style={styles.summaryLabel}>Mana</Text>
+              <Text style={styles.summaryValue}>
+                {playerSummary.currentMana} / {playerSummary.maxMana}
+              </Text>
+            </View>
+            <ProgressBar
+              progress={playerSummary.manaProgress}
+              color={colors.manaBar}
+              backgroundColor={colors.manaBarBg}
               height={10}
             />
           </Card>
@@ -121,15 +142,25 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   summaryHeader: {
+    marginBottom: spacing.sm,
+  },
+  summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
+  secondarySummaryRow: {
+    marginTop: spacing.md,
+  },
   summaryTitle: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
     color: colors.text,
+  },
+  summaryLabel: {
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
   },
   summaryValue: {
     fontSize: fontSize.md,

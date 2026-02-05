@@ -1,4 +1,17 @@
-import { BASE_SKILL_XP, BASE_PLAYER_XP } from './constants';
+import {
+  BASE_SKILL_XP,
+  BASE_PLAYER_XP,
+  BASE_PLAYER_HEALTH,
+  HEALTH_PER_LEVEL,
+  BASE_PLAYER_MANA,
+  MANA_PER_LEVEL,
+  BASE_HEALTH_REGEN_PER_SECOND,
+  HEALTH_REGEN_PER_LEVEL,
+  HEALTH_REGEN_FROM_MAX_HEALTH,
+  BASE_MANA_REGEN_PER_SECOND,
+  MANA_REGEN_PER_LEVEL,
+  MANA_REGEN_FROM_MAX_MANA,
+} from './constants';
 
 /**
  * Calculate XP required for a skill level.
@@ -27,6 +40,52 @@ export function totalXpForSkillLevel(level: number): number {
 export function xpForPlayerLevel(level: number): number {
   if (level <= 1) return 0;
   return Math.floor(BASE_PLAYER_XP * Math.pow(level - 1, 2));
+}
+
+function normalizeLevel(level: number): number {
+  return Math.max(1, Math.floor(level || 1));
+}
+
+/**
+ * Calculate max health from player level.
+ */
+export function playerMaxHealthForLevel(level: number): number {
+  const safeLevel = normalizeLevel(level);
+  return BASE_PLAYER_HEALTH + (safeLevel - 1) * HEALTH_PER_LEVEL;
+}
+
+/**
+ * Calculate max mana from player level.
+ */
+export function playerMaxManaForLevel(level: number): number {
+  const safeLevel = normalizeLevel(level);
+  return BASE_PLAYER_MANA + (safeLevel - 1) * MANA_PER_LEVEL;
+}
+
+/**
+ * Calculate health regenerated per second.
+ */
+export function playerHealthRegenPerSecond(level: number, maxHealth: number): number {
+  const safeLevel = normalizeLevel(level);
+  const safeMaxHealth = Math.max(1, maxHealth);
+  return (
+    BASE_HEALTH_REGEN_PER_SECOND +
+    (safeLevel - 1) * HEALTH_REGEN_PER_LEVEL +
+    safeMaxHealth * HEALTH_REGEN_FROM_MAX_HEALTH
+  );
+}
+
+/**
+ * Calculate mana regenerated per second.
+ */
+export function playerManaRegenPerSecond(level: number, maxMana: number): number {
+  const safeLevel = normalizeLevel(level);
+  const safeMaxMana = Math.max(1, maxMana);
+  return (
+    BASE_MANA_REGEN_PER_SECOND +
+    (safeLevel - 1) * MANA_REGEN_PER_LEVEL +
+    safeMaxMana * MANA_REGEN_FROM_MAX_MANA
+  );
 }
 
 /**

@@ -3,8 +3,9 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
+import { PackRevealModal } from './PackRevealModal';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
-import { ITEM_DEFINITIONS } from '@/game/data';
+import { ITEM_DEFINITIONS, SHOP_OFFERS } from '@/game/data';
 import { getShopOfferUnitPriceCoinsFromBagSlots } from '@/game/logic';
 import { useGameStore } from '@/store';
 import { formatNumber } from '@/utils/format';
@@ -17,6 +18,7 @@ interface RollSummaryEntry {
 
 export function GachaSummaryCard() {
   const [lastOpenedRolls, setLastOpenedRolls] = useState<ItemId[] | null>(null);
+  const [activeRevealRolls, setActiveRevealRolls] = useState<ItemId[] | null>(null);
 
   const { coins, bagMaxSlots } = useGameStore(
     useShallow((state) => ({
@@ -45,6 +47,13 @@ export function GachaSummaryCard() {
 
   const canAfford = coins >= packPrice;
 
+  const handleCloseReveal = () => {
+    if (activeRevealRolls) {
+      setLastOpenedRolls(activeRevealRolls);
+    }
+    setActiveRevealRolls(null);
+  };
+
   const handleOpenPack = () => {
     const result = buyShopOffer('supply_mystery_pack', 1);
     if (!result.success) {
@@ -57,47 +66,56 @@ export function GachaSummaryCard() {
       return;
     }
 
-    setLastOpenedRolls(openedPack.rolls);
+    setActiveRevealRolls(openedPack.rolls);
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={styles.header}>
-        <Text style={styles.title}>🎲 Shopkeeper Packs</Text>
-        <Text style={styles.price}>
-          {'\u{1FA99}'} {formatNumber(packPrice)}
-        </Text>
-      </View>
-
-      <Text style={styles.description}>
-        Open 1 Prospector Pack for 5 items. Drop rate: 80% Rock, 20% weapon upgrades.
-      </Text>
-
-      <Button
-        title="Open 1 Pack"
-        onPress={handleOpenPack}
-        disabled={!canAfford}
-        style={styles.button}
-      />
-
-      {!canAfford && (
-        <Text style={styles.hint}>Earn more gold to buy a pack from the shopkeeper.</Text>
-      )}
-
-      {lastRollSummary.length > 0 && (
-        <View style={styles.results}>
-          <Text style={styles.resultsTitle}>Last Pack</Text>
-          {lastRollSummary.map(({ itemId, quantity }) => {
-            const item = ITEM_DEFINITIONS[itemId];
-            return (
-              <Text key={itemId} style={styles.resultLine}>
-                {item?.icon ?? '•'} {item?.name ?? itemId} x{quantity}
-              </Text>
-            );
-          })}
+    <>
+      <Card style={styles.card}>
+        <View style={styles.header}>
+          <Text style={styles.title}>🎲 Shopkeeper Packs</Text>
+          <Text style={styles.price}>
+            {'\u{1FA99}'} {formatNumber(packPrice)}
+          </Text>
         </View>
-      )}
-    </Card>
+
+        <Text style={styles.description}>
+          Open 1 Prospector Pack for 5 pulls. Swipe to reveal mixed materials, gems, and rare gear.
+        </Text>
+
+        <Button
+          title="Open 1 Pack"
+          onPress={handleOpenPack}
+          disabled={!canAfford}
+          style={styles.button}
+        />
+
+        {!canAfford && (
+          <Text style={styles.hint}>Earn more gold to buy a pack from the shopkeeper.</Text>
+        )}
+
+        {lastRollSummary.length > 0 && (
+          <View style={styles.results}>
+            <Text style={styles.resultsTitle}>Last Pack</Text>
+            {lastRollSummary.map(({ itemId, quantity }) => {
+              const item = ITEM_DEFINITIONS[itemId];
+              return (
+                <Text key={itemId} style={styles.resultLine}>
+                  {item?.icon ?? '•'} {item?.name ?? itemId} x{quantity}
+                </Text>
+              );
+            })}
+          </View>
+        )}
+      </Card>
+
+      <PackRevealModal
+        visible={activeRevealRolls !== null}
+        packName={SHOP_OFFERS.supply_mystery_pack.name}
+        rolls={activeRevealRolls ?? []}
+        onClose={handleCloseReveal}
+      />
+    </>
   );
 }
 

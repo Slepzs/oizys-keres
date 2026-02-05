@@ -3,6 +3,8 @@ import type { GameEvent } from '../systems/events.types';
 import { TICKS_PER_SECOND } from '../data/constants';
 import { advanceSeed } from './rng';
 import { processCombatTick } from './combat/tick';
+import { processCraftingAutomationTick } from './crafting';
+import { regeneratePlayerVitals } from './player';
 import { processSkillsTick } from './skills/tick';
 
 export interface TickResult {
@@ -29,12 +31,22 @@ export function processTick(state: GameState, deltaMs: number, ctx: GameContext)
   newState = skillsResult.state;
   const events: GameEvent[] = [...skillsResult.events];
 
+  const craftingResult = processCraftingAutomationTick(newState, ticksElapsed);
+  newState = craftingResult.state;
+  events.push(...craftingResult.events);
+
   // Process combat if active
   if (newState.combat.activeCombat) {
     const combatResult = processCombatTick(newState.combat, ctx.now, ticksElapsed);
     newState = { ...newState, combat: combatResult.state };
     events.push(...combatResult.events);
   }
+
+  // Regenerate player health and mana every tick (applies to offline processing too).
+  newState = {
+    ...newState,
+    player: regeneratePlayerVitals(newState.player, deltaMs),
+  };
 
   // Advance RNG seed
   newState.rngSeed = advanceSeed(newState.rngSeed);

@@ -1,31 +1,11 @@
 import type { GameState } from '@/game/types';
 import type { ShopOfferId } from '@/game/types/shop';
-import type { ItemId } from '@/game/types/items';
-import { ITEM_DEFINITIONS, SHOP_OFFERS } from '@/game/data';
+import { SHOP_OFFERS } from '@/game/data';
 import { buyShopOffer as buyShopOfferLogic, type OpenedShopPack } from '@/game/logic';
 import type { SliceGet, SliceSet, StoreHelpers } from './types';
 
 export interface ShopSlice {
   buyShopOffer: (offerId: ShopOfferId, quantity?: number) => { success: boolean; error?: string; openedPacks?: OpenedShopPack[] };
-}
-
-function summarizePackRolls(rolls: ItemId[]): string {
-  const counts = new Map<ItemId, number>();
-
-  for (const itemId of rolls) {
-    counts.set(itemId, (counts.get(itemId) ?? 0) + 1);
-  }
-
-  return Array.from(counts.entries())
-    .map(([itemId, quantity]) => {
-      const item = ITEM_DEFINITIONS[itemId];
-      if (!item) {
-        return `${itemId} x${quantity}`;
-      }
-
-      return `${item.icon} ${item.name} x${quantity}`;
-    })
-    .join(', ');
 }
 
 export function createShopSlice(set: SliceSet, get: SliceGet, helpers: StoreHelpers): ShopSlice {
@@ -48,12 +28,13 @@ export function createShopSlice(set: SliceSet, get: SliceGet, helpers: StoreHelp
 
       const offer = SHOP_OFFERS[offerId];
       if (result.openedPacks && result.openedPacks.length > 0) {
-        const firstPack = result.openedPacks[0];
-        const extraPacks = result.openedPacks.length - 1;
-        const rollsSummary = summarizePackRolls(firstPack.rolls);
-        const extraLabel = extraPacks > 0 ? ` (+${extraPacks} more packs)` : '';
+        const openedCount = result.openedPacks.length;
+        const readyMessage =
+          openedCount > 1
+            ? `${openedCount} packs are ready to reveal.`
+            : 'Pack is ready to reveal.';
 
-        get().addNotification('system', 'Pack Opened', `${rollsSummary}${extraLabel}`, {
+        get().addNotification('system', 'Pack Opened', readyMessage, {
           icon: offer?.icon ?? '🎁',
           duration: 5500,
         });

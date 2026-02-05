@@ -18,6 +18,10 @@ export interface PlayerState {
   level: number;
   xp: number;
   coins: number;
+  health: number;
+  maxHealth: number;
+  mana: number;
+  maxMana: number;
 }
 
 export interface AttributeState {

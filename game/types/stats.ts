@@ -2,7 +2,7 @@ import type { SkillId } from './skills';
 
 export type StatCategory = 'attribute' | 'skill';
 export type StatVisibility = 'visible' | 'hidden';
-export type AttributeStatId = 'player_level' | 'player_xp';
+export type AttributeStatId = 'player_level' | 'player_xp' | 'player_health' | 'player_mana';
 
 export interface BaseStatDefinition {
   id: string;

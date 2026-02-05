@@ -32,12 +32,12 @@ export const SHOP_OFFERS: Record<ShopOfferId, ShopOffer> = {
     id: 'supply_mystery_pack',
     tier: 'normal',
     name: 'Prospector Pack',
-    description: 'Open 1 pack for 5 items. 80% of pulls are rocks, but rare weapon upgrades can drop.',
+    description: 'Open 1 pack for 5 pulls: mixed materials, gems, and rare gear upgrades.',
     icon: '🎁',
     pricing: {
       kind: 'fixed',
       currency: 'coins',
-      amount: 300,
+      amount: 1_500,
     },
     effect: {
       kind: 'open_gacha_pack',

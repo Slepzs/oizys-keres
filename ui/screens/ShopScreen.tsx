@@ -1,34 +1,21 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
+import { PackRevealModal } from '../components/game/PackRevealModal';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
-import { DEFAULT_BAG_SIZE, ITEM_DEFINITIONS, SHOP_OFFER_IDS, SHOP_OFFERS } from '@/game/data';
+import { DEFAULT_BAG_SIZE, SHOP_OFFER_IDS, SHOP_OFFERS } from '@/game/data';
 import { getBagTabCount, getShopOfferUnitPriceCoinsFromBagSlots, MAX_BAG_TABS } from '@/game/logic';
 import { useGameActions, useGameStore } from '@/store';
 import { formatNumber } from '@/utils/format';
 import type { ShopOfferId } from '@/game/types/shop';
 import type { ItemId } from '@/game/types/items';
 
-function summarizePackRolls(rolls: ItemId[]): string {
-  const counts = new Map<ItemId, number>();
-
-  for (const itemId of rolls) {
-    counts.set(itemId, (counts.get(itemId) ?? 0) + 1);
-  }
-
-  return Array.from(counts.entries())
-    .map(([itemId, quantity]) => {
-      const item = ITEM_DEFINITIONS[itemId];
-      return `${item?.icon ?? ''} ${item?.name ?? itemId} x${quantity}`.trim();
-    })
-    .join('\n');
-}
-
 export function ShopScreen() {
+  const [revealingPack, setRevealingPack] = useState<{ packName: string; rolls: ItemId[] } | null>(null);
   const { coins, bagMaxSlots } = useGameStore(
     useShallow((state) => ({
       coins: state.player.coins,
@@ -59,7 +46,10 @@ export function ShopScreen() {
 
     if (result.openedPacks && result.openedPacks.length > 0) {
       const firstPack = result.openedPacks[0];
-      Alert.alert('Pack opened', summarizePackRolls(firstPack.rolls));
+      setRevealingPack({
+        packName: SHOP_OFFERS[offerId]?.name ?? 'Pack',
+        rolls: firstPack.rolls,
+      });
     }
   };
 
@@ -137,7 +127,7 @@ export function ShopScreen() {
                   <Text style={styles.offerName}>{offer.name}</Text>
                   <Text style={styles.offerDesc}>{offer.description}</Text>
                   {offer.effect.kind === 'open_gacha_pack' && (
-                    <Text style={styles.offerMeta}>Contains 5 item pulls</Text>
+                    <Text style={styles.offerMeta}>Swipe to reveal 5 pulls</Text>
                   )}
                 </View>
               </View>
@@ -157,6 +147,13 @@ export function ShopScreen() {
           );
         })}
       </ScrollView>
+
+      <PackRevealModal
+        visible={revealingPack !== null}
+        packName={revealingPack?.packName ?? 'Pack'}
+        rolls={revealingPack?.rolls ?? []}
+        onClose={() => setRevealingPack(null)}
+      />
     </SafeContainer>
   );
 }

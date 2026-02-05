@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router';
 import { colors, fontSize } from '@/constants/theme';
 import { RpgIcon } from '@/ui/components/common';
+import { CombatTabBar } from '@/ui/components/layout';
 
 export default function TabLayout() {
   return (
     <Tabs
+      tabBar={(props) => <CombatTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
@@ -41,10 +43,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="crafting"
         options={{
-          title: 'Craft',
-          tabBarIcon: ({ color }) => (
-            <RpgIcon name="anvil" fallback="🛠️" size={18} color={color} />
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen

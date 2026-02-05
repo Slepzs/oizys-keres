@@ -445,3 +445,40 @@ export function sellItemFromSlot(
     success: sold > 0,
   };
 }
+
+export interface SellAllItemsResult {
+  bag: BagState;
+  slotsSold: number;
+  itemsSold: number;
+  coinsEarned: number;
+}
+
+/**
+ * Sell all unlocked, sellable items in the bag.
+ */
+export function sellAllSellableItems(bag: BagState): SellAllItemsResult {
+  let nextBag = bag;
+  let slotsSold = 0;
+  let itemsSold = 0;
+  let coinsEarned = 0;
+
+  for (let slotIndex = 0; slotIndex < nextBag.slots.length; slotIndex++) {
+    const slot = nextBag.slots[slotIndex];
+    if (!slot) continue;
+
+    const result = sellItemFromSlot(nextBag, slotIndex, slot.quantity);
+    if (!result.success) continue;
+
+    nextBag = result.bag;
+    slotsSold += 1;
+    itemsSold += result.sold;
+    coinsEarned += result.coinsEarned;
+  }
+
+  return {
+    bag: nextBag,
+    slotsSold,
+    itemsSold,
+    coinsEarned,
+  };
+}

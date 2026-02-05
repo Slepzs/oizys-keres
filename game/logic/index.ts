@@ -6,6 +6,7 @@ export * from "./crafting";
 export * from "./multipliers";
 export * from "./notifications";
 export * from "./offline";
+export * from "./player";
 export * from "./quests";
 export * from "./resources";
 export * from "./rng";

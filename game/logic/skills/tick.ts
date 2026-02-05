@@ -1,4 +1,4 @@
-import type { GameState, SkillDefinition, SkillId } from '../../types';
+import type { GameState, ResourceId, SkillDefinition, SkillId } from '../../types';
 import type { GameEvent } from '../../systems/events.types';
 import { SKILL_DEFINITIONS } from '../../data/skills.data';
 import { SKILL_DROP_TABLES } from '../../data/skill-drops.data';
@@ -20,7 +20,11 @@ export function processSkillsTick(state: GameState, ticksElapsed: number): Skill
   let newState = state;
 
   // Process active skill
-  if (state.activeSkill) {
+  if (
+    state.activeSkill
+    && state.activeSkill !== 'crafting'
+    && state.activeSkill in SKILL_DEFINITIONS
+  ) {
     const result = processSkillTick(newState, state.activeSkill as SkillId, ticksElapsed);
     newState = result.state;
     events.push(...result.events);
@@ -28,6 +32,9 @@ export function processSkillsTick(state: GameState, ticksElapsed: number): Skill
 
   // Process automated skills
   for (const skillId of Object.keys(state.skills) as SkillId[]) {
+    if (skillId === 'crafting') {
+      continue;
+    }
     const skill = state.skills[skillId];
     if (skill.automationEnabled && skillId !== state.activeSkill) {
       // Automation runs at 50% efficiency
@@ -81,7 +88,15 @@ function processSkillTick(state: GameState, skillId: SkillId, ticksElapsed: numb
   const efficiencyMult = skillEfficiencyMultiplier(skill.level);
   const xpMultiplier = getSkillXpMultiplier(newState, skillId);
   const xpGained = Math.floor(effectiveDefinition.baseXpPerAction * actionsCompleted * xpMultiplier);
-  const resourceGained = Math.floor(effectiveDefinition.baseResourcePerAction * efficiencyMult * actionsCompleted);
+  const totalResourceGained = Math.floor(
+    effectiveDefinition.baseResourcePerAction * efficiencyMult * actionsCompleted
+  );
+  const resourceRewards = getSkillResourceRewards(
+    skillId,
+    effectiveDefinition.resourceProduced,
+    totalResourceGained,
+    newState.rngSeed
+  );
 
   // Add XP to skill
   if (xpGained > 0) {
@@ -130,12 +145,14 @@ function processSkillTick(state: GameState, skillId: SkillId, ticksElapsed: numb
   }
 
   // Add resources
-  if (resourceGained > 0) {
-    const resourceResult = addResource(newState.resources, effectiveDefinition.resourceProduced, resourceGained);
-    newState = {
-      ...newState,
-      resources: resourceResult.resources,
-    };
+  if (resourceRewards.length > 0) {
+    for (const reward of resourceRewards) {
+      const resourceResult = addResource(newState.resources, reward.resourceId, reward.amount);
+      newState = {
+        ...newState,
+        resources: resourceResult.resources,
+      };
+    }
   }
 
   // Check if bag is full before processing drops to prevent item loss
@@ -148,17 +165,71 @@ function processSkillTick(state: GameState, skillId: SkillId, ticksElapsed: numb
     events.push(...dropResult.events);
   }
 
-  if (xpGained > 0 || resourceGained > 0) {
-    events.push({
-      type: 'SKILL_ACTION',
-      skillId,
-      xpGained,
-      resourceId: effectiveDefinition.resourceProduced,
-      resourceGained,
-    });
+  if (xpGained > 0 || totalResourceGained > 0) {
+    if (resourceRewards.length === 0) {
+      events.push({
+        type: 'SKILL_ACTION',
+        skillId,
+        xpGained,
+        resourceId: effectiveDefinition.resourceProduced,
+        resourceGained: 0,
+      });
+    } else {
+      resourceRewards.forEach((reward, index) => {
+        events.push({
+          type: 'SKILL_ACTION',
+          skillId,
+          xpGained: index === 0 ? xpGained : 0,
+          resourceId: reward.resourceId,
+          resourceGained: reward.amount,
+        });
+      });
+    }
   }
 
   return { state: newState, events };
+}
+
+interface SkillResourceReward {
+  resourceId: ResourceId;
+  amount: number;
+}
+
+function getSkillResourceRewards(
+  skillId: SkillId,
+  resourceId: ResourceId,
+  totalResourceGained: number,
+  seed: number
+): SkillResourceReward[] {
+  if (totalResourceGained <= 0) {
+    return [];
+  }
+
+  if (skillId !== 'mining') {
+    return [{ resourceId, amount: totalResourceGained }];
+  }
+
+  const rng = createRng(seed);
+  let oreGained = 0;
+  let stoneGained = 0;
+
+  for (let i = 0; i < totalResourceGained; i++) {
+    if (rollChance(rng, 0.5)) {
+      oreGained++;
+    } else {
+      stoneGained++;
+    }
+  }
+
+  const rewards: SkillResourceReward[] = [];
+  if (oreGained > 0) {
+    rewards.push({ resourceId: 'ore', amount: oreGained });
+  }
+  if (stoneGained > 0) {
+    rewards.push({ resourceId: 'stone', amount: stoneGained });
+  }
+
+  return rewards;
 }
 
 function getEffectiveSkillDefinition(

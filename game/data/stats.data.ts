@@ -20,6 +20,18 @@ const ATTRIBUTE_STATS: AttributeStatDefinition[] = [
     category: 'attribute',
     order: 20,
   },
+  {
+    id: 'player_health',
+    label: 'Health',
+    category: 'attribute',
+    order: 30,
+  },
+  {
+    id: 'player_mana',
+    label: 'Mana',
+    category: 'attribute',
+    order: 40,
+  },
 ];
 
 const SKILL_STATS: SkillStatDefinition[] = SKILL_IDS.map((skillId, index) => {

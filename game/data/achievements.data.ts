@@ -90,33 +90,33 @@ export const ACHIEVEMENT_DEFINITIONS: Record<string, AchievementDefinition> = {
     rewards: [{ type: 'multiplier', target: 'mining', bonus: 0.15 }],
   },
 
-  // Smithing achievements
+  // Crafting achievements
   smith_10: {
     id: 'smith_10',
-    name: 'Apprentice Smith',
-    description: 'Reach Smithing level 10',
+    name: 'Apprentice Crafter',
+    description: 'Reach Crafting level 10',
     icon: '🔨',
     category: 'skill',
-    condition: { type: 'skill_level', skillId: 'smithing', level: 10 },
-    rewards: [{ type: 'multiplier', target: 'smithing', bonus: 0.05 }],
+    condition: { type: 'skill_level', skillId: 'crafting', level: 10 },
+    rewards: [{ type: 'multiplier', target: 'crafting', bonus: 0.05 }],
   },
   smith_25: {
     id: 'smith_25',
-    name: 'Skilled Smith',
-    description: 'Reach Smithing level 25',
+    name: 'Skilled Crafter',
+    description: 'Reach Crafting level 25',
     icon: '🔨',
     category: 'skill',
-    condition: { type: 'skill_level', skillId: 'smithing', level: 25 },
-    rewards: [{ type: 'multiplier', target: 'smithing', bonus: 0.10 }],
+    condition: { type: 'skill_level', skillId: 'crafting', level: 25 },
+    rewards: [{ type: 'multiplier', target: 'crafting', bonus: 0.10 }],
   },
   smith_50: {
     id: 'smith_50',
-    name: 'Expert Smith',
-    description: 'Reach Smithing level 50',
+    name: 'Expert Crafter',
+    description: 'Reach Crafting level 50',
     icon: '🏆',
     category: 'skill',
-    condition: { type: 'skill_level', skillId: 'smithing', level: 50 },
-    rewards: [{ type: 'multiplier', target: 'smithing', bonus: 0.15 }],
+    condition: { type: 'skill_level', skillId: 'crafting', level: 50 },
+    rewards: [{ type: 'multiplier', target: 'crafting', bonus: 0.15 }],
   },
 
   // Quest achievements

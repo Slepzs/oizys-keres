@@ -91,6 +91,13 @@ export interface InfrastructureDefinition {
 
 export type InfrastructureLevelsState = Record<InfrastructureId, number>;
 
+export interface CraftingAutomationState {
+  recipeId: CraftingRecipeId | null;
+  quantity: number;
+  tickProgress: number;
+}
+
 export interface CraftingState {
   infrastructureLevels: InfrastructureLevelsState;
+  automation: CraftingAutomationState;
 }

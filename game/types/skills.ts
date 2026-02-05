@@ -1,6 +1,6 @@
 import type { ResourceId } from './resources';
 
-export type SkillId = 'woodcutting' | 'mining' | 'smithing';
+export type SkillId = 'woodcutting' | 'mining' | 'crafting';
 
 export interface SkillState {
   level: number;

@@ -90,16 +90,16 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     ],
   },
 
-  // Smithing Chain
+  // Crafting Chain
   forge_apprentice: {
     id: 'forge_apprentice',
     name: 'Forge Apprentice',
-    description: 'Start training smithing beyond the basics.',
+    description: 'Start training crafting beyond the basics.',
     icon: '🔨',
     category: 'main',
     unlock: [{ type: 'quest_completed', questId: 'ore_collector' }],
     objectives: [
-      { id: 'xp', type: 'gain_xp', target: 'smithing', amount: 250 },
+      { id: 'xp', type: 'gain_xp', target: 'crafting', amount: 250 },
       { id: 'ore', type: 'gain_resource', target: 'ore', amount: 60 },
     ],
     rewards: [
@@ -110,12 +110,12 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
   forge_journeyman: {
     id: 'forge_journeyman',
     name: 'Forge Journeyman',
-    description: 'Reach early smithing mastery with a full stone reserve.',
+    description: 'Reach early crafting mastery with a full stone reserve.',
     icon: '⚒️',
     category: 'skill',
     unlock: [{ type: 'quest_completed', questId: 'forge_apprentice' }],
     objectives: [
-      { id: 'level', type: 'reach_level', target: 'smithing', level: 7 },
+      { id: 'level', type: 'reach_level', target: 'crafting', level: 7 },
       { id: 'ore', type: 'gain_resource', target: 'ore', amount: 180 },
     ],
     rewards: [
@@ -234,15 +234,15 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
 
   daily_smith: {
     id: 'daily_smith',
-    name: 'Daily: Smithing',
-    description: 'Complete your daily smithing shift.',
+    name: 'Daily: Crafting',
+    description: 'Complete your daily crafting shift.',
     icon: '📅',
     category: 'daily',
     repeatable: true,
     cooldownMs: 86400000, // 24 hours
-    unlock: [{ type: 'level_at_least', skill: 'smithing', value: 5 }],
+    unlock: [{ type: 'level_at_least', skill: 'crafting', value: 5 }],
     objectives: [
-      { id: 'xp', type: 'gain_xp', target: 'smithing', amount: 900 },
+      { id: 'xp', type: 'gain_xp', target: 'crafting', amount: 900 },
     ],
     rewards: [
       { type: 'player_xp', amount: 70 },

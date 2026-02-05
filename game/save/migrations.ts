@@ -4,10 +4,43 @@ import { createInitialBagState } from '../data/items.data';
 import { createInitialQuestsState } from '../data/quests.data';
 import { createInitialAchievementsState } from '../data/achievements.data';
 import { createInitialCraftingState } from '../data/crafting.data';
+import { playerMaxHealthForLevel, playerMaxManaForLevel } from '../data/curves';
 import { createInitialMultipliersState } from '../logic/multipliers';
 import { createInitialCombatState } from '../logic/combat';
 
 type MigrationFn = (save: SaveBlob) => SaveBlob;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function migratePlayerVitals(save: SaveBlob, targetVersion: number): SaveBlob {
+  const level = Math.max(1, Math.floor(save.state.player.level ?? 1));
+  const maxHealth = playerMaxHealthForLevel(level);
+  const maxMana = playerMaxManaForLevel(level);
+
+  const currentHealth = Number.isFinite((save.state.player as any)?.health)
+    ? (save.state.player as any).health
+    : maxHealth;
+  const currentMana = Number.isFinite((save.state.player as any)?.mana)
+    ? (save.state.player as any).mana
+    : maxMana;
+
+  return {
+    ...save,
+    version: targetVersion,
+    state: {
+      ...save.state,
+      player: {
+        ...save.state.player,
+        health: clamp(currentHealth, 0, maxHealth),
+        maxHealth,
+        mana: clamp(currentMana, 0, maxMana),
+        maxMana,
+      },
+    },
+  };
+}
 
 /**
  * Registry of migration functions.
@@ -133,6 +166,75 @@ const migrations: Record<number, MigrationFn> = {
       crafting: createInitialCraftingState(),
     },
   }),
+
+  // Migration from v10 to v11: Add player health/mana vitals
+  10: (save) => migratePlayerVitals(save, 11),
+
+  // Migration from v11 to v12: Rename smithing -> crafting and add crafting automation state
+  11: (save) => {
+    const rawSkills = (save.state.skills as any) ?? {};
+    const { smithing: legacySmithing, ...skillsWithoutLegacy } = rawSkills;
+    const mergedCraftingSkill = {
+      ...(skillsWithoutLegacy.crafting ?? {}),
+      ...(legacySmithing ?? {}),
+    };
+
+    mergedCraftingSkill.automationUnlocked = true;
+
+    const rawSkillStats = (save.state.skillStats as any) ?? {};
+    const { smithing: legacySmithingStats, ...skillStatsWithoutLegacy } = rawSkillStats;
+    const mergedCraftingStats = {
+      ...(skillStatsWithoutLegacy.crafting ?? {}),
+      ...(legacySmithingStats ?? {}),
+    };
+
+    const baseCrafting = createInitialCraftingState();
+    const rawCrafting = (save.state as any).crafting ?? {};
+    const rawAutomation = rawCrafting.automation ?? {};
+
+    return {
+      ...save,
+      version: 12,
+      state: {
+        ...save.state,
+        skills: {
+          ...skillsWithoutLegacy,
+          crafting: mergedCraftingSkill,
+        },
+        skillStats: {
+          ...skillStatsWithoutLegacy,
+          crafting: mergedCraftingStats,
+        },
+        multipliers: {
+          ...(save.state.multipliers ?? createInitialMultipliersState()),
+          active: ((save.state.multipliers?.active ?? []) as Array<any>).map((multiplier) => (
+            multiplier.target === 'smithing'
+              ? { ...multiplier, target: 'crafting' }
+              : multiplier
+          )),
+        },
+        activeSkill: save.state.activeSkill === 'smithing' ? null : save.state.activeSkill,
+        crafting: {
+          ...baseCrafting,
+          ...rawCrafting,
+          infrastructureLevels: {
+            ...baseCrafting.infrastructureLevels,
+            ...(rawCrafting.infrastructureLevels ?? {}),
+          },
+          automation: {
+            ...baseCrafting.automation,
+            ...rawAutomation,
+            recipeId: typeof rawAutomation.recipeId === 'string' ? rawAutomation.recipeId : null,
+            quantity: Math.max(1, Math.floor(rawAutomation.quantity ?? baseCrafting.automation.quantity)),
+            tickProgress: Math.max(0, Number(rawAutomation.tickProgress ?? baseCrafting.automation.tickProgress)),
+          },
+        },
+      },
+    };
+  },
+
+  // Migration from v12 to v13: Ensure player health/mana vitals for all modern saves
+  12: (save) => migratePlayerVitals(save, 13),
 };
 
 /**

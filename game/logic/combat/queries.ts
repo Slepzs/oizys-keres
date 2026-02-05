@@ -18,6 +18,7 @@ const HP_PER_DEFENSE_LEVEL = 5;
 
 // Default attack speed (seconds between attacks)
 const DEFAULT_ATTACK_SPEED = 2.4;
+const COMBAT_XP_REWARD_MULTIPLIER = 1.5;
 
 /**
  * Get combat skill level from XP.
@@ -152,11 +153,21 @@ export function distributeXpOnKill(
     }
   };
 
+  const adjustedXpReward = Math.max(1, Math.floor(xpReward * COMBAT_XP_REWARD_MULTIPLIER));
+
   if (trainingMode === 'balanced') {
-    const xpPerSkill = Math.floor(xpReward / 3);
+    const skillCount = COMBAT_SKILL_IDS.length;
+    const xpPerSkill = Math.floor(adjustedXpReward / skillCount);
+    let remainder = adjustedXpReward - xpPerSkill * skillCount;
+
     for (const skillId of COMBAT_SKILL_IDS) {
+      const extraXp = remainder > 0 ? 1 : 0;
+      if (remainder > 0) {
+        remainder -= 1;
+      }
+
       const oldXp = newSkills[skillId].xp;
-      const newXp = oldXp + xpPerSkill;
+      const newXp = oldXp + xpPerSkill + extraXp;
       newSkills = {
         ...newSkills,
         [skillId]: { xp: newXp },
@@ -165,7 +176,7 @@ export function distributeXpOnKill(
     }
   } else {
     const oldXp = newSkills[trainingMode].xp;
-    const newXp = oldXp + xpReward;
+    const newXp = oldXp + adjustedXpReward;
     newSkills = {
       ...newSkills,
       [trainingMode]: { xp: newXp },
@@ -175,4 +186,3 @@ export function distributeXpOnKill(
 
   return { skills: newSkills, levelUps };
 }
-

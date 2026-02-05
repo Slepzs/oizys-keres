@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from './gameStore';
 import { xpForPlayerLevel, xpForSkillLevel } from '@/game/data';
 import type { SkillId, CombatSkillId, TrainingMode, EquipmentSlot } from '@/game/types';
-import { SKILL_IDS, COMBAT_SKILL_DEFINITIONS, WOODCUTTING_TREES } from '@/game/data';
+import { SKILL_IDS, COMBAT_SKILL_DEFINITIONS, WOODCUTTING_TREES, ENEMY_DEFINITIONS } from '@/game/data';
 import {
   getCombatSkillLevel,
   getCombatSkillXpProgress,
@@ -18,20 +18,25 @@ import {
 } from '@/game/logic';
 import { COMBAT_SKILL_IDS } from '@/game/types';
 
-const BASE_HEALTH = 100;
-const HEALTH_PER_LEVEL = 10;
-
 export function usePlayerSummary() {
-  const { level, xp } = useGameStore(
-    useShallow((state) => ({ level: state.player.level, xp: state.player.xp }))
+  const { level, xp, health, maxHealth, mana, maxMana } = useGameStore(
+    useShallow((state) => ({
+      level: state.player.level,
+      xp: state.player.xp,
+      health: state.player.health,
+      maxHealth: state.player.maxHealth,
+      mana: state.player.mana,
+      maxMana: state.player.maxMana,
+    }))
   );
 
   return useMemo(() => {
     const xpRequired = xpForPlayerLevel(level + 1);
     const progress = xpRequired > 0 ? xp / xpRequired : 1;
-    const maxHealth = BASE_HEALTH + level * HEALTH_PER_LEVEL;
-    const currentHealth = maxHealth;
-    const healthProgress = maxHealth > 0 ? currentHealth / maxHealth : 1;
+    const currentHealth = Math.floor(health);
+    const currentMana = Math.floor(mana);
+    const healthProgress = maxHealth > 0 ? health / maxHealth : 1;
+    const manaProgress = maxMana > 0 ? mana / maxMana : 1;
 
     return {
       level,
@@ -41,8 +46,11 @@ export function usePlayerSummary() {
       currentHealth,
       maxHealth,
       healthProgress,
+      currentMana,
+      maxMana,
+      manaProgress,
     };
-  }, [level, xp]);
+  }, [level, xp, health, maxHealth, mana, maxMana]);
 }
 
 export function useSkillSummaries() {
@@ -178,6 +186,43 @@ export function useActiveCombat() {
       playerMaxHp,
     };
   }, [activeCombat, playerCurrentHp, playerMaxHp]);
+}
+
+export function useCombatTracker() {
+  const { enemyId, enemyCurrentHp, playerCurrentHp, playerMaxHp } = useGameStore(
+    useShallow((state) => ({
+      enemyId: state.combat.activeCombat?.enemyId ?? null,
+      enemyCurrentHp: state.combat.activeCombat?.enemyCurrentHp ?? 0,
+      playerCurrentHp: state.combat.playerCurrentHp,
+      playerMaxHp: state.combat.playerMaxHp,
+    }))
+  );
+
+  return useMemo(() => {
+    if (!enemyId) {
+      return null;
+    }
+
+    const enemy = ENEMY_DEFINITIONS[enemyId];
+    if (!enemy) {
+      return null;
+    }
+
+    const playerProgress = playerMaxHp > 0 ? playerCurrentHp / playerMaxHp : 0;
+    const enemyProgress = enemy.maxHp > 0 ? enemyCurrentHp / enemy.maxHp : 0;
+
+    return {
+      enemyId,
+      enemyName: enemy.name,
+      enemyIcon: enemy.icon,
+      enemyMaxHp: enemy.maxHp,
+      enemyCurrentHp,
+      enemyProgress,
+      playerCurrentHp,
+      playerMaxHp,
+      playerProgress,
+    };
+  }, [enemyId, enemyCurrentHp, playerCurrentHp, playerMaxHp]);
 }
 
 export function useEquipment() {

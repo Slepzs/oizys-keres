@@ -46,7 +46,7 @@ export const RESOURCE_DEFINITIONS: Record<ResourceId, ResourceDefinition> = {
   ore: {
     id: 'ore',
     name: 'Ore',
-    description: 'Raw metal ore for smithing.',
+    description: 'Raw metal ore for crafting.',
     icon: '⛏️',
   },
 };

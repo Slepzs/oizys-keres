@@ -54,6 +54,11 @@ export function createInitialCraftingState(): CraftingState {
       sawmill: 0,
       armory: 0,
     },
+    automation: {
+      recipeId: null,
+      quantity: 1,
+      tickProgress: 0,
+    },
   };
 }
 
@@ -270,7 +275,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 60 },
       { type: 'skill_level', skillId: 'mining', level: 40 },
-      { type: 'skill_level', skillId: 'smithing', level: 24 },
+      { type: 'skill_level', skillId: 'crafting', level: 24 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [
@@ -292,7 +297,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 68 },
       { type: 'skill_level', skillId: 'mining', level: 48 },
-      { type: 'skill_level', skillId: 'smithing', level: 35 },
+      { type: 'skill_level', skillId: 'crafting', level: 35 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [
@@ -588,7 +593,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 56 },
       { type: 'skill_level', skillId: 'mining', level: 38 },
-      { type: 'skill_level', skillId: 'smithing', level: 20 },
+      { type: 'skill_level', skillId: 'crafting', level: 20 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [
@@ -609,7 +614,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 58 },
       { type: 'skill_level', skillId: 'mining', level: 40 },
-      { type: 'skill_level', skillId: 'smithing', level: 22 },
+      { type: 'skill_level', skillId: 'crafting', level: 22 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [
@@ -630,7 +635,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 57 },
       { type: 'skill_level', skillId: 'mining', level: 39 },
-      { type: 'skill_level', skillId: 'smithing', level: 21 },
+      { type: 'skill_level', skillId: 'crafting', level: 21 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [
@@ -651,7 +656,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 56 },
       { type: 'skill_level', skillId: 'mining', level: 38 },
-      { type: 'skill_level', skillId: 'smithing', level: 20 },
+      { type: 'skill_level', skillId: 'crafting', level: 20 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [
@@ -672,7 +677,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 64 },
       { type: 'skill_level', skillId: 'mining', level: 45 },
-      { type: 'skill_level', skillId: 'smithing', level: 30 },
+      { type: 'skill_level', skillId: 'crafting', level: 30 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [
@@ -694,7 +699,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 67 },
       { type: 'skill_level', skillId: 'mining', level: 47 },
-      { type: 'skill_level', skillId: 'smithing', level: 33 },
+      { type: 'skill_level', skillId: 'crafting', level: 33 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [
@@ -716,7 +721,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 68 },
       { type: 'skill_level', skillId: 'mining', level: 48 },
-      { type: 'skill_level', skillId: 'smithing', level: 34 },
+      { type: 'skill_level', skillId: 'crafting', level: 34 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [
@@ -738,7 +743,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 70 },
       { type: 'skill_level', skillId: 'mining', level: 50 },
-      { type: 'skill_level', skillId: 'smithing', level: 36 },
+      { type: 'skill_level', skillId: 'crafting', level: 36 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [
@@ -760,7 +765,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 60 },
       { type: 'skill_level', skillId: 'mining', level: 40 },
-      { type: 'skill_level', skillId: 'smithing', level: 26 },
+      { type: 'skill_level', skillId: 'crafting', level: 26 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [
@@ -782,7 +787,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     requirements: [
       { type: 'skill_level', skillId: 'woodcutting', level: 66 },
       { type: 'skill_level', skillId: 'mining', level: 46 },
-      { type: 'skill_level', skillId: 'smithing', level: 32 },
+      { type: 'skill_level', skillId: 'crafting', level: 32 },
       { type: 'infrastructure_level', infrastructureId: 'armory', level: 1 },
     ],
     costs: [

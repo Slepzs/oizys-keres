@@ -26,6 +26,8 @@ export const colors = {
   xpBarBg: '#1e3a5f',
   healthBar: '#4ade80',
   healthBarBg: '#1e3a1e',
+  manaBar: '#60a5fa',
+  manaBarBg: '#1e3a70',
 
   // Item rarities
   rarityCommon: '#9ca3af',

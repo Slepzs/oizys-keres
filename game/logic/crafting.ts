@@ -1,4 +1,5 @@
 import { CRAFTING_RECIPES, INFRASTRUCTURE_DEFINITIONS } from '../data/crafting.data';
+import { skillSpeedMultiplier } from '../data/curves';
 import { ITEM_DEFINITIONS } from '../data/items.data';
 import { RESOURCE_DEFINITIONS } from '../data/resources.data';
 import { SKILL_DEFINITIONS } from '../data/skills.data';
@@ -13,8 +14,9 @@ import type {
   InfrastructureId,
 } from '../types/crafting';
 import { addItemToBag, countItemInBag, removeItemFromBag } from './bag';
-import { addMultiplier } from './multipliers';
+import { addMultiplier, getSkillXpMultiplier } from './multipliers';
 import { removeResource } from './resources';
+import { addPlayerXp, addSkillXp } from './xp';
 
 export type CraftingSnapshotState = Pick<GameState, 'skills' | 'resources' | 'bag' | 'crafting'>;
 
@@ -33,6 +35,11 @@ export interface CraftRecipeResult {
   crafted: number;
   error?: string;
   recipe?: CraftingRecipe;
+}
+
+export interface CraftingAutomationTickResult {
+  state: GameState;
+  events: GameEvent[];
 }
 
 export function getCraftingRecipe(recipeId: CraftingRecipeId): CraftingRecipe | null {
@@ -279,12 +286,96 @@ export function craftRecipe(state: GameState, recipeId: CraftingRecipeId, quanti
     });
   }
 
+  const xpResult = applyCraftingXp(newState, recipe, crafted);
+  newState = xpResult.state;
+  events.push(...xpResult.events);
+
   return {
     success: true,
     state: newState,
     events,
     crafted,
     recipe,
+  };
+}
+
+export function processCraftingAutomationTick(
+  state: GameState,
+  ticksElapsed: number
+): CraftingAutomationTickResult {
+  const recipeId = state.crafting.automation.recipeId;
+  if (!recipeId) {
+    return { state, events: [] };
+  }
+
+  const craftingSkill = state.skills.crafting;
+  if (!craftingSkill?.automationEnabled) {
+    if ((state.crafting.automation.tickProgress ?? 0) <= 0) {
+      return { state, events: [] };
+    }
+
+    return {
+      state: setCraftingTickProgress(state, 0),
+      events: [],
+    };
+  }
+
+  const recipe = getCraftingRecipe(recipeId);
+  if (!recipe) {
+    return {
+      state: {
+        ...setCraftingTickProgress(state, 0),
+        crafting: {
+          ...state.crafting,
+          automation: {
+            ...state.crafting.automation,
+            recipeId: null,
+          },
+        },
+      },
+      events: [],
+    };
+  }
+
+  const speedMult = skillSpeedMultiplier(Math.max(1, craftingSkill.level));
+  const ticksPerCraft = Math.max(1, SKILL_DEFINITIONS.crafting.ticksPerAction / speedMult);
+  const totalTicks = (state.crafting.automation.tickProgress ?? 0) + ticksElapsed;
+  const actionsCompleted = Math.floor(totalTicks / ticksPerCraft);
+  const remainingTicks = totalTicks % ticksPerCraft;
+
+  if (actionsCompleted <= 0) {
+    return {
+      state: setCraftingTickProgress(state, remainingTicks),
+      events: [],
+    };
+  }
+
+  const desiredQuantity = Math.max(1, Math.floor(state.crafting.automation.quantity || 1));
+  let workingState = state;
+  const events: GameEvent[] = [];
+  let blocked = false;
+
+  for (let action = 0; action < actionsCompleted; action++) {
+    const status = getCraftingRecipeStatus(workingState, recipeId);
+    if (!status.unlocked || status.atInfrastructureCap || status.maxCraftable <= 0) {
+      blocked = true;
+      break;
+    }
+
+    const craftQuantity = Math.min(desiredQuantity, status.maxCraftable);
+    const craftResult = craftRecipe(workingState, recipeId, craftQuantity);
+    if (!craftResult.success || craftResult.crafted <= 0) {
+      blocked = true;
+      break;
+    }
+
+    workingState = craftResult.state;
+    events.push(...craftResult.events);
+  }
+
+  return {
+    state: setCraftingTickProgress(workingState, blocked ? 0 : remainingTicks),
+    events,
   };
 }
 
@@ -372,6 +463,103 @@ function applyInfrastructureBonuses(state: GameState, infrastructureId: Infrastr
   }
 
   return nextState;
+}
+
+function applyCraftingXp(state: GameState, recipe: CraftingRecipe, crafted: number): CraftingAutomationTickResult {
+  const craftingSkill = state.skills.crafting;
+  if (!craftingSkill || crafted <= 0) {
+    return { state, events: [] };
+  }
+
+  const baseXp = getRecipeXpGain(recipe, crafted);
+  const xpMultiplier = getSkillXpMultiplier(state, 'crafting');
+  const xpGained = Math.max(0, Math.floor(baseXp * xpMultiplier));
+  if (xpGained <= 0) {
+    return { state, events: [] };
+  }
+
+  const skillXpResult = addSkillXp(craftingSkill, xpGained);
+  const updatedCraftingSkill = {
+    ...craftingSkill,
+    xp: skillXpResult.newXp,
+    level: skillXpResult.newLevel,
+  };
+
+  const events: GameEvent[] = [
+    {
+      type: 'SKILL_ACTION',
+      skillId: 'crafting',
+      xpGained,
+      resourceId: SKILL_DEFINITIONS.crafting.resourceProduced,
+      resourceGained: 0,
+    },
+  ];
+
+  if (
+    !updatedCraftingSkill.automationUnlocked
+    && updatedCraftingSkill.level >= SKILL_DEFINITIONS.crafting.automationUnlockLevel
+  ) {
+    updatedCraftingSkill.automationUnlocked = true;
+    events.push({ type: 'AUTOMATION_UNLOCKED', skillId: 'crafting' });
+  }
+
+  let nextState: GameState = {
+    ...state,
+    skills: {
+      ...state.skills,
+      crafting: updatedCraftingSkill,
+    },
+  };
+
+  if (skillXpResult.leveledUp) {
+    events.push({ type: 'SKILL_LEVEL_UP', skillId: 'crafting', newLevel: skillXpResult.newLevel });
+  }
+
+  const playerXpGained = Math.floor(xpGained * 0.1);
+  if (playerXpGained > 0) {
+    const playerXpResult = addPlayerXp(state.player, playerXpGained);
+    nextState = {
+      ...nextState,
+      player: {
+        ...state.player,
+        xp: playerXpResult.newXp,
+        level: playerXpResult.newLevel,
+      },
+    };
+
+    if (playerXpResult.leveledUp) {
+      events.push({ type: 'PLAYER_LEVEL_UP', newLevel: playerXpResult.newLevel });
+    }
+  }
+
+  return { state: nextState, events };
+}
+
+function getRecipeXpGain(recipe: CraftingRecipe, crafted: number): number {
+  const weightedCost = recipe.costs.reduce((total, cost) => {
+    if (cost.type === 'resource') {
+      return total + cost.amount;
+    }
+
+    return total + cost.amount * 8;
+  }, 0);
+
+  const outputWeight = recipe.output.type === 'infrastructure' ? 1.35 : 1;
+  const xpPerCraft = Math.max(6, Math.floor((weightedCost * outputWeight) / 6));
+  return xpPerCraft * crafted;
+}
+
+function setCraftingTickProgress(state: GameState, tickProgress: number): GameState {
+  return {
+    ...state,
+    crafting: {
+      ...state.crafting,
+      automation: {
+        ...state.crafting.automation,
+        tickProgress: Math.max(0, tickProgress),
+      },
+    },
+  };
 }
 
 function buildMissingRequirementsMessage(requirements: CraftingRequirement[]): string {

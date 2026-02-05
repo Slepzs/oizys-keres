@@ -13,9 +13,9 @@ import { SKILL_DEFINITIONS, SKILL_IDS, WOODCUTTING_TREES } from '@/game/data';
 import type { SkillId } from '@/game/types';
 
 const SKILL_CRAFTING_PLACEHOLDER: Record<SkillId, string> = {
-  woodcutting: 'Use gathered materials for tools and infrastructure.',
-  mining: 'Mining crafting pipeline placeholder.',
-  smithing: 'Smithing crafting pipeline placeholder.',
+  woodcutting: 'Gather wood to feed crafting recipes.',
+  mining: 'Gather ore and stone for advanced recipes.',
+  crafting: 'Crafting XP comes from crafting completed recipes.',
 };
 
 export function SkillsScreen() {
@@ -24,6 +24,11 @@ export function SkillsScreen() {
   const [showTreeSelector, setShowTreeSelector] = useState(false);
 
   const handleSkillPress = (skillId: SkillId) => {
+    if (skillId === 'crafting') {
+      router.push('/crafting');
+      return;
+    }
+
     if (state.activeSkill === skillId) {
       setActiveSkill(null);
     } else {
@@ -44,8 +49,9 @@ export function SkillsScreen() {
         {SKILL_IDS.map((skillId) => {
           const skill = state.skills[skillId];
           const definition = SKILL_DEFINITIONS[skillId];
-          const isActive = state.activeSkill === skillId;
-          const hasCraftingSystem = skillId === 'woodcutting';
+          const isTrainable = skillId !== 'crafting';
+          const isActive = isTrainable && state.activeSkill === skillId;
+          const hasCraftingSystem = skillId === 'crafting';
 
           const cardStyle = isActive
             ? { ...styles.skillCard, ...styles.activeCard }
@@ -69,6 +75,9 @@ export function SkillsScreen() {
                 <Text style={styles.level}>Level {skill.level}</Text>
                 {isActive && (
                   <Text style={styles.activeText}>Training...</Text>
+                )}
+                {!isActive && skillId === 'crafting' && (
+                  <Text style={styles.activeText}>Recipe-based</Text>
                 )}
               </View>
 

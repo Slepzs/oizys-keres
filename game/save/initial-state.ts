@@ -10,6 +10,7 @@ import {
 } from "../data/stats.data";
 import { createInitialCombatState } from "../logic/combat";
 import { createInitialMultipliersState } from "../logic/multipliers";
+import { playerMaxHealthForLevel, playerMaxManaForLevel } from "../data/curves";
 import type { BagSettings, GameState, NotificationsState } from "../types";
 
 export function createInitialBagSettings(): BagSettings {
@@ -37,12 +38,19 @@ export interface CreateInitialGameStateParams {
 export function createInitialGameState(params: CreateInitialGameStateParams = {}): GameState {
 	const now = params.now ?? Date.now();
 	const rngSeed = params.rngSeed ?? Math.floor(Math.random() * 2147483647);
+	const startingLevel = 1;
+	const startingMaxHealth = playerMaxHealthForLevel(startingLevel);
+	const startingMaxMana = playerMaxManaForLevel(startingLevel);
 
 	return {
 		player: {
-			level: 1,
+			level: startingLevel,
 			xp: 0,
 			coins: 0,
+			health: startingMaxHealth,
+			maxHealth: startingMaxHealth,
+			mana: startingMaxMana,
+			maxMana: startingMaxMana,
 		},
 		skills: createInitialSkillsState(),
 		attributes: createInitialAttributesState(),

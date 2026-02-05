@@ -23,26 +23,27 @@ export const SKILL_DEFINITIONS: Record<SkillId, SkillDefinition> = {
     automationUnlockLevel: 15,
     ticksPerAction: 40, // 4 seconds
   },
-  smithing: {
-    id: 'smithing',
-    name: 'Smithing',
-    description: 'Craft items from ore and other materials.',
+  crafting: {
+    id: 'crafting',
+    name: 'Crafting',
+    description: 'Turn gathered materials into tools, gear, and infrastructure.',
     icon: '🔨',
-    baseXpPerAction: 15,
-    baseResourcePerAction: 1,
-    resourceProduced: 'ore', // consumes ore, produces items later
-    automationUnlockLevel: 20,
-    ticksPerAction: 50, // 5 seconds
+    baseXpPerAction: 0,
+    baseResourcePerAction: 0,
+    resourceProduced: 'ore',
+    automationUnlockLevel: 1,
+    ticksPerAction: 45, // Used by auto-crafting cadence
   },
 };
 
-export function createInitialSkillState(): SkillState {
+export function createInitialSkillState(overrides: Partial<SkillState> = {}): SkillState {
   return {
     level: 1,
     xp: 0,
     automationUnlocked: false,
     automationEnabled: false,
     tickProgress: 0,
+    ...overrides,
   };
 }
 
@@ -50,7 +51,7 @@ export function createInitialSkillsState(): SkillsState {
   return {
     woodcutting: createInitialSkillState(),
     mining: createInitialSkillState(),
-    smithing: createInitialSkillState(),
+    crafting: createInitialSkillState({ automationUnlocked: true }),
   };
 }
 

@@ -55,7 +55,7 @@ export const SKILL_DROP_TABLES: Record<SkillId, SkillDropTable> = {
     },
   ],
 
-  smithing: [
+  crafting: [
     {
       itemId: 'bronze_ingot',
       chance: 0.3,

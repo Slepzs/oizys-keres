@@ -12,32 +12,32 @@ interface NotificationToastProps {
 
 const NOTIFICATION_COLORS: Record<NotificationType, { bg: string; border: string; icon: string }> = {
   quest: {
-    bg: 'rgba(74, 158, 255, 0.15)',
+    bg: '#1a2638',
     border: colors.primary,
     icon: colors.primary,
   },
   achievement: {
-    bg: 'rgba(251, 191, 36, 0.15)',
+    bg: '#332a12',
     border: colors.warning,
     icon: colors.warning,
   },
   skill_level_up: {
-    bg: 'rgba(74, 222, 128, 0.15)',
+    bg: '#163126',
     border: colors.success,
     icon: colors.success,
   },
   player_level_up: {
-    bg: 'rgba(168, 85, 247, 0.15)',
+    bg: '#2b1f3b',
     border: colors.rarityEpic,
     icon: colors.rarityEpic,
   },
   combat: {
-    bg: 'rgba(248, 113, 113, 0.15)',
+    bg: '#341d1d',
     border: colors.error,
     icon: colors.error,
   },
   system: {
-    bg: 'rgba(160, 160, 160, 0.15)',
+    bg: colors.surfaceLight,
     border: colors.textSecondary,
     icon: colors.textSecondary,
   },

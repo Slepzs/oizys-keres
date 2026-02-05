@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { BagGrid } from '../components/game/BagGrid';
@@ -9,7 +9,7 @@ import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants
 import { getUsedSlotCount } from '@/game/logic';
 import { formatNumber } from '@/utils/format';
 import type { SortMode } from '@/game/types';
-import { DEFAULT_BAG_SIZE } from '@/game/data';
+import { DEFAULT_BAG_SIZE, ITEM_DEFINITIONS } from '@/game/data';
 
 const SORT_MODE_LABELS: Record<SortMode, string> = {
   rarity: 'Rarity',
@@ -23,7 +23,7 @@ const SORT_MODES: SortMode[] = ['rarity', 'category', 'quantity', 'name'];
 export function BagScreen() {
   const bag = useBag();
   const bagSettings = useBagSettings();
-  const { sortBag, consolidateBag, toggleAutoSort, setSortMode, setActiveBagTab } = useGameActions();
+  const { sortBag, consolidateBag, sellAll, toggleAutoSort, setSortMode, setActiveBagTab } = useGameActions();
   const coins = useGameStore((state) => state.player.coins);
   const insets = useSafeAreaInsets();
   const [showSortModal, setShowSortModal] = useState(false);
@@ -37,6 +37,24 @@ export function BagScreen() {
   const tabCount = useMemo(() => Math.max(1, Math.ceil(bag.maxSlots / tabSize)), [bag.maxSlots, tabSize]);
   const activeTabIndex = Math.max(0, Math.min(bagSettings.activeTabIndex, tabCount - 1));
   const slotOffset = activeTabIndex * tabSize;
+  const sellAllPreview = useMemo(() => {
+    let slotsSellable = 0;
+    let itemsSellable = 0;
+    let coinsTotal = 0;
+
+    for (const slot of bag.slots) {
+      if (!slot || slot.locked) continue;
+
+      const definition = ITEM_DEFINITIONS[slot.itemId];
+      if (!definition || definition.sellPrice <= 0) continue;
+
+      slotsSellable += 1;
+      itemsSellable += slot.quantity;
+      coinsTotal += definition.sellPrice * slot.quantity;
+    }
+
+    return { slotsSellable, itemsSellable, coinsTotal };
+  }, [bag.slots]);
 
   const selectedSlot = selectedIndex !== null ? bag.slots[selectedIndex] : null;
 
@@ -50,6 +68,37 @@ export function BagScreen() {
     sortBag(mode);
     setSortMode(mode);
     setShowSortModal(false);
+  };
+
+  const handleSellAll = () => {
+    if (sellAllPreview.itemsSellable <= 0) {
+      Alert.alert('Nothing to Sell', 'No unlocked sellable items in your bag.');
+      return;
+    }
+
+    const itemLabel = sellAllPreview.itemsSellable === 1 ? 'item' : 'items';
+    const slotLabel = sellAllPreview.slotsSellable === 1 ? 'slot' : 'slots';
+
+    Alert.alert(
+      'Sell All',
+      `Sell ${formatNumber(sellAllPreview.itemsSellable)} ${itemLabel} from ${formatNumber(sellAllPreview.slotsSellable)} ${slotLabel} for ${'\u{1FA99}'} ${formatNumber(sellAllPreview.coinsTotal)}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sell All',
+          style: 'destructive',
+          onPress: () => {
+            const result = sellAll();
+            if (!result.success) {
+              Alert.alert('Could not Sell All', result.error ?? 'Unknown error');
+              return;
+            }
+
+            setSelectedIndex(null);
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -94,6 +143,18 @@ export function BagScreen() {
             onPress={consolidateBag}
           >
             <Text style={styles.actionButtonText}>Stack</Text>
+          </Pressable>
+
+          {/* Sell All Button */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionButton,
+              styles.actionButtonDanger,
+              pressed && styles.actionButtonPressed,
+            ]}
+            onPress={handleSellAll}
+          >
+            <Text style={[styles.actionButtonText, styles.actionButtonDangerText]}>Sell All</Text>
           </Pressable>
 
           {/* Auto-Sort Toggle */}
@@ -253,6 +314,7 @@ const styles = StyleSheet.create({
   },
   actionBar: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
@@ -297,6 +359,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
+  actionButtonDanger: {
+    borderColor: colors.error,
+  },
   actionButtonPressed: {
     opacity: 0.7,
   },
@@ -304,6 +369,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
     color: colors.textSecondary,
+  },
+  actionButtonDangerText: {
+    color: colors.error,
   },
   actionButtonTextActive: {
     color: colors.text,
