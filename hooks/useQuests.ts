@@ -1,17 +1,15 @@
 import { useMemo, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, useQuests as useQuestsState } from '@/store';
-import type { GameState, QuestsState, QuestDefinition, PlayerQuestState } from '@/game/types';
+import type { GameState, QuestDefinition, PlayerQuestState } from '@/game/types';
 import {
   getAvailableQuests,
-  getReadyToClaimQuests,
-  getActiveIncompleteQuests,
   getQuestProgress,
   getCooldownRemaining,
   getCompletedQuests,
   type CompletedQuestInfo,
 } from '@/game/logic';
-import { QUEST_DEFINITIONS, getQuestDefinition } from '@/game/data';
+import { getQuestDefinition } from '@/game/data';
 
 interface QuestWithProgress {
   definition: QuestDefinition;
@@ -60,32 +58,34 @@ export function useQuestsHook(): UseQuestsReturn {
   const storeAbandonQuest = useGameStore((s) => s.abandonQuest);
   const storeClaimRewards = useGameStore((s) => s.claimQuestRewards);
 
+  const questProgressEntries = useMemo((): QuestWithProgress[] => {
+    return questsState.active
+      .map((state) => {
+        const definition = getQuestDefinition(state.questId);
+        if (!definition) {
+          return null;
+        }
+
+        const { percentage, allComplete } = getQuestProgress(state, gameState);
+        return {
+          definition,
+          state,
+          progress: percentage,
+          isComplete: allComplete,
+        };
+      })
+      .filter((entry): entry is QuestWithProgress => entry !== null);
+  }, [gameState, questsState]);
+
   // Memoized active quests with progress
   const activeQuests = useMemo((): QuestWithProgress[] => {
-    return getActiveIncompleteQuests(questsState).map((state) => {
-      const definition = getQuestDefinition(state.questId);
-      const { percentage, allComplete } = getQuestProgress(state);
-      return {
-        definition: definition!,
-        state,
-        progress: percentage,
-        isComplete: allComplete,
-      };
-    }).filter((q) => q.definition);
-  }, [questsState]);
+    return questProgressEntries.filter((quest) => !quest.isComplete);
+  }, [questProgressEntries]);
 
   // Memoized ready to claim quests
   const readyToClaim = useMemo((): QuestWithProgress[] => {
-    return getReadyToClaimQuests(questsState).map((state) => {
-      const definition = getQuestDefinition(state.questId);
-      return {
-        definition: definition!,
-        state,
-        progress: 1,
-        isComplete: true,
-      };
-    }).filter((q) => q.definition);
-  }, [questsState]);
+    return questProgressEntries.filter((quest) => quest.isComplete);
+  }, [questProgressEntries]);
 
   // Memoized available quests
   const availableQuests = useMemo((): QuestDefinition[] => {

@@ -149,7 +149,13 @@ function processSkillTick(state: GameState, skillId: SkillId, ticksElapsed: numb
   }
 
   if (xpGained > 0 || resourceGained > 0) {
-    events.push({ type: 'SKILL_ACTION', skillId, xpGained, resourceGained });
+    events.push({
+      type: 'SKILL_ACTION',
+      skillId,
+      xpGained,
+      resourceId: effectiveDefinition.resourceProduced,
+      resourceGained,
+    });
   }
 
   return { state: newState, events };
@@ -240,4 +246,3 @@ function processSkillDrops(state: GameState, skillId: SkillId, actionsCompleted:
 
   return { state: newState, events };
 }
-

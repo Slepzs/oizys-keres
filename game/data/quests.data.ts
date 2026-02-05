@@ -9,47 +9,50 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
   first_steps: {
     id: 'first_steps',
     name: 'First Steps',
-    description: 'Begin your journey by gathering some wood.',
+    description: 'Begin your journey with a real woodcutting shift.',
     icon: '🌲',
     category: 'main',
     objectives: [
-      { id: 'xp', type: 'gain_xp', target: 'woodcutting', amount: 100 },
+      { id: 'xp', type: 'gain_xp', target: 'woodcutting', amount: 250 },
+      { id: 'wood', type: 'gain_resource', target: 'wood', amount: 40 },
     ],
     rewards: [
-      { type: 'player_xp', amount: 50 },
+      { type: 'player_xp', amount: 80 },
+      { type: 'resource', resource: 'wood', amount: 30 },
     ],
   },
 
   wood_for_days: {
     id: 'wood_for_days',
     name: 'Wood for Days',
-    description: 'Continue woodcutting and stockpile resources.',
+    description: 'Push woodcutting further and build a real stockpile.',
     icon: '🪵',
     category: 'main',
     unlock: [{ type: 'quest_completed', questId: 'first_steps' }],
     objectives: [
-      { id: 'xp', type: 'gain_xp', target: 'woodcutting', amount: 500 },
-      { id: 'wood', type: 'gain_resource', target: 'wood', amount: 50 },
+      { id: 'xp', type: 'gain_xp', target: 'woodcutting', amount: 1200 },
+      { id: 'wood', type: 'gain_resource', target: 'wood', amount: 150 },
     ],
     rewards: [
-      { type: 'player_xp', amount: 100 },
-      { type: 'xp', skill: 'woodcutting', amount: 200 },
+      { type: 'player_xp', amount: 160 },
+      { type: 'xp', skill: 'woodcutting', amount: 280 },
     ],
   },
 
   aspiring_lumberjack: {
     id: 'aspiring_lumberjack',
     name: 'Aspiring Lumberjack',
-    description: 'Reach level 5 in woodcutting.',
+    description: 'Train woodcutting seriously and secure seed reserves.',
     icon: '🪓',
     category: 'skill',
     unlock: [{ type: 'quest_completed', questId: 'wood_for_days' }],
     objectives: [
-      { id: 'level', type: 'reach_level', target: 'woodcutting', level: 5 },
+      { id: 'level', type: 'reach_level', target: 'woodcutting', level: 8 },
+      { id: 'seed_stock', type: 'have_item', target: 'tree_seed', amount: 4 },
     ],
     rewards: [
-      { type: 'player_xp', amount: 150 },
-      { type: 'resource', resource: 'wood', amount: 100 },
+      { type: 'player_xp', amount: 220 },
+      { type: 'resource', resource: 'wood', amount: 140 },
     ],
   },
 
@@ -57,32 +60,33 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
   pickaxe_ready: {
     id: 'pickaxe_ready',
     name: 'Pickaxe Ready',
-    description: 'Try your hand at mining.',
+    description: 'Prove you can mine consistently.',
     icon: '⛏️',
     category: 'main',
     unlock: [{ type: 'quest_completed', questId: 'first_steps' }],
     objectives: [
-      { id: 'xp', type: 'gain_xp', target: 'mining', amount: 100 },
+      { id: 'xp', type: 'gain_xp', target: 'mining', amount: 250 },
+      { id: 'ore', type: 'gain_resource', target: 'ore', amount: 20 },
     ],
     rewards: [
-      { type: 'player_xp', amount: 50 },
+      { type: 'player_xp', amount: 85 },
     ],
   },
 
   ore_collector: {
     id: 'ore_collector',
     name: 'Ore Collector',
-    description: 'Gather a substantial amount of ore.',
+    description: 'Gather a serious ore haul for future crafting.',
     icon: '🪨',
     category: 'main',
     unlock: [{ type: 'quest_completed', questId: 'pickaxe_ready' }],
     objectives: [
-      { id: 'xp', type: 'gain_xp', target: 'mining', amount: 500 },
-      { id: 'ore', type: 'gain_resource', target: 'ore', amount: 30 },
+      { id: 'xp', type: 'gain_xp', target: 'mining', amount: 1200 },
+      { id: 'ore', type: 'gain_resource', target: 'ore', amount: 90 },
     ],
     rewards: [
-      { type: 'player_xp', amount: 100 },
-      { type: 'xp', skill: 'mining', amount: 200 },
+      { type: 'player_xp', amount: 170 },
+      { type: 'xp', skill: 'mining', amount: 280 },
     ],
   },
 
@@ -90,32 +94,104 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
   forge_apprentice: {
     id: 'forge_apprentice',
     name: 'Forge Apprentice',
-    description: 'Begin learning the ways of smithing.',
+    description: 'Start training smithing beyond the basics.',
     icon: '🔨',
     category: 'main',
     unlock: [{ type: 'quest_completed', questId: 'ore_collector' }],
     objectives: [
-      { id: 'xp', type: 'gain_xp', target: 'smithing', amount: 100 },
+      { id: 'xp', type: 'gain_xp', target: 'smithing', amount: 250 },
+      { id: 'ore', type: 'gain_resource', target: 'ore', amount: 60 },
     ],
     rewards: [
-      { type: 'player_xp', amount: 75 },
+      { type: 'player_xp', amount: 110 },
     ],
   },
 
-  // Player Level Quests
-  adventurer_level_5: {
-    id: 'adventurer_level_5',
-    name: 'Rising Adventurer',
-    description: 'Reach player level 5.',
-    icon: '⭐',
-    category: 'main',
-    unlock: [{ type: 'quest_completed', questId: 'first_steps' }],
+  forge_journeyman: {
+    id: 'forge_journeyman',
+    name: 'Forge Journeyman',
+    description: 'Reach early smithing mastery with a full stone reserve.',
+    icon: '⚒️',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'forge_apprentice' }],
     objectives: [
-      { id: 'player_level', type: 'reach_level', target: 'woodcutting', level: 5 },
+      { id: 'level', type: 'reach_level', target: 'smithing', level: 7 },
+      { id: 'ore', type: 'gain_resource', target: 'ore', amount: 180 },
     ],
     rewards: [
-      { type: 'resource', resource: 'wood', amount: 50 },
-      { type: 'resource', resource: 'ore', amount: 25 },
+      { type: 'player_xp', amount: 200 },
+      { type: 'resource', resource: 'ore', amount: 75 },
+    ],
+  },
+
+  // Combat Quests
+  sewers_cleanup: {
+    id: 'sewers_cleanup',
+    name: 'Sewers Cleanup',
+    description: 'Thin out the giant rat population in the sewers.',
+    icon: '🐀',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'first_steps' }],
+    objectives: [
+      { id: 'rat_kills', type: 'kill', target: 'rat', amount: 15 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 120 },
+      { type: 'resource', resource: 'stone', amount: 40 },
+    ],
+  },
+
+  fang_stockpile: {
+    id: 'fang_stockpile',
+    name: 'Fang Stockpile',
+    description: 'Defeat more rats and keep enough fangs in your bag.',
+    icon: '🦷',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'sewers_cleanup' }],
+    objectives: [
+      { id: 'rat_kills', type: 'kill', target: 'rat', amount: 30 },
+      { id: 'rat_fangs', type: 'have_item', target: 'rat_fang', amount: 8 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 180 },
+      { type: 'item', itemId: 'rat_fang', quantity: 4 },
+    ],
+  },
+
+  wolf_control: {
+    id: 'wolf_control',
+    name: 'Wolf Control',
+    description: 'Push deeper into the sewers and bring back pelts.',
+    icon: '🐺',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'fang_stockpile' }],
+    objectives: [
+      { id: 'wolf_kills', type: 'kill', target: 'wolf', amount: 10 },
+      { id: 'pelts_in_bag', type: 'have_item', target: 'wolf_pelt', amount: 2 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 240 },
+      { type: 'resource', resource: 'ore', amount: 90 },
+    ],
+  },
+
+  goblin_intel: {
+    id: 'goblin_intel',
+    name: 'Goblin Intel',
+    description: 'Defeat goblins and keep ears for proof of progress.',
+    icon: '👺',
+    category: 'exploration',
+    unlock: [
+      { type: 'quest_completed', questId: 'forge_journeyman' },
+      { type: 'quest_completed', questId: 'wolf_control' },
+    ],
+    objectives: [
+      { id: 'goblin_kills', type: 'kill', target: 'goblin', amount: 8 },
+      { id: 'ears_in_bag', type: 'have_item', target: 'goblin_ear', amount: 3 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 320 },
+      { type: 'item', itemId: 'goblin_ear', quantity: 2 },
     ],
   },
 
@@ -123,54 +199,72 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
   daily_woodcutter: {
     id: 'daily_woodcutter',
     name: 'Daily: Woodcutting',
-    description: 'Complete your daily woodcutting practice.',
+    description: 'Complete your daily woodcutting shift.',
     icon: '📅',
     category: 'daily',
     repeatable: true,
     cooldownMs: 86400000, // 24 hours
     unlock: [{ type: 'level_at_least', skill: 'woodcutting', value: 5 }],
     objectives: [
-      { id: 'xp', type: 'gain_xp', target: 'woodcutting', amount: 1000 },
+      { id: 'xp', type: 'gain_xp', target: 'woodcutting', amount: 1200 },
     ],
     rewards: [
-      { type: 'player_xp', amount: 50 },
-      { type: 'resource', resource: 'wood', amount: 50 },
+      { type: 'player_xp', amount: 75 },
+      { type: 'resource', resource: 'wood', amount: 70 },
     ],
   },
 
   daily_miner: {
     id: 'daily_miner',
     name: 'Daily: Mining',
-    description: 'Complete your daily mining practice.',
+    description: 'Complete your daily mining shift.',
     icon: '📅',
     category: 'daily',
     repeatable: true,
     cooldownMs: 86400000, // 24 hours
     unlock: [{ type: 'level_at_least', skill: 'mining', value: 5 }],
     objectives: [
-      { id: 'xp', type: 'gain_xp', target: 'mining', amount: 1000 },
+      { id: 'xp', type: 'gain_xp', target: 'mining', amount: 1200 },
     ],
     rewards: [
-      { type: 'player_xp', amount: 50 },
-      { type: 'resource', resource: 'ore', amount: 30 },
+      { type: 'player_xp', amount: 75 },
+      { type: 'resource', resource: 'ore', amount: 45 },
     ],
   },
 
   daily_smith: {
     id: 'daily_smith',
     name: 'Daily: Smithing',
-    description: 'Complete your daily smithing practice.',
+    description: 'Complete your daily smithing shift.',
     icon: '📅',
     category: 'daily',
     repeatable: true,
     cooldownMs: 86400000, // 24 hours
     unlock: [{ type: 'level_at_least', skill: 'smithing', value: 5 }],
     objectives: [
-      { id: 'xp', type: 'gain_xp', target: 'smithing', amount: 1000 },
+      { id: 'xp', type: 'gain_xp', target: 'smithing', amount: 900 },
     ],
     rewards: [
-      { type: 'player_xp', amount: 50 },
-      { type: 'resource', resource: 'stone', amount: 30 },
+      { type: 'player_xp', amount: 70 },
+      { type: 'resource', resource: 'stone', amount: 60 },
+    ],
+  },
+
+  daily_hunter: {
+    id: 'daily_hunter',
+    name: 'Daily: Rat Hunt',
+    description: 'Keep the sewers under control each day.',
+    icon: '📅',
+    category: 'daily',
+    repeatable: true,
+    cooldownMs: 86400000, // 24 hours
+    unlock: [{ type: 'player_level_at_least', value: 3 }],
+    objectives: [
+      { id: 'rat_kills', type: 'kill', target: 'rat', amount: 12 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 90 },
+      { type: 'resource', resource: 'wood', amount: 40 },
     ],
   },
 
@@ -178,16 +272,32 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
   seed_collector: {
     id: 'seed_collector',
     name: 'Seed Collector',
-    description: 'Collect tree seeds while woodcutting.',
+    description: 'Collect and keep tree seeds in your bag.',
     icon: '🌱',
     category: 'exploration',
     unlock: [{ type: 'level_at_least', skill: 'woodcutting', value: 3 }],
     objectives: [
-      { id: 'seeds', type: 'collect_item', target: 'tree_seed', amount: 5 },
+      { id: 'seeds', type: 'have_item', target: 'tree_seed', amount: 6 },
     ],
     rewards: [
       { type: 'player_xp', amount: 75 },
       { type: 'xp', skill: 'woodcutting', amount: 150 },
+    ],
+  },
+
+  nest_warden: {
+    id: 'nest_warden',
+    name: 'Nest Warden',
+    description: 'Find bird nests and keep them safe in your bag.',
+    icon: '🪺',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'seed_collector' }],
+    objectives: [
+      { id: 'nests', type: 'have_item', target: 'bird_nest', amount: 2 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 160 },
+      { type: 'resource', resource: 'wood', amount: 120 },
     ],
   },
 
@@ -199,11 +309,27 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     category: 'exploration',
     unlock: [{ type: 'level_at_least', skill: 'mining', value: 5 }],
     objectives: [
-      { id: 'gems', type: 'collect_item', target: 'ruby', amount: 1 },
+      { id: 'gems', type: 'collect_item', target: 'ruby', amount: 2 },
     ],
     rewards: [
-      { type: 'player_xp', amount: 100 },
-      { type: 'xp', skill: 'mining', amount: 250 },
+      { type: 'player_xp', amount: 140 },
+      { type: 'xp', skill: 'mining', amount: 280 },
+    ],
+  },
+
+  sapphire_cache: {
+    id: 'sapphire_cache',
+    name: 'Sapphire Cache',
+    description: 'Hold a small sapphire cache in your bag.',
+    icon: '🔵',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'gem_finder' }],
+    objectives: [
+      { id: 'sapphires', type: 'have_item', target: 'sapphire', amount: 2 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 220 },
+      { type: 'resource', resource: 'ore', amount: 110 },
     ],
   },
 };

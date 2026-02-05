@@ -5,7 +5,8 @@ import { Button } from '../common/Button';
 import { ProgressBar } from '../common/ProgressBar';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import type { QuestDefinition, PlayerQuestState, Objective } from '@/game/types';
-import { getObjectiveProgress, getQuestProgress } from '@/game/logic';
+import { getObjectiveProgress } from '@/game/logic';
+import { ENEMY_DEFINITIONS, ITEM_DEFINITIONS, RESOURCE_DEFINITIONS, SKILL_DEFINITIONS } from '@/game/data';
 
 interface QuestCardProps {
   definition: QuestDefinition;
@@ -167,20 +168,36 @@ function ObjectiveRow({ objective, current }: ObjectiveRowProps) {
 
 function formatObjective(objective: Objective): string {
   switch (objective.type) {
-    case 'gain_xp':
-      return `Gain ${objective.target} XP`;
-    case 'gain_resource':
-      return `Gather ${objective.target}`;
-    case 'collect_item':
-      return `Collect ${objective.target}`;
-    case 'reach_level':
-      return `Reach ${objective.target} level`;
+    case 'gain_xp': {
+      const skillName = SKILL_DEFINITIONS[objective.target]?.name ?? objective.target;
+      return `Gain ${skillName} XP`;
+    }
+    case 'gain_resource': {
+      const resourceName = RESOURCE_DEFINITIONS[objective.target]?.name ?? objective.target;
+      return `Gather ${resourceName}`;
+    }
+    case 'collect_item': {
+      const itemName = ITEM_DEFINITIONS[objective.target]?.name ?? objective.target;
+      return `Collect ${itemName}`;
+    }
+    case 'have_item': {
+      const itemName = ITEM_DEFINITIONS[objective.target]?.name ?? objective.target;
+      return `Keep ${itemName} in bag`;
+    }
+    case 'reach_level': {
+      const skillName = SKILL_DEFINITIONS[objective.target]?.name ?? objective.target;
+      return `Reach ${skillName} level`;
+    }
     case 'timer':
       return 'Wait';
-    case 'kill':
-      return `Defeat ${objective.target}`;
-    case 'craft':
-      return `Craft ${objective.target}`;
+    case 'kill': {
+      const enemyName = ENEMY_DEFINITIONS[objective.target]?.name ?? objective.target;
+      return `Defeat ${enemyName}`;
+    }
+    case 'craft': {
+      const itemName = ITEM_DEFINITIONS[objective.target]?.name ?? objective.target;
+      return `Craft ${itemName}`;
+    }
     default:
       return 'Unknown objective';
   }
@@ -196,13 +213,13 @@ function formatReward(reward: {
 }): string {
   switch (reward.type) {
     case 'xp':
-      return `+${reward.amount} ${reward.skill} XP`;
+      return `+${reward.amount} ${(reward.skill && SKILL_DEFINITIONS[reward.skill]?.name) ?? reward.skill} XP`;
     case 'player_xp':
       return `+${reward.amount} Player XP`;
     case 'resource':
-      return `+${reward.amount} ${reward.resource}`;
+      return `+${reward.amount} ${(reward.resource && RESOURCE_DEFINITIONS[reward.resource]?.name) ?? reward.resource}`;
     case 'item':
-      return `+${reward.quantity} ${reward.itemId}`;
+      return `+${reward.quantity} ${(reward.itemId && ITEM_DEFINITIONS[reward.itemId]?.name) ?? reward.itemId}`;
     default:
       return 'Unknown reward';
   }

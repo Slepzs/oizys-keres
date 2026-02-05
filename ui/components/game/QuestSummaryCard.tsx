@@ -17,7 +17,12 @@ function isQuestComplete(state: PlayerQuestState): boolean {
     if (objective.type === 'gain_xp' || objective.type === 'gain_resource') {
       return current >= objective.amount;
     }
-    if (objective.type === 'collect_item' || objective.type === 'kill' || objective.type === 'craft') {
+    if (
+      objective.type === 'collect_item' ||
+      objective.type === 'have_item' ||
+      objective.type === 'kill' ||
+      objective.type === 'craft'
+    ) {
       return current >= objective.amount;
     }
     if (objective.type === 'reach_level') {
