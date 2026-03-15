@@ -1,5 +1,12 @@
 # Project Log
 
+## 2026-03-16 (automated)
+- What was improved: Added a "Nearest Goals" panel to the CraftingScreen infrastructure summary card. The panel computes the 3 closest locked equipment/weapon/tool recipes — sorted by total remaining skill-level gap — and displays each with its primary blocking requirement (e.g. "Mining 30→55") and a per-recipe ore cost breakdown for key resources (copper_ore, iron_ore, coal, mithril_ore, adamantite_ore) showing current stock vs. required amount. Ore costs are color-coded green when met and grey when short. Infra-blocked recipes are sorted to the bottom so the most immediately actionable goals surface first.
+- Why it was improved: Players had no way to scan which recipes were closest to being craftable or how much mining output they needed to accumulate before unlocking the next gear tier. Without this information, the gap between gathering and crafting progression was opaque — especially for mithril/adamantite which require dedicated mining levels and long accumulation times.
+- Strategic direction chosen: Surface actionable, forward-looking information inside the existing crafting summary card rather than adding a new screen, keeping the change focused and consistent with the "make system state legible" pattern established in recent sessions.
+- Next potential vector: Add a "Sell Ore" offer to the ShopScreen for mithril_ore and adamantite_ore at premium rates so players with surplus high-tier ores can convert them to coins, creating an economic pressure valve and a coin-sink alongside the existing crafting sink.
+
+
 ## 2026-03-15 20:30:00 +0100
 - What was improved: Added active bonus visibility to CraftingScreen and StatsScreen. The CraftingScreen infrastructure summary card now shows an "Active Bonuses" panel listing every bonus granted by built infrastructure — value, target name, and source. StatsScreen gained a new "Bonuses" section at the bottom that surfaces all active multipliers from any source (infrastructure, achievements, upgrades), formatted with green value highlights.
 - Why it was improved: Players could not see what bonuses their built infrastructure was providing without browsing each recipe individually. The Master Forge, which costs 600 mithril ore and 200 adamantite ore, granted +15% mining and +15% crafting XP with no visible confirmation in the UI, making the payoff of the endgame resource grind invisible and weakening motivation to complete it.

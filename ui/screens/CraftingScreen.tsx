@@ -24,10 +24,19 @@ import type {
   CraftingRecipe,
   CraftingRequirement,
   InfrastructureLevelsState,
+  ResourceId,
   ResourcesState,
   SkillsState,
 } from '@/game/types';
 import { useGameStore } from '@/store';
+
+const KEY_ORE_RESOURCE_IDS = new Set<ResourceId>([
+  'copper_ore',
+  'iron_ore',
+  'coal',
+  'mithril_ore',
+  'adamantite_ore',
+]);
 
 const CATEGORY_META: Record<CraftingCategory, { label: string; icon: string; fallback: string }> = {
   tools: { label: 'Tools', icon: 'axe', fallback: '🪓' },
@@ -89,6 +98,71 @@ export function CraftingScreen() {
     () => ({ skills, resources, bag, crafting }),
     [skills, resources, bag, crafting]
   );
+
+  const upcomingGoals = useMemo(() => {
+    const { skills: s, resources: r, crafting: c } = craftingState;
+
+    const results: {
+      recipe: CraftingRecipe;
+      totalSkillGap: number;
+      hasInfraBlocker: boolean;
+      keyBlocker: string;
+      oreCosts: { name: string; current: number; required: number }[];
+    }[] = [];
+
+    for (const recipeId of CRAFTING_RECIPE_IDS) {
+      const recipe = CRAFTING_RECIPES[recipeId];
+      if (recipe.category === 'infrastructure') continue;
+
+      const status = getCraftingRecipeStatus(craftingState, recipeId);
+      if (status.unlocked || status.atInfrastructureCap) continue;
+
+      let totalSkillGap = 0;
+      let keyBlocker = '';
+      let keyBlockerGap = -1;
+      let hasInfraBlocker = false;
+
+      for (const req of recipe.requirements) {
+        if (req.type === 'skill_level') {
+          const current = s[req.skillId]?.level ?? 0;
+          const gap = Math.max(0, req.level - current);
+          totalSkillGap += gap;
+          if (gap > keyBlockerGap) {
+            keyBlockerGap = gap;
+            keyBlocker = `${SKILL_DEFINITIONS[req.skillId].name} ${current}\u2192${req.level}`;
+          }
+        } else {
+          const current = c.infrastructureLevels[req.infrastructureId] ?? 0;
+          if (current < req.level) {
+            hasInfraBlocker = true;
+            if (keyBlocker === '') {
+              keyBlocker = `Build ${INFRASTRUCTURE_DEFINITIONS[req.infrastructureId].name}`;
+            }
+          }
+        }
+      }
+
+      const oreCosts: { name: string; current: number; required: number }[] = [];
+      for (const cost of recipe.costs) {
+        if (cost.type !== 'resource') continue;
+        if (!KEY_ORE_RESOURCE_IDS.has(cost.resourceId)) continue;
+        oreCosts.push({
+          name: RESOURCE_DEFINITIONS[cost.resourceId].name,
+          current: r[cost.resourceId]?.amount ?? 0,
+          required: cost.amount,
+        });
+      }
+
+      results.push({ recipe, totalSkillGap, hasInfraBlocker, keyBlocker, oreCosts });
+    }
+
+    return results
+      .sort((a, b) => {
+        if (a.hasInfraBlocker !== b.hasInfraBlocker) return a.hasInfraBlocker ? 1 : -1;
+        return a.totalSkillGap - b.totalSkillGap;
+      })
+      .slice(0, 3);
+  }, [craftingState]);
   const autoRecipe = useMemo(() => {
     const recipeId = crafting.automation.recipeId;
     if (!recipeId) {
@@ -159,6 +233,37 @@ export function CraftingScreen() {
                   <Text style={styles.activeBonusValue}>{bonus.value}</Text>
                   <Text style={styles.activeBonusLabel}>{bonus.label}</Text>
                   <Text style={styles.activeBonusSource}>{bonus.infrastructureName}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {upcomingGoals.length > 0 && (
+            <View style={styles.upcomingSection}>
+              <Text style={styles.upcomingTitle}>Nearest Goals</Text>
+              {upcomingGoals.map(({ recipe, keyBlocker, oreCosts }) => (
+                <View key={recipe.id} style={styles.upcomingGoalRow}>
+                  <View style={styles.upcomingGoalHeader}>
+                    <Text style={styles.upcomingGoalName}>{recipe.name}</Text>
+                    <Text style={styles.upcomingGoalBlocker}>{keyBlocker}</Text>
+                  </View>
+                  {oreCosts.length > 0 && (
+                    <View style={styles.upcomingOreCosts}>
+                      {oreCosts.map((cost) => (
+                        <Text
+                          key={cost.name}
+                          style={[
+                            styles.upcomingOreCostText,
+                            cost.current >= cost.required
+                              ? styles.upcomingOreMet
+                              : styles.upcomingOreMissing,
+                          ]}
+                        >
+                          {cost.name}: {Math.floor(cost.current)}/{cost.required}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
                 </View>
               ))}
             </View>
@@ -567,6 +672,55 @@ const styles = StyleSheet.create({
   },
   activeBonusSource: {
     fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  upcomingSection: {
+    marginTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+    paddingTop: spacing.sm,
+  },
+  upcomingTitle: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
+  },
+  upcomingGoalRow: {
+    marginBottom: spacing.sm,
+  },
+  upcomingGoalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  upcomingGoalName: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+    flex: 1,
+  },
+  upcomingGoalBlocker: {
+    fontSize: fontSize.xs,
+    color: colors.warning,
+    textAlign: 'right',
+  },
+  upcomingOreCosts: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  upcomingOreCostText: {
+    fontSize: fontSize.xs,
+  },
+  upcomingOreMet: {
+    color: colors.success,
+  },
+  upcomingOreMissing: {
     color: colors.textMuted,
   },
 });
