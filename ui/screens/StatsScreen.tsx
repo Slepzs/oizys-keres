@@ -6,7 +6,7 @@ import { ProgressBar } from '../components/common/ProgressBar';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { getAllStatDefinitions } from '@/game/systems';
 import type { AttributeStatDefinition, SkillStatDefinition, StatDefinition } from '@/game/types';
-import { usePlayerSummary, useSkillSummaries, useCombatSummary } from '@/store';
+import { usePlayerSummary, useSkillSummaries, useCombatSummary, useActiveMultipliers } from '@/store';
 import { COMBAT_SKILL_DEFINITIONS } from '@/game/data';
 import { COMBAT_SKILL_IDS } from '@/game/types';
 
@@ -16,6 +16,7 @@ export function StatsScreen() {
   const playerSummary = usePlayerSummary();
   const skillSummaries = useSkillSummaries();
   const combatSummary = useCombatSummary();
+  const activeMultipliers = useActiveMultipliers();
 
   const visibleStats = useMemo(() => {
     return getAllStatDefinitions()
@@ -180,9 +181,60 @@ export function StatsScreen() {
             </Card>
           );
         })}
+
+        {activeMultipliers.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Bonuses</Text>
+            {activeMultipliers.map((multiplier) => (
+              <Card key={multiplier.id} style={styles.statCard}>
+                <View style={styles.statRow}>
+                  <View style={styles.statLabelRow}>
+                    <Text style={styles.statIcon}>✨</Text>
+                    <View>
+                      <Text style={styles.statLabel}>{formatMultiplierTarget(multiplier.target)}</Text>
+                      <Text style={styles.statSubLabel}>{formatMultiplierSource(multiplier.source)}</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.statValue, styles.bonusValue]}>
+                    {multiplier.type === 'additive'
+                      ? `+${Math.round(multiplier.value * 100)}%`
+                      : `${multiplier.value.toFixed(2)}x`}
+                  </Text>
+                </View>
+              </Card>
+            ))}
+          </>
+        )}
       </ScrollView>
     </SafeContainer>
   );
+}
+
+function formatMultiplierTarget(target: string): string {
+  switch (target) {
+    case 'xp': return 'Global XP';
+    case 'drops': return 'Drop Chance';
+    case 'all_skills': return 'All Skills XP';
+    case 'woodcutting': return 'Woodcutting XP';
+    case 'mining': return 'Mining XP';
+    case 'crafting': return 'Crafting XP';
+    case 'attack': return 'Attack XP';
+    case 'strength': return 'Strength XP';
+    case 'defense': return 'Defense XP';
+    case 'summoning': return 'Summoning XP';
+    default: return `${target} XP`;
+  }
+}
+
+function formatMultiplierSource(source: string): string {
+  switch (source) {
+    case 'infrastructure': return 'Infrastructure';
+    case 'achievement': return 'Achievement';
+    case 'upgrade': return 'Upgrade';
+    case 'equipment': return 'Equipment';
+    case 'perk': return 'Perk';
+    default: return source;
+  }
 }
 
 const styles = StyleSheet.create({
@@ -252,5 +304,9 @@ const styles = StyleSheet.create({
   },
   skillProgress: {
     marginTop: spacing.xs,
+  },
+  bonusValue: {
+    color: colors.success,
+    fontWeight: fontWeight.bold,
   },
 });

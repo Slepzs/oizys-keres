@@ -392,3 +392,15 @@ export function useNotificationActions() {
     }))
   );
 }
+
+export function useActiveMultipliers() {
+  const multipliers = useGameStore(useShallow((state) => state.multipliers.active));
+
+  return useMemo(() => {
+    return multipliers.slice().sort((a, b) => {
+      if (a.source < b.source) return -1;
+      if (a.source > b.source) return 1;
+      return 0;
+    });
+  }, [multipliers]);
+}

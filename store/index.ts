@@ -27,4 +27,5 @@ export {
   useSummoningActions,
   useWoodcuttingTrees,
   useMiningRocks,
+  useActiveMultipliers,
 } from './selectors';

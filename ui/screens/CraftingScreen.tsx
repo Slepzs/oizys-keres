@@ -65,6 +65,26 @@ export function CraftingScreen() {
     return Object.keys(INFRASTRUCTURE_DEFINITIONS).length;
   }, []);
 
+  const activeBonuses = useMemo(() => {
+    const bonuses: { infrastructureName: string; label: string; value: string }[] = [];
+    for (const infra of Object.values(INFRASTRUCTURE_DEFINITIONS)) {
+      const level = crafting.infrastructureLevels[infra.id] ?? 0;
+      if (level <= 0) {
+        continue;
+      }
+      for (const bonus of infra.bonuses) {
+        bonuses.push({
+          infrastructureName: infra.name,
+          label: formatBonusTarget(bonus.target),
+          value: bonus.type === 'additive'
+            ? `+${Math.round(bonus.value * 100)}%`
+            : `${bonus.value.toFixed(2)}x`,
+        });
+      }
+    }
+    return bonuses;
+  }, [crafting.infrastructureLevels]);
+
   const craftingState = useMemo(
     () => ({ skills, resources, bag, crafting }),
     [skills, resources, bag, crafting]
@@ -130,6 +150,19 @@ export function CraftingScreen() {
               );
             })}
           </View>
+
+          {activeBonuses.length > 0 && (
+            <View style={styles.activeBonusesSection}>
+              <Text style={styles.activeBonusesTitle}>Active Bonuses</Text>
+              {activeBonuses.map((bonus, index) => (
+                <View key={index} style={styles.activeBonusRow}>
+                  <Text style={styles.activeBonusValue}>{bonus.value}</Text>
+                  <Text style={styles.activeBonusLabel}>{bonus.label}</Text>
+                  <Text style={styles.activeBonusSource}>{bonus.infrastructureName}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </Card>
 
         <View style={styles.categoryRow}>
@@ -261,6 +294,22 @@ export function CraftingScreen() {
       </ScrollView>
     </SafeContainer>
   );
+}
+
+function formatBonusTarget(target: string): string {
+  switch (target) {
+    case 'xp': return 'Global XP';
+    case 'drops': return 'Drop Chance';
+    case 'all_skills': return 'All Skills XP';
+    case 'woodcutting': return 'Woodcutting XP';
+    case 'mining': return 'Mining XP';
+    case 'crafting': return 'Crafting XP';
+    case 'attack': return 'Attack XP';
+    case 'strength': return 'Strength XP';
+    case 'defense': return 'Defense XP';
+    case 'summoning': return 'Summoning XP';
+    default: return `${target} XP`;
+  }
 }
 
 function isRequirementMet(
@@ -484,5 +533,40 @@ const styles = StyleSheet.create({
   stopAutoButton: {
     marginTop: spacing.xs,
     alignSelf: 'flex-start',
+  },
+  activeBonusesSection: {
+    marginTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+    paddingTop: spacing.sm,
+  },
+  activeBonusesTitle: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
+  },
+  activeBonusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 2,
+  },
+  activeBonusValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.success,
+    minWidth: 44,
+  },
+  activeBonusLabel: {
+    fontSize: fontSize.sm,
+    color: colors.text,
+    flex: 1,
+  },
+  activeBonusSource: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
 });
