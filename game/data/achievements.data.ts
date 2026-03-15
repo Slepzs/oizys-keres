@@ -146,6 +146,44 @@ export const ACHIEVEMENT_DEFINITIONS: Record<string, AchievementDefinition> = {
     rewards: [{ type: 'multiplier', target: 'crafting', bonus: 0.15 }],
   },
 
+  // Summoning achievements
+  summoner_10: {
+    id: 'summoner_10',
+    name: 'Apprentice Summoner',
+    description: 'Reach Summoning level 10',
+    icon: '🔮',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'summoning', level: 10 },
+    rewards: [{ type: 'multiplier', target: 'summoning', bonus: 0.05 }],
+  },
+  summoner_25: {
+    id: 'summoner_25',
+    name: 'Companion Binder',
+    description: 'Reach Summoning level 25',
+    icon: '🔮',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'summoning', level: 25 },
+    rewards: [{ type: 'multiplier', target: 'summoning', bonus: 0.10 }],
+  },
+  summoner_50: {
+    id: 'summoner_50',
+    name: 'Pet Whisperer',
+    description: 'Reach Summoning level 50',
+    icon: '🏆',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'summoning', level: 50 },
+    rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.05 }],
+  },
+  essence_collector: {
+    id: 'essence_collector',
+    name: 'Spirit Collector',
+    description: 'Gather 100 Spirit Essence',
+    icon: '✨',
+    category: 'collection',
+    condition: { type: 'total_resources', resourceId: 'spirit_essence', amount: 100 },
+    rewards: [{ type: 'multiplier', target: 'drops', bonus: 0.05 }],
+  },
+
   // Quest achievements
   first_quest: {
     id: 'first_quest',

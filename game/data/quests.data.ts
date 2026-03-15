@@ -195,6 +195,41 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     ],
   },
 
+  // Summoning Chain
+  first_ritual: {
+    id: 'first_ritual',
+    name: 'First Ritual',
+    description: 'Channel your first summoning rituals and start accumulating spirit essence.',
+    icon: '🔮',
+    category: 'main',
+    unlock: [{ type: 'quest_completed', questId: 'first_steps' }],
+    objectives: [
+      { id: 'xp', type: 'gain_xp', target: 'summoning', amount: 250 },
+      { id: 'essence', type: 'gain_resource', target: 'spirit_essence', amount: 20 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 110 },
+      { type: 'xp', skill: 'summoning', amount: 200 },
+    ],
+  },
+
+  bonded_companion: {
+    id: 'bonded_companion',
+    name: 'Bonded Companion',
+    description: 'Deepen the bond with your companion through consistent ritual work.',
+    icon: '🌟',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'first_ritual' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'summoning', level: 8 },
+      { id: 'essence', type: 'gain_resource', target: 'spirit_essence', amount: 60 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 200 },
+      { type: 'xp', skill: 'summoning', amount: 500 },
+    ],
+  },
+
   // Daily Repeatables
   daily_woodcutter: {
     id: 'daily_woodcutter',
@@ -247,6 +282,24 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     rewards: [
       { type: 'player_xp', amount: 70 },
       { type: 'resource', resource: 'stone', amount: 60 },
+    ],
+  },
+
+  daily_summoner: {
+    id: 'daily_summoner',
+    name: 'Daily: Summoning',
+    description: 'Complete your daily summoning rituals.',
+    icon: '📅',
+    category: 'daily',
+    repeatable: true,
+    cooldownMs: 86400000, // 24 hours
+    unlock: [{ type: 'level_at_least', skill: 'summoning', value: 5 }],
+    objectives: [
+      { id: 'xp', type: 'gain_xp', target: 'summoning', amount: 900 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 70 },
+      { type: 'resource', resource: 'spirit_essence', amount: 15 },
     ],
   },
 
