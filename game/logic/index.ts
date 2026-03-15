@@ -15,3 +15,4 @@ export * from "./stats/selectors";
 export * from "./tick";
 export * from "./woodcutting";
 export * from "./xp";
+export * from './mining';

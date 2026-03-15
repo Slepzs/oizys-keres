@@ -15,3 +15,4 @@ export * from "./shop.data";
 export * from "./stats.data";
 export * from "./tree-tiers.data";
 export * from "./zones.data";
+export * from './rock-tiers.data';

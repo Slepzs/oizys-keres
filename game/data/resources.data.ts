@@ -49,6 +49,36 @@ export const RESOURCE_DEFINITIONS: Record<ResourceId, ResourceDefinition> = {
     description: 'Raw metal ore for crafting.',
     icon: '⛏️',
   },
+  copper_ore: {
+    id: 'copper_ore',
+    name: 'Copper Ore',
+    description: 'Soft copper ore, easy to smelt.',
+    icon: '🟤',
+  },
+  iron_ore: {
+    id: 'iron_ore',
+    name: 'Iron Ore',
+    description: 'Common iron ore used in many recipes.',
+    icon: '🔩',
+  },
+  coal: {
+    id: 'coal',
+    name: 'Coal',
+    description: 'Combustible coal used to fuel smelting.',
+    icon: '🖤',
+  },
+  mithril_ore: {
+    id: 'mithril_ore',
+    name: 'Mithril Ore',
+    description: 'A rare, light metal with magical properties.',
+    icon: '💠',
+  },
+  adamantite_ore: {
+    id: 'adamantite_ore',
+    name: 'Adamantite Ore',
+    description: 'An incredibly hard ore found in the deepest deposits.',
+    icon: '⬛',
+  },
 };
 
 export function createInitialResourceState(): ResourceState {
@@ -68,5 +98,10 @@ export function createInitialResourcesState(): ResourcesState {
     magic_wood: createInitialResourceState(),
     stone: createInitialResourceState(),
     ore: createInitialResourceState(),
+    copper_ore: createInitialResourceState(),
+    iron_ore: createInitialResourceState(),
+    coal: createInitialResourceState(),
+    mithril_ore: createInitialResourceState(),
+    adamantite_ore: createInitialResourceState(),
   };
 }

@@ -1,11 +1,12 @@
 import type { SkillId } from '@/game/types';
-import { WOODCUTTING_TREES } from '@/game/data';
+import { WOODCUTTING_TREES, MINING_ROCKS } from '@/game/data';
 import type { SliceGet, SliceSet, StoreHelpers } from './types';
 
 export interface SkillsSlice {
   setActiveSkill: (skillId: SkillId | null) => void;
   toggleAutomation: (skillId: SkillId) => void;
   setActiveTree: (treeId: string) => void;
+  setActiveRock: (rockId: string) => void;
 }
 
 export function createSkillsSlice(set: SliceSet, get: SliceGet, _helpers: StoreHelpers): SkillsSlice {
@@ -46,6 +47,26 @@ export function createSkillsSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
           woodcutting: {
             ...woodcuttingSkill,
             activeTreeId: treeId,
+          },
+        },
+      });
+    },
+
+    setActiveRock: (rockId: string) => {
+      const state = get();
+      const miningSkill = state.skills.mining;
+      const rock = MINING_ROCKS[rockId];
+
+      if (!rock || miningSkill.level < rock.levelRequired) {
+        return;
+      }
+
+      set({
+        skills: {
+          ...state.skills,
+          mining: {
+            ...miningSkill,
+            activeRockId: rockId,
           },
         },
       });

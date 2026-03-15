@@ -9,6 +9,7 @@ import { addItemToBag, isBagFull } from '../bag';
 import { createRng, randomInt, rollChance } from '../rng';
 import { getEffectiveMultiplier, getSkillXpMultiplier } from '../multipliers';
 import { getActiveTree } from '../woodcutting';
+import { getActiveMiningRock } from '../mining';
 
 export interface SkillsTickResult {
   state: GameState;
@@ -205,7 +206,9 @@ function getSkillResourceRewards(
     return [];
   }
 
-  if (skillId !== 'mining') {
+  // Basic limestone/ore rock splits into ore + stone 50/50
+  // Higher-tier rocks produce their specific resource directly
+  if (skillId !== 'mining' || resourceId !== 'ore') {
     return [{ resourceId, amount: totalResourceGained }];
   }
 
@@ -237,24 +240,41 @@ function getEffectiveSkillDefinition(
   skillId: SkillId,
   state: GameState
 ): SkillDefinition {
-  if (skillId !== 'woodcutting') {
-    return baseDefinition;
+  if (skillId === 'woodcutting') {
+    const skill = state.skills[skillId];
+    const treeTier = getActiveTree(skill);
+
+    if (!treeTier || skill.level < treeTier.levelRequired) {
+      return baseDefinition;
+    }
+
+    return {
+      ...baseDefinition,
+      baseXpPerAction: treeTier.baseXpPerAction,
+      baseResourcePerAction: treeTier.baseResourcePerAction,
+      resourceProduced: treeTier.resourceProduced,
+      ticksPerAction: treeTier.ticksPerAction,
+    };
   }
 
-  const skill = state.skills[skillId];
-  const treeTier = getActiveTree(skill);
+  if (skillId === 'mining') {
+    const skill = state.skills[skillId];
+    const rockTier = getActiveMiningRock(skill);
 
-  if (!treeTier || skill.level < treeTier.levelRequired) {
-    return baseDefinition;
+    if (!rockTier || skill.level < rockTier.levelRequired) {
+      return baseDefinition;
+    }
+
+    return {
+      ...baseDefinition,
+      baseXpPerAction: rockTier.baseXpPerAction,
+      baseResourcePerAction: rockTier.baseResourcePerAction,
+      resourceProduced: rockTier.resourceProduced,
+      ticksPerAction: rockTier.ticksPerAction,
+    };
   }
 
-  return {
-    ...baseDefinition,
-    baseXpPerAction: treeTier.baseXpPerAction,
-    baseResourcePerAction: treeTier.baseResourcePerAction,
-    resourceProduced: treeTier.resourceProduced,
-    ticksPerAction: treeTier.ticksPerAction,
-  };
+  return baseDefinition;
 }
 
 interface DropResult {

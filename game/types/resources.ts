@@ -6,7 +6,12 @@ export type ResourceId =
   | 'yew_wood'
   | 'magic_wood'
   | 'stone'
-  | 'ore';
+  | 'ore'
+  | 'copper_ore'
+  | 'iron_ore'
+  | 'coal'
+  | 'mithril_ore'
+  | 'adamantite_ore';
 
 export interface ResourceState {
   amount: number;

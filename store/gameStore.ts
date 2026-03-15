@@ -235,6 +235,7 @@ export const useGameActions = () =>
       loadSave: state.loadSave,
       reset: state.reset,
       setActiveTree: state.setActiveTree,
+      setActiveRock: state.setActiveRock,
       // Notification actions
       addNotification: state.addNotification,
       removeNotification: state.removeNotification,

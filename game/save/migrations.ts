@@ -235,6 +235,44 @@ const migrations: Record<number, MigrationFn> = {
 
   // Migration from v12 to v13: Ensure player health/mana vitals for all modern saves
   12: (save) => migratePlayerVitals(save, 13),
+
+  // Migration from v13 to v14: Initialize activeRockId for mining skill
+  13: (save) => {
+    const miningLevel = save.state.skills.mining?.level ?? 1;
+    // Default to highest available rock tier based on current mining level
+    const rockTiers = [
+      { id: 'limestone', level: 1 },
+      { id: 'copper', level: 10 },
+      { id: 'iron', level: 25 },
+      { id: 'coal', level: 40 },
+      { id: 'mithril', level: 55 },
+      { id: 'adamantite', level: 70 },
+    ].filter(rock => rock.level <= miningLevel);
+    const defaultRock = rockTiers[rockTiers.length - 1];
+
+    return {
+      ...save,
+      version: 14,
+      state: {
+        ...save.state,
+        skills: {
+          ...save.state.skills,
+          mining: {
+            ...save.state.skills.mining,
+            activeRockId: defaultRock?.id || 'limestone',
+          },
+        },
+        resources: {
+          ...save.state.resources,
+          copper_ore: (save.state.resources as any)?.copper_ore ?? { amount: 0, totalGained: 0 },
+          iron_ore: (save.state.resources as any)?.iron_ore ?? { amount: 0, totalGained: 0 },
+          coal: (save.state.resources as any)?.coal ?? { amount: 0, totalGained: 0 },
+          mithril_ore: (save.state.resources as any)?.mithril_ore ?? { amount: 0, totalGained: 0 },
+          adamantite_ore: (save.state.resources as any)?.adamantite_ore ?? { amount: 0, totalGained: 0 },
+        },
+      },
+    };
+  },
 };
 
 /**
