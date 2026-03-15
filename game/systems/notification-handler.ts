@@ -117,6 +117,35 @@ export function registerNotificationHandlers(): void {
       return state;
     }, 200);
 
+    // Combat skill level up (every level — faster feedback than regular skills)
+    eventBus.on('COMBAT_SKILL_LEVEL_UP', (event, state, _ctx) => {
+      if (notificationCallback) {
+        const skillNames: Record<string, string> = { attack: 'Attack', strength: 'Strength', defense: 'Defense' };
+        const skillIcons: Record<string, string> = { attack: '⚔️', strength: '💪', defense: '🛡️' };
+        const name = skillNames[event.skillId] ?? event.skillId;
+        const icon = skillIcons[event.skillId] ?? '⚔️';
+        notificationCallback(
+          'skill_level_up',
+          `${name} Level ${event.newLevel}!`,
+          `${icon} Your ${name.toLowerCase()} skill reached level ${event.newLevel}.`,
+          { icon }
+        );
+      }
+      return state;
+    }, 200);
+
+    // Critical hit notification (only for big crits to avoid spam)
+    eventBus.on('COMBAT_PLAYER_ATTACK', (event, state, _ctx) => {
+      if (notificationCallback && event.isCritical && event.damage >= 10) {
+        notificationCallback(
+          'combat',
+          'Critical Hit!',
+          `You dealt ${event.damage} damage in one blow!`
+        );
+      }
+      return state;
+    }, 200);
+
     // Combat notifications
     eventBus.on('COMBAT_PLAYER_DIED', (_event, state, _ctx) => {
       if (notificationCallback) {

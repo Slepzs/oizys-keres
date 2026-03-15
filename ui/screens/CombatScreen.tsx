@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Switch, Pressable } from 'react-nat
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { Card } from '../components/common/Card';
 import { CombatStats } from '../components/game/CombatStats';
+import { CombatPetCard } from '../components/game/CombatPetCard';
 import { EnemyDisplay } from '../components/game/EnemyDisplay';
 import { EquipmentPanel } from '../components/game/EquipmentPanel';
 import { CombatZoneCard } from '../components/game/CombatZoneCard';
@@ -88,6 +89,12 @@ export function CombatScreen() {
             onTrainingModeChange={handleTrainingModeChange}
           />
         </View>
+
+        {combatSummary.activePet && (
+          <View style={styles.section}>
+            <CombatPetCard pet={combatSummary.activePet} bonuses={combatSummary.petBonuses} />
+          </View>
+        )}
 
         {/* Auto-fight Toggle */}
         <Card style={styles.section}>

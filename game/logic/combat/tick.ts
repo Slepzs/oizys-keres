@@ -11,7 +11,12 @@ import {
   distributeXpOnKill,
   getPlayerAttackSpeed,
   getPlayerDefense,
+  getPlayerRegenAmount,
   getPlayerStrength,
+  PLAYER_CRIT_CHANCE,
+  ENEMY_CRIT_CHANCE,
+  CRIT_DAMAGE_MULTIPLIER,
+  REGEN_INTERVAL_MS,
 } from './queries';
 
 export interface CombatTickResult {
@@ -64,8 +69,6 @@ function handleEnemyKilled(
     enemyXpReward,
     state.combat.trainingMode
   );
-  const petBonuses = getCurrentBonuses(state);
-  const newMaxHp = calculateMaxHp(xpResult.skills, petBonuses.maxHpBonus);
 
   events.push({
     type: 'COMBAT_ENEMY_KILLED',
@@ -87,6 +90,11 @@ function handleEnemyKilled(
     enemyXpReward
   );
   events.push(...petRewardResult.events);
+  const petBonuses = getSummoningCombatBonuses(
+    petRewardResult.summoning,
+    state.skills.summoning.level
+  );
+  const newMaxHp = calculateMaxHp(xpResult.skills, petBonuses.maxHpBonus);
 
   let nextState: GameState = {
     ...state,
@@ -130,6 +138,7 @@ function handleEnemyKilled(
               playerNextAttackAt: occurredAt + nextPlayerAttackSpeed * 1000,
               enemyNextAttackAt: occurredAt + nextEnemy.attackSpeed * 1000,
               petNextAttackAt: occurredAt,
+              playerRegenAt: occurredAt + REGEN_INTERVAL_MS,
             },
           },
         };
@@ -217,26 +226,54 @@ export function processCombatTick(
     const petNextAttackAt = petProfile
       ? (combat.petNextAttackAt ?? Math.min(combat.playerNextAttackAt, combat.enemyNextAttackAt))
       : Number.POSITIVE_INFINITY;
-    const nextEventAt = Math.min(combat.playerNextAttackAt, combat.enemyNextAttackAt, petNextAttackAt);
+    const regenAt = combat.playerRegenAt ?? Number.POSITIVE_INFINITY;
+    const nextEventAt = Math.min(combat.playerNextAttackAt, combat.enemyNextAttackAt, petNextAttackAt, regenAt);
     if (nextEventAt > now) {
       break;
     }
 
-    const isPlayerTurn = combat.playerNextAttackAt <= combat.enemyNextAttackAt
+    const isRegen = regenAt <= combat.playerNextAttackAt
+      && regenAt <= combat.enemyNextAttackAt
+      && regenAt <= petNextAttackAt;
+    const isPlayerTurn = !isRegen
+      && combat.playerNextAttackAt <= combat.enemyNextAttackAt
       && combat.playerNextAttackAt <= petNextAttackAt;
-    const isPetTurn = petProfile
+    const isPetTurn = !isRegen
+      && petProfile
       && petNextAttackAt <= combat.playerNextAttackAt
       && petNextAttackAt <= combat.enemyNextAttackAt;
 
-    if (isPlayerTurn) {
+    if (isRegen) {
+      const regenAmount = getPlayerRegenAmount(newState.combat);
+      const newHp = Math.min(newState.combat.playerMaxHp, newState.combat.playerCurrentHp + regenAmount);
+      events.push({
+        type: 'COMBAT_PLAYER_REGEN',
+        hpRestored: newHp - newState.combat.playerCurrentHp,
+        playerHpAfter: newHp,
+      });
+      newState = {
+        ...newState,
+        combat: {
+          ...newState.combat,
+          playerCurrentHp: newHp,
+          activeCombat: {
+            ...combat,
+            playerRegenAt: regenAt + REGEN_INTERVAL_MS,
+          },
+        },
+      };
+    } else if (isPlayerTurn) {
       const playerStrength = getPlayerStrength(newState.combat, bonuses);
-      const damage = calculateDamage(playerStrength, enemy.defense);
+      const isCritical = Math.random() < PLAYER_CRIT_CHANCE;
+      const baseDamagePlayer = calculateDamage(playerStrength, enemy.defense);
+      const damage = isCritical ? Math.floor(baseDamagePlayer * CRIT_DAMAGE_MULTIPLIER) : baseDamagePlayer;
       const enemyHpRemaining = Math.max(0, combat.enemyCurrentHp - damage);
 
       events.push({
         type: 'COMBAT_PLAYER_ATTACK',
         damage,
         enemyHpRemaining,
+        isCritical,
       });
 
       const attackSpeed = getPlayerAttackSpeed(newState.combat, bonuses);
@@ -292,13 +329,16 @@ export function processCombatTick(
     } else {
       const playerDefense = getPlayerDefense(newState.combat, bonuses);
       const baseDamage = calculateDamage(enemy.strength, playerDefense);
-      const damage = Math.max(1, baseDamage - bonuses.damageReduction);
+      const isCritical = Math.random() < ENEMY_CRIT_CHANCE;
+      const damageAfterReduction = Math.max(1, baseDamage - bonuses.damageReduction);
+      const damage = isCritical ? Math.floor(damageAfterReduction * CRIT_DAMAGE_MULTIPLIER) : damageAfterReduction;
       const playerHpRemaining = Math.max(0, newState.combat.playerCurrentHp - damage);
 
       events.push({
         type: 'COMBAT_ENEMY_ATTACK',
         damage,
         playerHpRemaining,
+        isCritical,
       });
 
       newState = {

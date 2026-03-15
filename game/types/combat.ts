@@ -46,6 +46,7 @@ export interface ActiveCombat {
   playerNextAttackAt: number;
   enemyNextAttackAt: number;
   petNextAttackAt?: number;
+  playerRegenAt: number;
 }
 
 export interface CombatState {

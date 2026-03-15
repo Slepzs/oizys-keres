@@ -5,7 +5,7 @@ import { ENEMY_DEFINITIONS } from '../../data/enemies.data';
 import { ITEM_DEFINITIONS } from '../../data/items.data';
 import { ZONE_DEFINITIONS } from '../../data/zones.data';
 import { createInitialCombatSkillsState } from '../../data/combat-skills.data';
-import { calculateCombatLevel, calculateMaxHp, getPlayerAttackSpeed } from './queries';
+import { calculateCombatLevel, calculateMaxHp, getPlayerAttackSpeed, REGEN_INTERVAL_MS } from './queries';
 
 /**
  * Start combat in a zone.
@@ -55,6 +55,7 @@ export function startCombat(
       playerNextAttackAt: now + playerAttackSpeedSeconds * 1000,
       enemyNextAttackAt: now + enemy.attackSpeed * 1000,
       petNextAttackAt: now,
+      playerRegenAt: now + REGEN_INTERVAL_MS,
     },
   };
 }

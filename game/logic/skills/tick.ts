@@ -10,7 +10,8 @@ import { createRng, randomInt, rollChance } from '../rng';
 import { getEffectiveMultiplier, getSkillXpMultiplier } from '../multipliers';
 import { getActiveTree } from '../woodcutting';
 import { getActiveMiningRock } from '../mining';
-import { processSummoningRituals } from '../summoning';
+import { getSummoningCombatBonuses, processSummoningRituals } from '../summoning';
+import { calculateMaxHp } from '../combat';
 
 export interface SkillsTickResult {
   state: GameState;
@@ -163,9 +164,19 @@ function processSkillTick(state: GameState, skillId: SkillId, ticksElapsed: numb
       newState.skills.summoning.level,
       actionsCompleted
     );
+    const maxHpBonus = getSummoningCombatBonuses(
+      ritualResult.summoning,
+      newState.skills.summoning.level
+    ).maxHpBonus;
+    const updatedPlayerMaxHp = calculateMaxHp(newState.combat.combatSkills, maxHpBonus);
     newState = {
       ...newState,
       summoning: ritualResult.summoning,
+      combat: {
+        ...newState.combat,
+        playerMaxHp: updatedPlayerMaxHp,
+        playerCurrentHp: Math.min(newState.combat.playerCurrentHp, updatedPlayerMaxHp),
+      },
     };
     events.push(...ritualResult.events);
   }

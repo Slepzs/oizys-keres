@@ -7,8 +7,9 @@ import { Button } from '../components/common/Button';
 import { SkillProgressBar } from '../components/game/SkillProgressBar';
 import { TreeSelector } from '../components/game/TreeSelector';
 import { RockSelector } from '../components/game/RockSelector';
+import { SummoningSkillPanel } from '../components/game/SummoningSkillPanel';
 import { useGame } from '@/hooks/useGame';
-import { useGameActions, useMiningRocks, useWoodcuttingTrees } from '@/store';
+import { useGameActions, useMiningRocks, useSummoningSummary, useWoodcuttingTrees } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { SKILL_DEFINITIONS, SKILL_IDS } from '@/game/data';
 import type { SkillId } from '@/game/types';
@@ -22,11 +23,12 @@ const SKILL_CRAFTING_PLACEHOLDER: Record<SkillId, string> = {
 
 export function SkillsScreen() {
   const { state, setActiveSkill, toggleAutomation } = useGame();
-  const { setActiveTree, setActiveRock } = useGameActions();
+  const { setActiveTree, setActiveRock, setActivePet } = useGameActions();
   const [showTreeSelector, setShowTreeSelector] = useState(false);
   const [showRockSelector, setShowRockSelector] = useState(false);
   const woodcuttingTrees = useWoodcuttingTrees();
   const miningRocks = useMiningRocks();
+  const summoning = useSummoningSummary();
 
   const handleSkillPress = (skillId: SkillId) => {
     if (skillId === 'crafting') {
@@ -59,6 +61,23 @@ export function SkillsScreen() {
           const cardStyle = isActive
             ? { ...styles.skillCard, ...styles.activeCard }
             : styles.skillCard;
+
+          if (skillId === 'summoning') {
+            return (
+              <SummoningSkillPanel
+                key={skillId}
+                skill={skill}
+                skillXpRequired={summoning.skillXpRequired}
+                isActive={isActive}
+                ritualsCompleted={summoning.ritualsCompleted}
+                essenceAmount={summoning.essenceAmount}
+                pets={summoning.pets}
+                onToggleTraining={() => handleSkillPress(skillId)}
+                onToggleAutomation={() => toggleAutomation(skillId)}
+                onSelectPet={setActivePet}
+              />
+            );
+          }
 
           return (
             <Card

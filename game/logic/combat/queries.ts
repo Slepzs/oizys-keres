@@ -21,6 +21,14 @@ const HP_PER_DEFENSE_LEVEL = 5;
 const DEFAULT_ATTACK_SPEED = 2.4;
 const COMBAT_XP_REWARD_MULTIPLIER = 1.5;
 
+// Critical hit constants
+export const PLAYER_CRIT_CHANCE = 0.15;
+export const ENEMY_CRIT_CHANCE = 0.10;
+export const CRIT_DAMAGE_MULTIPLIER = 2.0;
+
+// HP regeneration (ms between regen ticks)
+export const REGEN_INTERVAL_MS = 5000;
+
 /**
  * Get combat skill level from XP.
  */
@@ -142,6 +150,15 @@ export function getPlayerAttackSpeed(
   const baseAttackSpeed = equipStats.attackSpeed ?? DEFAULT_ATTACK_SPEED;
   const multiplier = bonuses?.attackSpeedMultiplier ?? 1;
   return Math.max(1, baseAttackSpeed / Math.max(0.25, multiplier));
+}
+
+/**
+ * Get HP regenerated per regen tick.
+ * Base 1 HP + 1 per 10 defense levels.
+ */
+export function getPlayerRegenAmount(combatState: CombatState): number {
+  const defenseLevel = getCombatSkillLevel(combatState.combatSkills.defense.xp);
+  return 1 + Math.floor(defenseLevel / 10);
 }
 
 /**

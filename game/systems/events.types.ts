@@ -22,8 +22,9 @@ export type GameEvent =
   | { type: 'ACHIEVEMENT_UNLOCKED'; achievementId: string }
   // Combat events
   | { type: 'COMBAT_STARTED'; zoneId: string; enemyId: string }
-  | { type: 'COMBAT_PLAYER_ATTACK'; damage: number; enemyHpRemaining: number }
-  | { type: 'COMBAT_ENEMY_ATTACK'; damage: number; playerHpRemaining: number }
+  | { type: 'COMBAT_PLAYER_ATTACK'; damage: number; enemyHpRemaining: number; isCritical: boolean }
+  | { type: 'COMBAT_ENEMY_ATTACK'; damage: number; playerHpRemaining: number; isCritical: boolean }
+  | { type: 'COMBAT_PLAYER_REGEN'; hpRestored: number; playerHpAfter: number }
   | { type: 'COMBAT_PET_ATTACK'; petId: PetId; damage: number; enemyHpRemaining: number; healAmount: number }
   | { type: 'COMBAT_ENEMY_KILLED'; enemyId: string; xpReward: number }
   | { type: 'COMBAT_PLAYER_DIED' }
