@@ -1,6 +1,7 @@
 import type { GameState } from '../../types';
 import type { AchievementCondition, AchievementDefinition } from '../../types/achievements';
 import { ACHIEVEMENT_DEFINITIONS } from '../../data/achievements.data';
+import { calculateCombatLevel } from '../combat';
 
 /**
  * Evaluate if an achievement condition is met.
@@ -38,6 +39,14 @@ export function evaluateAchievementCondition(condition: AchievementCondition, st
     case 'any_skill_level': {
       return Object.values(state.skills).some((skill) => skill.level >= condition.level);
     }
+
+    case 'combat_level': {
+      const combatLevel = calculateCombatLevel(state.combat.combatSkills);
+      return combatLevel >= condition.level;
+    }
+
+    case 'total_kills':
+      return state.combat.totalKills >= condition.count;
 
     default:
       return false;

@@ -17,7 +17,9 @@ export type AchievementCondition =
   | { type: 'quests_completed'; count: number }
   | { type: 'skills_maxed'; count: number }
   | { type: 'any_skill_level'; level: number }
-  | { type: 'total_items_collected'; itemId: ItemId; count: number };
+  | { type: 'total_items_collected'; itemId: ItemId; count: number }
+  | { type: 'combat_level'; level: number }
+  | { type: 'total_kills'; count: number };
 
 /**
  * Rewards granted when an achievement is unlocked.

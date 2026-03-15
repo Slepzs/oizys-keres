@@ -6,13 +6,16 @@ import { ProgressBar } from '../components/common/ProgressBar';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { getAllStatDefinitions } from '@/game/systems';
 import type { AttributeStatDefinition, SkillStatDefinition, StatDefinition } from '@/game/types';
-import { usePlayerSummary, useSkillSummaries } from '@/store';
+import { usePlayerSummary, useSkillSummaries, useCombatSummary } from '@/store';
+import { COMBAT_SKILL_DEFINITIONS } from '@/game/data';
+import { COMBAT_SKILL_IDS } from '@/game/types';
 
 const SHOW_SUMMARY = true;
 
 export function StatsScreen() {
   const playerSummary = usePlayerSummary();
   const skillSummaries = useSkillSummaries();
+  const combatSummary = useCombatSummary();
 
   const visibleStats = useMemo(() => {
     return getAllStatDefinitions()
@@ -125,6 +128,51 @@ export function StatsScreen() {
               <ProgressBar
                 progress={summary.progress}
                 color={skillColor}
+                backgroundColor={colors.xpBarBg}
+                height={6}
+                style={styles.skillProgress}
+              />
+            </Card>
+          );
+        })}
+
+        <Text style={styles.sectionTitle}>Combat</Text>
+        <Card style={styles.statCard}>
+          <View style={styles.statRow}>
+            <View style={styles.statLabelRow}>
+              <Text style={styles.statIcon}>⚔️</Text>
+              <View>
+                <Text style={styles.statLabel}>Combat Level</Text>
+                <Text style={styles.statSubLabel}>
+                  {combatSummary.totalKills} kills · {combatSummary.totalDeaths} deaths
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.statValue}>Level {combatSummary.combatLevel}</Text>
+          </View>
+        </Card>
+        {COMBAT_SKILL_IDS.map((skillId) => {
+          const skill = combatSummary.skills[skillId];
+          const def = COMBAT_SKILL_DEFINITIONS[skillId];
+          return (
+            <Card key={skillId} style={styles.statCard}>
+              <View style={styles.statRow}>
+                <View style={styles.statLabelRow}>
+                  <Text style={styles.statIcon}>{def.icon}</Text>
+                  <View>
+                    <Text style={styles.statLabel}>{def.name}</Text>
+                    <Text style={styles.statSubLabel}>Level {skill.level}</Text>
+                  </View>
+                </View>
+                <Text style={styles.statValue}>
+                  {skill.xpRequired > 0
+                    ? `${skill.xp} / ${skill.xpRequired} XP`
+                    : `${skill.xp} XP`}
+                </Text>
+              </View>
+              <ProgressBar
+                progress={skill.progress}
+                color={colors.error}
                 backgroundColor={colors.xpBarBg}
                 height={6}
                 style={styles.skillProgress}

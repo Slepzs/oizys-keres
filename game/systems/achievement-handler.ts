@@ -34,6 +34,16 @@ export function registerAchievementHandlers(): void {
       return checkAchievements(newState, event, ctx);
     }, 100);
 
+    // Check achievements on combat skill level up (attack, strength, defense)
+    eventBus.on('COMBAT_SKILL_LEVEL_UP', (_event, state, ctx) => {
+      return checkAchievements(state, _event, ctx);
+    }, 100);
+
+    // Track total kills and check combat achievements on each enemy kill
+    eventBus.on('COMBAT_ENEMY_KILLED', (event, state, ctx) => {
+      return checkAchievements(state, event, ctx);
+    }, 100);
+
     // Note: QUEST_COMPLETED achievements are handled directly in quest-handler.ts
     // to avoid timing issues with the event bus. This ensures quest completion
     // counts are updated before achievement checks run.
