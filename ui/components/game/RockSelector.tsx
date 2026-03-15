@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Card } from '../common/Card';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { MINING_ROCKS } from '@/game/data';
 import type { RockTier } from '@/game/data/rock-tiers.data';
+import type { RockTierId } from '@/game/types';
 
 interface RockSelectorProps {
   currentLevel: number;
-  activeRockId: string | undefined;
-  onSelectRock: (rockId: string) => void;
+  activeRockId: RockTierId | undefined;
+  onSelectRock: (rockId: RockTierId) => void;
   onClose: () => void;
 }
 

@@ -1,7 +1,8 @@
 import type { ResourceId } from '../types/resources';
+import type { RockTierId } from '../types/skills';
 
 export interface RockTier {
-  id: string;
+  id: RockTierId;
   name: string;
   description: string;
   icon: string;
@@ -12,7 +13,7 @@ export interface RockTier {
   ticksPerAction: number;
 }
 
-export const MINING_ROCKS: Record<string, RockTier> = {
+export const MINING_ROCKS: Record<RockTierId, RockTier> = {
   limestone: {
     id: 'limestone',
     name: 'Limestone Rock',
@@ -81,7 +82,7 @@ export const MINING_ROCKS: Record<string, RockTier> = {
   },
 };
 
-export const ROCK_IDS = Object.keys(MINING_ROCKS);
+export const ROCK_IDS = Object.keys(MINING_ROCKS) as RockTierId[];
 
 export function getAvailableRocks(miningLevel: number): RockTier[] {
   return Object.values(MINING_ROCKS).filter(

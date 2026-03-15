@@ -7,6 +7,7 @@ import { createInitialCraftingState } from '../data/crafting.data';
 import { playerMaxHealthForLevel, playerMaxManaForLevel } from '../data/curves';
 import { createInitialMultipliersState } from '../logic/multipliers';
 import { createInitialCombatState } from '../logic/combat';
+import type { RockTierId, TreeTierId } from '../types';
 
 type MigrationFn = (save: SaveBlob) => SaveBlob;
 
@@ -101,14 +102,15 @@ const migrations: Record<number, MigrationFn> = {
   6: (save) => {
     // Set to highest available tree based on level (default behavior)
     const woodcuttingLevel = save.state.skills.woodcutting.level;
-    const availableTrees = [
+    const treeTiers = [
       { id: 'normal', level: 1 },
       { id: 'oak', level: 15 },
       { id: 'willow', level: 30 },
       { id: 'maple', level: 45 },
       { id: 'yew', level: 60 },
       { id: 'magic', level: 75 },
-    ].filter(tree => tree.level <= woodcuttingLevel);
+    ] satisfies Array<{ id: TreeTierId; level: number }>;
+    const availableTrees = treeTiers.filter(tree => tree.level <= woodcuttingLevel);
     const defaultTree = availableTrees[availableTrees.length - 1];
 
     return {
@@ -247,8 +249,9 @@ const migrations: Record<number, MigrationFn> = {
       { id: 'coal', level: 40 },
       { id: 'mithril', level: 55 },
       { id: 'adamantite', level: 70 },
-    ].filter(rock => rock.level <= miningLevel);
-    const defaultRock = rockTiers[rockTiers.length - 1];
+    ] satisfies Array<{ id: RockTierId; level: number }>;
+    const availableRocks = rockTiers.filter(rock => rock.level <= miningLevel);
+    const defaultRock = availableRocks[availableRocks.length - 1];
 
     return {
       ...save,

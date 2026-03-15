@@ -1,7 +1,9 @@
 import type { GameState } from '../types';
 import { DEFAULT_BAG_SIZE } from '../data/items.data';
 import { SKILL_IDS } from '../data/skills.data';
+import { getActiveMiningRock } from '../logic/mining';
 import { normalizePlayerVitals } from '../logic/player';
+import { getActiveTree } from '../logic/woodcutting';
 import type { SaveBlob } from './schema';
 import { migrateSave, needsMigration } from './migrations';
 import { createInitialGameState, createInitialNotificationsState } from './initial-state';
@@ -158,6 +160,8 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...(rawSkillStats.crafting ?? rawSkillStats.smithing ?? {}),
     },
   };
+  repairedSkills.woodcutting.activeTreeId = getActiveTree(repairedSkills.woodcutting).id;
+  repairedSkills.mining.activeRockId = getActiveMiningRock(repairedSkills.mining).id;
   const repairedMultipliers = {
     ...initial.multipliers,
     ...(state.multipliers ?? {}),

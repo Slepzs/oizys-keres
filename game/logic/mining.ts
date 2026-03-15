@@ -1,9 +1,11 @@
 import { MINING_ROCKS, getAvailableRocks, getDefaultRock } from '../data/rock-tiers.data';
-import type { SkillState } from '../types/skills';
+import type { RockTierId, SkillState } from '../types/skills';
 
 export { MINING_ROCKS, getAvailableRocks, getDefaultRock };
 
-export function setActiveMiningRock(skill: SkillState, rockId: string): SkillState {
+type MiningSelectionState = Pick<SkillState, 'level' | 'activeRockId'>;
+
+export function setActiveMiningRock(skill: SkillState, rockId: RockTierId): SkillState {
   const rock = MINING_ROCKS[rockId];
   if (!rock || skill.level < rock.levelRequired) {
     return skill;
@@ -14,11 +16,17 @@ export function setActiveMiningRock(skill: SkillState, rockId: string): SkillSta
   };
 }
 
-export function getActiveMiningRock(skill: SkillState) {
+export function getActiveMiningRock(skill: MiningSelectionState) {
   if (!skill.activeRockId) {
     return getDefaultRock(skill.level);
   }
-  return MINING_ROCKS[skill.activeRockId] || getDefaultRock(skill.level);
+
+  const selectedRock = MINING_ROCKS[skill.activeRockId];
+  if (!selectedRock || skill.level < selectedRock.levelRequired) {
+    return getDefaultRock(skill.level);
+  }
+
+  return selectedRock;
 }
 
 export function getMiningRocksForLevel(level: number) {

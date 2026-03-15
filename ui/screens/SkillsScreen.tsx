@@ -8,9 +8,9 @@ import { SkillProgressBar } from '../components/game/SkillProgressBar';
 import { TreeSelector } from '../components/game/TreeSelector';
 import { RockSelector } from '../components/game/RockSelector';
 import { useGame } from '@/hooks/useGame';
-import { useGameActions } from '@/store';
+import { useGameActions, useMiningRocks, useWoodcuttingTrees } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
-import { SKILL_DEFINITIONS, SKILL_IDS, WOODCUTTING_TREES, MINING_ROCKS } from '@/game/data';
+import { SKILL_DEFINITIONS, SKILL_IDS } from '@/game/data';
 import type { SkillId } from '@/game/types';
 
 const SKILL_CRAFTING_PLACEHOLDER: Record<SkillId, string> = {
@@ -24,6 +24,8 @@ export function SkillsScreen() {
   const { setActiveTree, setActiveRock } = useGameActions();
   const [showTreeSelector, setShowTreeSelector] = useState(false);
   const [showRockSelector, setShowRockSelector] = useState(false);
+  const woodcuttingTrees = useWoodcuttingTrees();
+  const miningRocks = useMiningRocks();
 
   const handleSkillPress = (skillId: SkillId) => {
     if (skillId === 'crafting') {
@@ -39,13 +41,7 @@ export function SkillsScreen() {
   };
 
   const woodcuttingSkill = state.skills.woodcutting;
-  const activeTree = woodcuttingSkill.activeTreeId
-    ? WOODCUTTING_TREES[woodcuttingSkill.activeTreeId]
-    : null;
   const miningSkill = state.skills.mining;
-  const activeMiningRock = miningSkill.activeRockId
-    ? MINING_ROCKS[miningSkill.activeRockId]
-    : null;
 
   return (
     <SafeContainer padTop={false}>
@@ -108,7 +104,7 @@ export function SkillsScreen() {
                 <View style={styles.treeRow}>
                   <Text style={styles.treeLabel}>Tree:</Text>
                   <Text style={styles.treeValue}>
-                    {activeTree ? `${activeTree.icon} ${activeTree.name}` : '🌳 Normal Tree'}
+                    {`${woodcuttingTrees.active.icon} ${woodcuttingTrees.active.name}`}
                   </Text>
                   <Text
                     style={styles.treeChangeButton}
@@ -124,7 +120,7 @@ export function SkillsScreen() {
                 <View style={styles.treeRow}>
                   <Text style={styles.treeLabel}>Rock:</Text>
                   <Text style={styles.treeValue}>
-                    {activeMiningRock ? `${activeMiningRock.icon} ${activeMiningRock.name}` : '🪨 Limestone Rock'}
+                    {`${miningRocks.active.icon} ${miningRocks.active.name}`}
                   </Text>
                   <Text
                     style={styles.treeChangeButton}
@@ -162,7 +158,7 @@ export function SkillsScreen() {
       {showTreeSelector && (
         <TreeSelector
           currentLevel={woodcuttingSkill.level}
-          activeTreeId={woodcuttingSkill.activeTreeId}
+          activeTreeId={woodcuttingTrees.activeTreeId}
           onSelectTree={setActiveTree}
           onClose={() => setShowTreeSelector(false)}
         />
@@ -172,7 +168,7 @@ export function SkillsScreen() {
       {showRockSelector && (
         <RockSelector
           currentLevel={miningSkill.level}
-          activeRockId={miningSkill.activeRockId}
+          activeRockId={miningRocks.activeRockId}
           onSelectRock={setActiveRock}
           onClose={() => setShowRockSelector(false)}
         />

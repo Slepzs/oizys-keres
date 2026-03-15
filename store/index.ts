@@ -22,4 +22,6 @@ export {
   useCombatTracker,
   useEquipment,
   useCombatActions,
+  useWoodcuttingTrees,
+  useMiningRocks,
 } from './selectors';

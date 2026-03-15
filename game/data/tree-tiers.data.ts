@@ -1,7 +1,8 @@
 import type { ResourceId } from '../types/resources';
+import type { TreeTierId } from '../types/skills';
 
 export interface TreeTier {
-  id: string;
+  id: TreeTierId;
   name: string;
   description: string;
   icon: string;
@@ -13,7 +14,7 @@ export interface TreeTier {
   dropTableId?: string;
 }
 
-export const WOODCUTTING_TREES: Record<string, TreeTier> = {
+export const WOODCUTTING_TREES: Record<TreeTierId, TreeTier> = {
   normal: {
     id: 'normal',
     name: 'Normal Tree',
@@ -82,7 +83,7 @@ export const WOODCUTTING_TREES: Record<string, TreeTier> = {
   },
 };
 
-export const TREE_IDS = Object.keys(WOODCUTTING_TREES);
+export const TREE_IDS = Object.keys(WOODCUTTING_TREES) as TreeTierId[];
 
 export function getAvailableTrees(woodcuttingLevel: number): TreeTier[] {
   return Object.values(WOODCUTTING_TREES).filter(

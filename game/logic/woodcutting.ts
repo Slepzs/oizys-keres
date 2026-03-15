@@ -1,9 +1,11 @@
 import { WOODCUTTING_TREES, getAvailableTrees, getDefaultTree } from '../data/tree-tiers.data';
-import type { SkillState } from '../types/skills';
+import type { SkillState, TreeTierId } from '../types/skills';
 
 export { WOODCUTTING_TREES, getAvailableTrees, getDefaultTree };
 
-export function setActiveTree(skill: SkillState, treeId: string): SkillState {
+type WoodcuttingSelectionState = Pick<SkillState, 'level' | 'activeTreeId'>;
+
+export function setActiveTree(skill: SkillState, treeId: TreeTierId): SkillState {
   const tree = WOODCUTTING_TREES[treeId];
   if (!tree || skill.level < tree.levelRequired) {
     return skill;
@@ -14,11 +16,17 @@ export function setActiveTree(skill: SkillState, treeId: string): SkillState {
   };
 }
 
-export function getActiveTree(skill: SkillState) {
+export function getActiveTree(skill: WoodcuttingSelectionState) {
   if (!skill.activeTreeId) {
     return getDefaultTree(skill.level);
   }
-  return WOODCUTTING_TREES[skill.activeTreeId] || getDefaultTree(skill.level);
+
+  const selectedTree = WOODCUTTING_TREES[skill.activeTreeId];
+  if (!selectedTree || skill.level < selectedTree.levelRequired) {
+    return getDefaultTree(skill.level);
+  }
+
+  return selectedTree;
 }
 
 export function getWoodcuttingTreesForLevel(level: number) {

@@ -15,6 +15,8 @@ import {
   getTotalEquipmentStats,
   getAvailableTrees,
   getActiveTree,
+  getMiningRocksForLevel,
+  getActiveMiningRock,
 } from '@/game/logic';
 import { COMBAT_SKILL_IDS } from '@/game/types';
 
@@ -256,18 +258,41 @@ export function useCombatActions() {
 }
 
 export function useWoodcuttingTrees() {
-  const woodcutting = useGameStore(useShallow((state) => state.skills.woodcutting));
+  const { level, activeTreeId } = useGameStore(
+    useShallow((state) => ({
+      level: state.skills.woodcutting.level,
+      activeTreeId: state.skills.woodcutting.activeTreeId,
+    }))
+  );
 
   return useMemo(() => {
-    const available = getAvailableTrees(woodcutting.level);
-    const active = getActiveTree(woodcutting);
+    const active = getActiveTree({ level, activeTreeId });
     return {
-      available,
+      available: getAvailableTrees(level),
       active,
-      level: woodcutting.level,
-      activeTreeId: woodcutting.activeTreeId,
+      level,
+      activeTreeId: active.id,
     };
-  }, [woodcutting]);
+  }, [level, activeTreeId]);
+}
+
+export function useMiningRocks() {
+  const { level, activeRockId } = useGameStore(
+    useShallow((state) => ({
+      level: state.skills.mining.level,
+      activeRockId: state.skills.mining.activeRockId,
+    }))
+  );
+
+  return useMemo(() => {
+    const active = getActiveMiningRock({ level, activeRockId });
+    return {
+      available: getMiningRocksForLevel(level),
+      active,
+      level,
+      activeRockId: active.id,
+    };
+  }, [level, activeRockId]);
 }
 
 export function useNotificationActions() {

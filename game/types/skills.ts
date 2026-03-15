@@ -1,6 +1,8 @@
 import type { ResourceId } from './resources';
 
 export type SkillId = 'woodcutting' | 'mining' | 'crafting';
+export type TreeTierId = 'normal' | 'oak' | 'willow' | 'maple' | 'yew' | 'magic';
+export type RockTierId = 'limestone' | 'copper' | 'iron' | 'coal' | 'mithril' | 'adamantite';
 
 export interface SkillState {
   level: number;
@@ -8,8 +10,8 @@ export interface SkillState {
   automationUnlocked: boolean;
   automationEnabled: boolean;
   tickProgress: number;
-  activeTreeId?: string;
-  activeRockId?: string;
+  activeTreeId?: TreeTierId;
+  activeRockId?: RockTierId;
 }
 
 export type SkillsState = Record<SkillId, SkillState>;

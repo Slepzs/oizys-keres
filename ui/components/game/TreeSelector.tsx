@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Card } from '../common/Card';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { WOODCUTTING_TREES } from '@/game/data';
 import type { TreeTier } from '@/game/data/tree-tiers.data';
+import type { TreeTierId } from '@/game/types';
 
 interface TreeSelectorProps {
   currentLevel: number;
-  activeTreeId: string | undefined;
-  onSelectTree: (treeId: string) => void;
+  activeTreeId: TreeTierId | undefined;
+  onSelectTree: (treeId: TreeTierId) => void;
   onClose: () => void;
 }
 

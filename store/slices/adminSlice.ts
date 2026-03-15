@@ -1,4 +1,5 @@
 import { createInitialBagState } from '@/game/data/items.data';
+import { getActiveMiningRock, getActiveTree } from '@/game/logic';
 import type { ItemId, SkillId, CombatSkillId } from '@/game/types';
 import type { SliceGet, SliceSet, StoreHelpers } from './types';
 
@@ -55,13 +56,24 @@ export function createAdminSlice(set: SliceSet, get: SliceGet, _helpers: StoreHe
       const skill = state.skills[skillId];
       if (!skill) return;
 
+      const normalizedLevel = Math.max(1, level);
+      const updatedSkill = {
+        ...skill,
+        level: normalizedLevel,
+      };
+
+      if (skillId === 'woodcutting') {
+        updatedSkill.activeTreeId = getActiveTree(updatedSkill).id;
+      }
+
+      if (skillId === 'mining') {
+        updatedSkill.activeRockId = getActiveMiningRock(updatedSkill).id;
+      }
+
       set({
         skills: {
           ...state.skills,
-          [skillId]: {
-            ...skill,
-            level: Math.max(1, level),
-          },
+          [skillId]: updatedSkill,
         },
       });
     },
