@@ -3,7 +3,7 @@ import type { MultiplierTarget } from './multipliers';
 import type { ResourceId } from './resources';
 import type { SkillId } from './skills';
 
-export type InfrastructureId = 'campfire' | 'workbench' | 'sawmill' | 'armory';
+export type InfrastructureId = 'campfire' | 'workbench' | 'sawmill' | 'armory' | 'forge';
 
 export type CraftingCategory = 'tools' | 'infrastructure' | 'weapons' | 'armor';
 
@@ -46,7 +46,8 @@ export type CraftingRecipeId =
   | 'craft_arcane_platelegs'
   | 'craft_arcane_boots'
   | 'craft_berserker_charm'
-  | 'craft_runed_war_ring';
+  | 'craft_runed_war_ring'
+  | 'build_forge';
 
 export type CraftingRequirement =
   | { type: 'skill_level'; skillId: SkillId; level: number }
