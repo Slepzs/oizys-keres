@@ -15,6 +15,9 @@ export type ItemId =
   | 'orc_tusk'
   | 'troll_toe'
   | 'demon_essence'
+  | 'banshee_wisp'
+  | 'dragon_scale'
+  | 'elder_demon_core'
   // Woodcutting drops
   | 'tree_seed'
   | 'bird_nest'

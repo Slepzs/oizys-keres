@@ -87,3 +87,22 @@ applyTo: '**'
   - Training modes: attack, strength, defense, balanced (splits XP evenly)
   - Auto-fight: automatically spawns new enemy after kill
 - Specs directory at .agents/specs/ for future feature documentation
+- Mining Rock Tier System (v14 save schema):
+  - Data in /game/data/rock-tiers.data.ts (RockTier type, MINING_ROCKS, getAvailableRocks, getDefaultRock)
+  - Logic in /game/logic/mining.ts (setActiveMiningRock, getActiveMiningRock, getMiningRocksForLevel)
+  - SkillState now has optional `activeRockId?: string` field
+  - 6 tiers: limestone(1), copper(10), iron(25), coal(40), mithril(55), adamantite(70)
+  - 5 new ResourceIds: copper_ore, iron_ore, coal, mithril_ore, adamantite_ore
+  - Limestone rock preserves 50/50 ore/stone split; higher tiers produce one resource directly
+  - UI: RockSelector.tsx component, integrated into SkillsScreen for mining
+  - Store: setActiveRock action in skillsSlice, exposed via useGameActions
+- Combat Late-Game Expansion:
+  - 3 new enemies: banshee(55), dragon_whelp(65), elder_demon(75) in /game/data/enemies.data.ts
+  - 3 new zones: ruins(52), dragon_lair(62), abyssal_depths(73) in /game/data/zones.data.ts
+  - 3 new misc items: banshee_wisp, dragon_scale, elder_demon_core in types/items.ts + items.data.ts
+  - Equipment drops added to ALL enemies in combat-drops.data.ts
+    - Early (rat/wolf/nerd/goblin): bronze gear at 1-3% chance
+    - Mid (skeleton/orc): iron/steel gear at 1-2% chance
+    - High (troll/demon): steel/mithril gear + accessories at 1-3% chance
+    - Late (banshee/dragon_whelp/elder_demon): mithril/rune/arcane gear at 1-3% chance
+  - Equipment is now obtainable via combat drops (previously unobtainable)

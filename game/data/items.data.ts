@@ -126,6 +126,36 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     maxStack: 50,
     sellPrice: 100,
   },
+  banshee_wisp: {
+    id: 'banshee_wisp',
+    name: 'Banshee Wisp',
+    description: 'A spectral wisp that lingers after a banshee is destroyed.',
+    icon: '🌫️',
+    category: 'misc',
+    rarity: 'epic',
+    maxStack: 50,
+    sellPrice: 180,
+  },
+  dragon_scale: {
+    id: 'dragon_scale',
+    name: 'Dragon Scale',
+    description: 'An iridescent scale shed by a young dragon.',
+    icon: '🐉',
+    category: 'misc',
+    rarity: 'epic',
+    maxStack: 50,
+    sellPrice: 280,
+  },
+  elder_demon_core: {
+    id: 'elder_demon_core',
+    name: 'Elder Demon Core',
+    description: 'The crystallized heart of an elder demon. Pure concentrated darkness.',
+    icon: '💜',
+    category: 'misc',
+    rarity: 'epic',
+    maxStack: 20,
+    sellPrice: 500,
+  },
 
   // Woodcutting drops
   tree_seed: {

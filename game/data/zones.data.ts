@@ -49,6 +49,30 @@ export const ZONE_DEFINITIONS: Record<string, ZoneDefinition> = {
     combatLevelRequired: 45,
     enemies: ['demon'],
   },
+  ruins: {
+    id: 'ruins',
+    name: 'Haunted Ruins',
+    description: 'Ancient ruins haunted by wailing banshees. Their screams can shatter stone.',
+    icon: '🏚️',
+    combatLevelRequired: 52,
+    enemies: ['banshee'],
+  },
+  dragon_lair: {
+    id: 'dragon_lair',
+    name: "Dragon's Lair",
+    description: 'A volcanic cavern reeking of sulfur. Young dragons guard their hoard jealously.',
+    icon: '🌋',
+    combatLevelRequired: 62,
+    enemies: ['dragon_whelp'],
+  },
+  abyssal_depths: {
+    id: 'abyssal_depths',
+    name: 'Abyssal Depths',
+    description: 'The deepest reaches of the demon realm. Elder demons reign here unchallenged.',
+    icon: '🕳️',
+    combatLevelRequired: 73,
+    enemies: ['elder_demon'],
+  },
 };
 
 export const ZONE_IDS = Object.keys(ZONE_DEFINITIONS);
