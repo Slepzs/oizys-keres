@@ -1,5 +1,11 @@
 # Project Log
 
+## 2026-03-15 20:30:00 +0100
+- What was improved: Added active bonus visibility to CraftingScreen and StatsScreen. The CraftingScreen infrastructure summary card now shows an "Active Bonuses" panel listing every bonus granted by built infrastructure — value, target name, and source. StatsScreen gained a new "Bonuses" section at the bottom that surfaces all active multipliers from any source (infrastructure, achievements, upgrades), formatted with green value highlights.
+- Why it was improved: Players could not see what bonuses their built infrastructure was providing without browsing each recipe individually. The Master Forge, which costs 600 mithril ore and 200 adamantite ore, granted +15% mining and +15% crafting XP with no visible confirmation in the UI, making the payoff of the endgame resource grind invisible and weakening motivation to complete it.
+- Strategic direction chosen: Surface existing system state more legibly rather than adding new mechanics — make every built structure immediately justify its cost through clear, persistent feedback.
+- Next potential vector: Add a "Top Ore Demand" hint to the Dashboard or CraftingScreen showing the highest-level recipes and how many mithril/adamantite ore each requires, so players can plan their gathering goals before reaching the unlock thresholds.
+
 ## 2026-03-15 20:01:00 +0100
 - What was improved: Corrected the endgame recipe gates so every adamantite-consuming recipe, including the Master Forge, now requires mining level 70, and updated the crafting screen to derive the infrastructure total from the live definitions so the new forge tier is counted correctly.
 - Why it was improved: The late-game ore loop had already been expanded, but several recipes were still visible before adamantite could actually be mined and the summary UI still reported the pre-forge infrastructure cap, which undermined progression clarity.
