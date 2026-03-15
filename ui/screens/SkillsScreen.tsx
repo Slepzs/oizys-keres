@@ -17,6 +17,7 @@ const SKILL_CRAFTING_PLACEHOLDER: Record<SkillId, string> = {
   woodcutting: 'Gather wood to feed crafting recipes.',
   mining: 'Gather ore and stone for advanced recipes.',
   crafting: 'Crafting XP comes from crafting completed recipes.',
+  summoning: 'Perform rituals to strengthen your active companion.',
 };
 
 export function SkillsScreen() {

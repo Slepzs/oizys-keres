@@ -37,8 +37,8 @@ export function processTick(state: GameState, deltaMs: number, ctx: GameContext)
 
   // Process combat if active
   if (newState.combat.activeCombat) {
-    const combatResult = processCombatTick(newState.combat, ctx.now, ticksElapsed);
-    newState = { ...newState, combat: combatResult.state };
+    const combatResult = processCombatTick(newState, ctx.now, ticksElapsed);
+    newState = combatResult.state;
     events.push(...combatResult.events);
   }
 

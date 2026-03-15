@@ -1,7 +1,9 @@
+import type { GameState } from '../../types';
 import type { CombatState } from '../../types/combat';
 import type { GameEvent } from '../../systems/events.types';
 import { ENEMY_DEFINITIONS } from '../../data/enemies.data';
 import { ZONE_DEFINITIONS } from '../../data/zones.data';
+import { getActivePetCombatProfile, getSummoningCombatBonuses, rewardActivePetForCombatKill } from '../summoning';
 import {
   calculateDamage,
   calculateCombatLevel,
@@ -13,11 +15,159 @@ import {
 } from './queries';
 
 export interface CombatTickResult {
-  state: CombatState;
+  state: GameState;
   events: GameEvent[];
 }
 
 const MAX_COMBAT_STEPS_PER_TICK = 250;
+
+function getCurrentBonuses(state: GameState) {
+  return getSummoningCombatBonuses(state.summoning, state.skills.summoning.level);
+}
+
+function getCurrentPet(state: GameState) {
+  return getActivePetCombatProfile(state.summoning, state.skills.summoning.level);
+}
+
+function ensurePetTimer(combatState: CombatState, hasPet: boolean): CombatState {
+  if (!hasPet || !combatState.activeCombat) {
+    return combatState;
+  }
+
+  if (Number.isFinite(combatState.activeCombat.petNextAttackAt)) {
+    return combatState;
+  }
+
+  const nextAttackAt = Math.min(
+    combatState.activeCombat.playerNextAttackAt,
+    combatState.activeCombat.enemyNextAttackAt
+  );
+
+  return {
+    ...combatState,
+    activeCombat: {
+      ...combatState.activeCombat,
+      petNextAttackAt: nextAttackAt,
+    },
+  };
+}
+
+function handleEnemyKilled(
+  state: GameState,
+  enemyId: string,
+  enemyXpReward: number,
+  occurredAt: number,
+  events: GameEvent[]
+): GameState {
+  const xpResult = distributeXpOnKill(
+    state.combat.combatSkills,
+    enemyXpReward,
+    state.combat.trainingMode
+  );
+  const petBonuses = getCurrentBonuses(state);
+  const newMaxHp = calculateMaxHp(xpResult.skills, petBonuses.maxHpBonus);
+
+  events.push({
+    type: 'COMBAT_ENEMY_KILLED',
+    enemyId,
+    xpReward: enemyXpReward,
+  });
+
+  for (const levelUp of xpResult.levelUps) {
+    events.push({
+      type: 'COMBAT_SKILL_LEVEL_UP',
+      skillId: levelUp.skillId,
+      newLevel: levelUp.newLevel,
+    });
+  }
+
+  const petRewardResult = rewardActivePetForCombatKill(
+    state.summoning,
+    state.skills.summoning.level,
+    enemyXpReward
+  );
+  events.push(...petRewardResult.events);
+
+  let nextState: GameState = {
+    ...state,
+    combat: {
+      ...state.combat,
+      combatSkills: xpResult.skills,
+      totalKills: state.combat.totalKills + 1,
+      playerMaxHp: newMaxHp,
+      playerCurrentHp: Math.min(state.combat.playerCurrentHp, newMaxHp),
+    },
+    summoning: petRewardResult.summoning,
+  };
+
+  if (nextState.combat.autoFight && nextState.combat.selectedZoneId) {
+    const selectedZoneId = nextState.combat.selectedZoneId;
+    const zone = ZONE_DEFINITIONS[selectedZoneId];
+    if (zone && zone.enemies.length > 0) {
+      const combatLevel = calculateCombatLevel(nextState.combat.combatSkills);
+      const preferredEnemyId = nextState.combat.selectedEnemyByZone[selectedZoneId];
+      const candidateEnemyIds = preferredEnemyId
+        ? [preferredEnemyId, ...zone.enemies.filter((id) => id !== preferredEnemyId)]
+        : zone.enemies;
+
+      const nextEnemyId = candidateEnemyIds.find((candidateEnemyId) => {
+        const enemy = ENEMY_DEFINITIONS[candidateEnemyId];
+        return !!enemy && combatLevel >= enemy.combatLevelRequired;
+      });
+      const nextEnemy = nextEnemyId ? ENEMY_DEFINITIONS[nextEnemyId] : null;
+
+      if (nextEnemyId && nextEnemy) {
+        const bonuses = getCurrentBonuses(nextState);
+        const nextPlayerAttackSpeed = getPlayerAttackSpeed(nextState.combat, bonuses);
+        nextState = {
+          ...nextState,
+          combat: {
+            ...nextState.combat,
+            activeCombat: {
+              zoneId: selectedZoneId,
+              enemyId: nextEnemyId,
+              enemyCurrentHp: nextEnemy.maxHp,
+              playerNextAttackAt: occurredAt + nextPlayerAttackSpeed * 1000,
+              enemyNextAttackAt: occurredAt + nextEnemy.attackSpeed * 1000,
+              petNextAttackAt: occurredAt,
+            },
+          },
+        };
+        events.push({
+          type: 'COMBAT_STARTED',
+          zoneId: selectedZoneId,
+          enemyId: nextEnemyId,
+        });
+      } else {
+        nextState = {
+          ...nextState,
+          combat: {
+            ...nextState.combat,
+            activeCombat: null,
+          },
+        };
+      }
+    } else {
+      nextState = {
+        ...nextState,
+        combat: {
+          ...nextState.combat,
+          activeCombat: null,
+        },
+      };
+    }
+  } else {
+    nextState = {
+      ...nextState,
+      combat: {
+        ...nextState.combat,
+        activeCombat: null,
+      },
+    };
+  }
+
+  return nextState;
+}
 
 /**
  * Process combat forward to `now` using the scheduled attack timestamps in `activeCombat`.
@@ -25,36 +175,61 @@ const MAX_COMBAT_STEPS_PER_TICK = 250;
  * simulate multiple attacks in one call.
  */
 export function processCombatTick(
-  combatState: CombatState,
+  state: GameState,
   now: number,
   _ticksElapsed: number
 ): CombatTickResult {
   const events: GameEvent[] = [];
-  let newState: CombatState = { ...combatState };
+  let newState = { ...state };
 
-  if (!newState.activeCombat) {
+  if (!newState.combat.activeCombat) {
     return { state: newState, events };
   }
 
   let steps = 0;
 
-  while (newState.activeCombat && steps < MAX_COMBAT_STEPS_PER_TICK) {
-    const combat = newState.activeCombat;
-    const enemy = ENEMY_DEFINITIONS[combat.enemyId];
-    if (!enemy) {
-      newState = { ...newState, activeCombat: null };
+  while (newState.combat.activeCombat && steps < MAX_COMBAT_STEPS_PER_TICK) {
+    const petProfile = getCurrentPet(newState);
+    const bonuses = getCurrentBonuses(newState);
+
+    newState = {
+      ...newState,
+      combat: ensurePetTimer(newState.combat, !!petProfile),
+    };
+
+    const combat = newState.combat.activeCombat;
+    if (!combat) {
       break;
     }
 
-    const nextEventAt = Math.min(combat.playerNextAttackAt, combat.enemyNextAttackAt);
+    const enemy = ENEMY_DEFINITIONS[combat.enemyId];
+    if (!enemy) {
+      newState = {
+        ...newState,
+        combat: {
+          ...newState.combat,
+          activeCombat: null,
+        },
+      };
+      break;
+    }
+
+    const petNextAttackAt = petProfile
+      ? (combat.petNextAttackAt ?? Math.min(combat.playerNextAttackAt, combat.enemyNextAttackAt))
+      : Number.POSITIVE_INFINITY;
+    const nextEventAt = Math.min(combat.playerNextAttackAt, combat.enemyNextAttackAt, petNextAttackAt);
     if (nextEventAt > now) {
       break;
     }
 
-    const isPlayerTurn = combat.playerNextAttackAt <= combat.enemyNextAttackAt;
+    const isPlayerTurn = combat.playerNextAttackAt <= combat.enemyNextAttackAt
+      && combat.playerNextAttackAt <= petNextAttackAt;
+    const isPetTurn = petProfile
+      && petNextAttackAt <= combat.playerNextAttackAt
+      && petNextAttackAt <= combat.enemyNextAttackAt;
 
     if (isPlayerTurn) {
-      const playerStrength = getPlayerStrength(newState);
+      const playerStrength = getPlayerStrength(newState.combat, bonuses);
       const damage = calculateDamage(playerStrength, enemy.defense);
       const enemyHpRemaining = Math.max(0, combat.enemyCurrentHp - damage);
 
@@ -64,96 +239,61 @@ export function processCombatTick(
         enemyHpRemaining,
       });
 
-      const attackSpeed = getPlayerAttackSpeed(newState);
-
+      const attackSpeed = getPlayerAttackSpeed(newState.combat, bonuses);
       newState = {
         ...newState,
-        activeCombat: {
-          ...combat,
-          enemyCurrentHp: enemyHpRemaining,
-          playerNextAttackAt: combat.playerNextAttackAt + attackSpeed * 1000,
+        combat: {
+          ...newState.combat,
+          activeCombat: {
+            ...combat,
+            enemyCurrentHp: enemyHpRemaining,
+            playerNextAttackAt: combat.playerNextAttackAt + attackSpeed * 1000,
+          },
         },
       };
 
       if (enemyHpRemaining <= 0) {
-        const xpResult = distributeXpOnKill(
-          newState.combatSkills,
-          enemy.xpReward,
-          newState.trainingMode
-        );
+        newState = handleEnemyKilled(newState, enemy.id, enemy.xpReward, nextEventAt, events);
+      }
+    } else if (isPetTurn && petProfile) {
+      const missingHpRatio = enemy.maxHp > 0 ? (enemy.maxHp - combat.enemyCurrentHp) / enemy.maxHp : 0;
+      const damage = Math.max(
+        1,
+        Math.floor(petProfile.damage * (1 + missingHpRatio * (petProfile.missingHpDamageMultiplier - 1)))
+      );
+      const enemyHpRemaining = Math.max(0, combat.enemyCurrentHp - damage);
+      events.push({
+        type: 'COMBAT_PET_ATTACK',
+        petId: petProfile.id,
+        damage,
+        enemyHpRemaining,
+        healAmount: petProfile.healOnAttack,
+      });
 
-        const newMaxHp = calculateMaxHp(xpResult.skills);
+      newState = {
+        ...newState,
+        combat: {
+          ...newState.combat,
+          playerCurrentHp: Math.min(
+            newState.combat.playerMaxHp,
+            newState.combat.playerCurrentHp + petProfile.healOnAttack
+          ),
+          activeCombat: {
+            ...combat,
+            enemyCurrentHp: enemyHpRemaining,
+            petNextAttackAt: petNextAttackAt + petProfile.attackIntervalSeconds * 1000,
+          },
+        },
+      };
 
-        events.push({
-          type: 'COMBAT_ENEMY_KILLED',
-          enemyId: enemy.id,
-          xpReward: enemy.xpReward,
-        });
-
-        for (const levelUp of xpResult.levelUps) {
-          events.push({
-            type: 'COMBAT_SKILL_LEVEL_UP',
-            skillId: levelUp.skillId,
-            newLevel: levelUp.newLevel,
-          });
-        }
-
-        newState = {
-          ...newState,
-          combatSkills: xpResult.skills,
-          totalKills: newState.totalKills + 1,
-          playerMaxHp: newMaxHp,
-          playerCurrentHp: Math.min(newState.playerCurrentHp, newMaxHp),
-        };
-
-        if (newState.autoFight && newState.selectedZoneId) {
-          const selectedZoneId = newState.selectedZoneId;
-          const zone = ZONE_DEFINITIONS[selectedZoneId];
-          if (zone && zone.enemies.length > 0) {
-            const combatLevel = calculateCombatLevel(newState.combatSkills);
-            const preferredEnemyId = newState.selectedEnemyByZone[selectedZoneId];
-            const candidateEnemyIds = preferredEnemyId
-              ? [preferredEnemyId, ...zone.enemies.filter((id) => id !== preferredEnemyId)]
-              : zone.enemies;
-
-            const nextEnemyId = candidateEnemyIds.find((id) => {
-              const enemy = ENEMY_DEFINITIONS[id];
-              return !!enemy && combatLevel >= enemy.combatLevelRequired;
-            });
-
-            const nextEnemy = nextEnemyId ? ENEMY_DEFINITIONS[nextEnemyId] : null;
-
-            if (nextEnemyId && nextEnemy) {
-              const nextAttackSpeed = getPlayerAttackSpeed(newState);
-              newState = {
-                ...newState,
-                activeCombat: {
-                  zoneId: selectedZoneId,
-                  enemyId: nextEnemyId,
-                  enemyCurrentHp: nextEnemy.maxHp,
-                  playerNextAttackAt: nextEventAt + nextAttackSpeed * 1000,
-                  enemyNextAttackAt: nextEventAt + nextEnemy.attackSpeed * 1000,
-                },
-              };
-              events.push({
-                type: 'COMBAT_STARTED',
-                zoneId: selectedZoneId,
-                enemyId: nextEnemyId,
-              });
-            } else {
-              newState = { ...newState, activeCombat: null };
-            }
-          } else {
-            newState = { ...newState, activeCombat: null };
-          }
-        } else {
-          newState = { ...newState, activeCombat: null };
-        }
+      if (enemyHpRemaining <= 0) {
+        newState = handleEnemyKilled(newState, enemy.id, enemy.xpReward, nextEventAt, events);
       }
     } else {
-      const playerDefense = getPlayerDefense(newState);
-      const damage = calculateDamage(enemy.strength, playerDefense);
-      const playerHpRemaining = Math.max(0, newState.playerCurrentHp - damage);
+      const playerDefense = getPlayerDefense(newState.combat, bonuses);
+      const baseDamage = calculateDamage(enemy.strength, playerDefense);
+      const damage = Math.max(1, baseDamage - bonuses.damageReduction);
+      const playerHpRemaining = Math.max(0, newState.combat.playerCurrentHp - damage);
 
       events.push({
         type: 'COMBAT_ENEMY_ATTACK',
@@ -163,23 +303,30 @@ export function processCombatTick(
 
       newState = {
         ...newState,
-        playerCurrentHp: playerHpRemaining,
-        activeCombat: {
-          ...combat,
-          enemyNextAttackAt: combat.enemyNextAttackAt + enemy.attackSpeed * 1000,
+        combat: {
+          ...newState.combat,
+          playerCurrentHp: playerHpRemaining,
+          activeCombat: {
+            ...combat,
+            enemyNextAttackAt: combat.enemyNextAttackAt + enemy.attackSpeed * 1000,
+          },
         },
       };
 
       if (playerHpRemaining <= 0) {
         events.push({ type: 'COMBAT_PLAYER_DIED' });
 
-        const maxHp = calculateMaxHp(newState.combatSkills);
+        const currentBonuses = getCurrentBonuses(newState);
+        const maxHp = calculateMaxHp(newState.combat.combatSkills, currentBonuses.maxHpBonus);
         newState = {
           ...newState,
-          playerCurrentHp: maxHp,
-          playerMaxHp: maxHp,
-          totalDeaths: newState.totalDeaths + 1,
-          activeCombat: null,
+          combat: {
+            ...newState.combat,
+            playerCurrentHp: maxHp,
+            playerMaxHp: maxHp,
+            totalDeaths: newState.combat.totalDeaths + 1,
+            activeCombat: null,
+          },
         };
         break;
       }

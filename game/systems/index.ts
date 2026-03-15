@@ -4,5 +4,6 @@ export * from "./events";
 export * from "./events.types";
 export * from "./notification-handler";
 export * from "./quest-handler";
+export * from "./summoning-handler";
 export * from "./skills";
 export * from "./stats";

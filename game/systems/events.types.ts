@@ -1,5 +1,6 @@
 import type { GameContext, GameState, SkillId, ItemId, CombatSkillId, ResourceId } from '../types';
 import type { CraftingCategory, CraftingRecipeId, InfrastructureId } from '../types/crafting';
+import type { PetEvolutionStageId, PetId } from '../types/summoning';
 
 /**
  * Game events emitted by the tick system and other game logic.
@@ -23,9 +24,14 @@ export type GameEvent =
   | { type: 'COMBAT_STARTED'; zoneId: string; enemyId: string }
   | { type: 'COMBAT_PLAYER_ATTACK'; damage: number; enemyHpRemaining: number }
   | { type: 'COMBAT_ENEMY_ATTACK'; damage: number; playerHpRemaining: number }
+  | { type: 'COMBAT_PET_ATTACK'; petId: PetId; damage: number; enemyHpRemaining: number; healAmount: number }
   | { type: 'COMBAT_ENEMY_KILLED'; enemyId: string; xpReward: number }
   | { type: 'COMBAT_PLAYER_DIED' }
-  | { type: 'COMBAT_SKILL_LEVEL_UP'; skillId: CombatSkillId; newLevel: number };
+  | { type: 'COMBAT_SKILL_LEVEL_UP'; skillId: CombatSkillId; newLevel: number }
+  // Summoning events
+  | { type: 'PET_UNLOCKED'; petId: PetId }
+  | { type: 'PET_LEVEL_UP'; petId: PetId; newLevel: number }
+  | { type: 'PET_EVOLVED'; petId: PetId; stageId: PetEvolutionStageId };
 
 /**
  * Event handler result type.

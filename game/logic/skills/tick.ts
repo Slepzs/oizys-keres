@@ -10,6 +10,7 @@ import { createRng, randomInt, rollChance } from '../rng';
 import { getEffectiveMultiplier, getSkillXpMultiplier } from '../multipliers';
 import { getActiveTree } from '../woodcutting';
 import { getActiveMiningRock } from '../mining';
+import { processSummoningRituals } from '../summoning';
 
 export interface SkillsTickResult {
   state: GameState;
@@ -154,6 +155,19 @@ function processSkillTick(state: GameState, skillId: SkillId, ticksElapsed: numb
         resources: resourceResult.resources,
       };
     }
+  }
+
+  if (skillId === 'summoning') {
+    const ritualResult = processSummoningRituals(
+      newState.summoning,
+      newState.skills.summoning.level,
+      actionsCompleted
+    );
+    newState = {
+      ...newState,
+      summoning: ritualResult.summoning,
+    };
+    events.push(...ritualResult.events);
   }
 
   // Check if bag is full before processing drops to prevent item loss

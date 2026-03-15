@@ -1,6 +1,6 @@
 import type { ResourceId } from './resources';
 
-export type SkillId = 'woodcutting' | 'mining' | 'crafting';
+export type SkillId = 'woodcutting' | 'mining' | 'crafting' | 'summoning';
 export type TreeTierId = 'normal' | 'oak' | 'willow' | 'maple' | 'yew' | 'magic';
 export type RockTierId = 'limestone' | 'copper' | 'iron' | 'coal' | 'mithril' | 'adamantite';
 

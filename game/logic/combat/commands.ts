@@ -10,7 +10,12 @@ import { calculateCombatLevel, calculateMaxHp, getPlayerAttackSpeed } from './qu
 /**
  * Start combat in a zone.
  */
-export function startCombat(combatState: CombatState, zoneId: string, now: number): CombatState {
+export function startCombat(
+  combatState: CombatState,
+  zoneId: string,
+  now: number,
+  playerAttackSpeedSeconds: number = getPlayerAttackSpeed(combatState)
+): CombatState {
   const zone = ZONE_DEFINITIONS[zoneId];
   if (!zone || zone.enemies.length === 0) {
     return combatState;
@@ -40,8 +45,6 @@ export function startCombat(combatState: CombatState, zoneId: string, now: numbe
     return combatState;
   }
 
-  const attackSpeed = getPlayerAttackSpeed(combatState);
-
   return {
     ...combatState,
     selectedZoneId: zoneId,
@@ -49,8 +52,9 @@ export function startCombat(combatState: CombatState, zoneId: string, now: numbe
       zoneId,
       enemyId,
       enemyCurrentHp: enemy.maxHp,
-      playerNextAttackAt: now + attackSpeed * 1000,
+      playerNextAttackAt: now + playerAttackSpeedSeconds * 1000,
       enemyNextAttackAt: now + enemy.attackSpeed * 1000,
+      petNextAttackAt: now,
     },
   };
 }

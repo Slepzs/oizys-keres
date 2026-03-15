@@ -1,4 +1,5 @@
 import { eventBus, registerOnce } from './events';
+import { PET_DEFINITIONS, PET_EVOLUTION_STAGES } from '../data/summoning.data';
 import { getQuestDefinition } from '../data/quests.data';
 import { getAchievementDefinition } from '../data/achievements.data';
 import { SKILL_DEFINITIONS } from '../data/skills.data';
@@ -124,6 +125,52 @@ export function registerNotificationHandlers(): void {
           'You Died!',
           'You were defeated in combat. Rest and try again.'
         );
+      }
+      return state;
+    }, 200);
+
+    eventBus.on('PET_UNLOCKED', (event, state, _ctx) => {
+      if (notificationCallback) {
+        const pet = PET_DEFINITIONS[event.petId];
+        if (pet) {
+          notificationCallback(
+            'achievement',
+            `${pet.name} Joined You`,
+            `${pet.icon} ${pet.passiveSummary}`,
+            { icon: pet.icon }
+          );
+        }
+      }
+      return state;
+    }, 200);
+
+    eventBus.on('PET_LEVEL_UP', (event, state, _ctx) => {
+      if (notificationCallback && event.newLevel % 5 === 0) {
+        const pet = PET_DEFINITIONS[event.petId];
+        if (pet) {
+          notificationCallback(
+            'skill_level_up',
+            `${pet.name} Bond ${event.newLevel}`,
+            `${pet.icon} Your bond with ${pet.name} reached level ${event.newLevel}.`,
+            { icon: pet.icon }
+          );
+        }
+      }
+      return state;
+    }, 200);
+
+    eventBus.on('PET_EVOLVED', (event, state, _ctx) => {
+      if (notificationCallback) {
+        const pet = PET_DEFINITIONS[event.petId];
+        const stage = PET_EVOLUTION_STAGES.find((candidate) => candidate.id === event.stageId);
+        if (pet && stage) {
+          notificationCallback(
+            'achievement',
+            `${pet.name} ${stage.name}`,
+            `${pet.icon} ${pet.name} evolved into its ${stage.name.toLowerCase()} form.`,
+            { icon: pet.icon }
+          );
+        }
       }
       return state;
     }, 200);

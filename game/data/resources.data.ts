@@ -79,6 +79,12 @@ export const RESOURCE_DEFINITIONS: Record<ResourceId, ResourceDefinition> = {
     description: 'An incredibly hard ore found in the deepest deposits.',
     icon: '⬛',
   },
+  spirit_essence: {
+    id: 'spirit_essence',
+    name: 'Spirit Essence',
+    description: 'Condensed ritual energy used to call and strengthen companions.',
+    icon: '🔮',
+  },
 };
 
 export const RESOURCE_IDS = Object.keys(RESOURCE_DEFINITIONS) as ResourceId[];
@@ -105,5 +111,6 @@ export function createInitialResourcesState(): ResourcesState {
     coal: createInitialResourceState(),
     mithril_ore: createInitialResourceState(),
     adamantite_ore: createInitialResourceState(),
+    spirit_essence: createInitialResourceState(),
   };
 }

@@ -85,4 +85,28 @@ export const SKILL_DROP_TABLES: Record<SkillId, SkillDropTable> = {
       minLevel: 5,
     },
   ],
+
+  summoning: [
+    {
+      itemId: 'bone_shard',
+      chance: 0.18,
+      minQuantity: 1,
+      maxQuantity: 2,
+      minLevel: 1,
+    },
+    {
+      itemId: 'banshee_wisp',
+      chance: 0.03,
+      minQuantity: 1,
+      maxQuantity: 1,
+      minLevel: 20,
+    },
+    {
+      itemId: 'demon_essence',
+      chance: 0.012,
+      minQuantity: 1,
+      maxQuantity: 1,
+      minLevel: 45,
+    },
+  ],
 };

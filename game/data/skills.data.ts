@@ -34,6 +34,17 @@ export const SKILL_DEFINITIONS: Record<SkillId, SkillDefinition> = {
     automationUnlockLevel: 1,
     ticksPerAction: 45, // Used by auto-crafting cadence
   },
+  summoning: {
+    id: 'summoning',
+    name: 'Summoning',
+    description: 'Perform spirit rituals to unlock companions and feed their bond.',
+    icon: '🔮',
+    baseXpPerAction: 16,
+    baseResourcePerAction: 2,
+    resourceProduced: 'spirit_essence',
+    automationUnlockLevel: 12,
+    ticksPerAction: 50,
+  },
 };
 
 export function createInitialSkillState(overrides: Partial<SkillState> = {}): SkillState {
@@ -52,6 +63,7 @@ export function createInitialSkillsState(): SkillsState {
     woodcutting: createInitialSkillState(),
     mining: createInitialSkillState(),
     crafting: createInitialSkillState({ automationUnlocked: true }),
+    summoning: createInitialSkillState(),
   };
 }
 

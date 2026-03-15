@@ -11,7 +11,8 @@ export type ResourceId =
   | 'iron_ore'
   | 'coal'
   | 'mithril_ore'
-  | 'adamantite_ore';
+  | 'adamantite_ore'
+  | 'spirit_essence';
 
 export interface ResourceState {
   amount: number;

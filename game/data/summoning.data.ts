@@ -1,0 +1,156 @@
+import type {
+  PetDefinition,
+  PetEvolutionStageDefinition,
+  PetId,
+  PetState,
+  SummoningState,
+} from '../types';
+
+export const PET_DEFINITIONS: Record<PetId, PetDefinition> = {
+  emberling: {
+    id: 'emberling',
+    name: 'Emberling',
+    description: 'A fox-spirit that turns every opening into a flurry of ash and teeth.',
+    icon: '🦊',
+    role: 'skirmisher',
+    affinity: 'Ash',
+    passiveId: 'cinder_drive',
+    passiveSummary: 'Boosts attack speed and peppers fights with rapid chip damage.',
+    unlockLevel: 1,
+    unlockRituals: 0,
+    baseAttack: 5,
+    attackPerLevel: 1.15,
+    attackIntervalSeconds: 2.1,
+    ritualBondXp: 14,
+    killBondXp: 6,
+  },
+  gravewisp: {
+    id: 'gravewisp',
+    name: 'Gravewisp',
+    description: 'A funeral lantern spirit that steals vigor from anything it touches.',
+    icon: '🕯️',
+    role: 'siphoner',
+    affinity: 'Umbral',
+    passiveId: 'soul_siphon',
+    passiveSummary: 'Converts pet hits into healing and scales well in longer fights.',
+    unlockLevel: 8,
+    unlockRituals: 24,
+    baseAttack: 7,
+    attackPerLevel: 1.3,
+    attackIntervalSeconds: 2.8,
+    ritualBondXp: 12,
+    killBondXp: 10,
+  },
+  shellback: {
+    id: 'shellback',
+    name: 'Shellback Colossus',
+    description: 'An armored tidebeast that shelters its binder behind layers of living stone.',
+    icon: '🐢',
+    role: 'guardian',
+    affinity: 'Tide',
+    passiveId: 'bastion_shell',
+    passiveSummary: 'Adds defense, max HP, and a steady layer of flat damage reduction.',
+    unlockLevel: 18,
+    unlockRituals: 72,
+    baseAttack: 10,
+    attackPerLevel: 1.45,
+    attackIntervalSeconds: 3.3,
+    ritualBondXp: 11,
+    killBondXp: 12,
+  },
+  storm_gryphon: {
+    id: 'storm_gryphon',
+    name: 'Storm Gryphon',
+    description: 'A sky-hunting predator that sharpens both your blade and the pace of battle.',
+    icon: '🦅',
+    role: 'vanguard',
+    affinity: 'Tempest',
+    passiveId: 'tempest_feathers',
+    passiveSummary: 'Adds attack and strength while keeping your tempo high.',
+    unlockLevel: 32,
+    unlockRituals: 150,
+    baseAttack: 13,
+    attackPerLevel: 1.7,
+    attackIntervalSeconds: 2.35,
+    ritualBondXp: 10,
+    killBondXp: 14,
+  },
+  void_mantis: {
+    id: 'void_mantis',
+    name: 'Void Mantis',
+    description: 'A predatory omen that waits for weakness and then carves through it.',
+    icon: '🪲',
+    role: 'executioner',
+    affinity: 'Void',
+    passiveId: 'void_hunt',
+    passiveSummary: 'Pet strikes ramp hard as enemies lose HP and excels at finishing kills.',
+    unlockLevel: 50,
+    unlockRituals: 280,
+    baseAttack: 17,
+    attackPerLevel: 2,
+    attackIntervalSeconds: 2.65,
+    ritualBondXp: 9,
+    killBondXp: 18,
+  },
+};
+
+export const PET_IDS = Object.keys(PET_DEFINITIONS) as PetId[];
+
+export const PET_EVOLUTION_STAGES: PetEvolutionStageDefinition[] = [
+  {
+    id: 'dormant',
+    name: 'Dormant',
+    icon: '◌',
+    minPetLevel: 1,
+    minSummoningLevel: 1,
+    powerMultiplier: 1,
+  },
+  {
+    id: 'awakened',
+    name: 'Awakened',
+    icon: '✦',
+    minPetLevel: 5,
+    minSummoningLevel: 10,
+    powerMultiplier: 1.25,
+  },
+  {
+    id: 'ascended',
+    name: 'Ascended',
+    icon: '✧',
+    minPetLevel: 15,
+    minSummoningLevel: 30,
+    powerMultiplier: 1.65,
+  },
+  {
+    id: 'mythic',
+    name: 'Mythic',
+    icon: '✹',
+    minPetLevel: 30,
+    minSummoningLevel: 60,
+    powerMultiplier: 2.15,
+  },
+];
+
+export function createInitialPetState(unlocked: boolean = false): PetState {
+  return {
+    unlocked,
+    level: 1,
+    xp: 0,
+    ritualsChanneled: 0,
+    combatKills: 0,
+  };
+}
+
+export function createInitialSummoningState(): SummoningState {
+  return {
+    activePetId: 'emberling',
+    ritualsCompleted: 0,
+    pets: {
+      emberling: createInitialPetState(true),
+      gravewisp: createInitialPetState(),
+      shellback: createInitialPetState(),
+      storm_gryphon: createInitialPetState(),
+      void_mantis: createInitialPetState(),
+    },
+  };
+}

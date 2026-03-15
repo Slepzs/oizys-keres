@@ -4,6 +4,7 @@ import { createInitialBagState } from '../data/items.data';
 import { createInitialQuestsState } from '../data/quests.data';
 import { createInitialAchievementsState } from '../data/achievements.data';
 import { createInitialCraftingState } from '../data/crafting.data';
+import { createInitialSummoningState } from '../data/summoning.data';
 import { playerMaxHealthForLevel, playerMaxManaForLevel } from '../data/curves';
 import { createInitialMultipliersState } from '../logic/multipliers';
 import { createInitialCombatState } from '../logic/combat';
@@ -276,6 +277,37 @@ const migrations: Record<number, MigrationFn> = {
       },
     };
   },
+
+  // Migration from v14 to v15: Add summoning skill, spirit essence, and companion state
+  14: (save) => ({
+    ...save,
+    version: 15,
+    state: {
+      ...save.state,
+      skills: {
+        ...save.state.skills,
+        summoning: {
+          level: 1,
+          xp: 0,
+          automationUnlocked: false,
+          automationEnabled: false,
+          tickProgress: 0,
+        },
+      },
+      skillStats: {
+        ...(save.state.skillStats as any),
+        summoning: {
+          level: 1,
+          xp: 0,
+        },
+      },
+      resources: {
+        ...save.state.resources,
+        spirit_essence: (save.state.resources as any)?.spirit_essence ?? { amount: 0, totalGained: 0 },
+      },
+      summoning: createInitialSummoningState(),
+    },
+  }),
 };
 
 /**

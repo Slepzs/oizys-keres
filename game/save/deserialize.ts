@@ -1,8 +1,11 @@
 import type { GameState } from '../types';
 import { DEFAULT_BAG_SIZE } from '../data/items.data';
 import { SKILL_IDS } from '../data/skills.data';
+import { createInitialSummoningState } from '../data/summoning.data';
+import { calculateMaxHp } from '../logic/combat';
 import { getActiveMiningRock } from '../logic/mining';
 import { normalizePlayerVitals } from '../logic/player';
+import { getSummoningCombatBonuses } from '../logic/summoning';
 import { getActiveTree } from '../logic/woodcutting';
 import type { SaveBlob } from './schema';
 import { migrateSave, needsMigration } from './migrations';
@@ -145,6 +148,10 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...(rawSkills.crafting ?? rawSkills.smithing ?? {}),
       automationUnlocked: true,
     },
+    summoning: {
+      ...initial.skills.summoning,
+      ...(rawSkills.summoning ?? {}),
+    },
   };
   const repairedSkillStats = {
     woodcutting: {
@@ -159,9 +166,30 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...initial.skillStats.crafting,
       ...(rawSkillStats.crafting ?? rawSkillStats.smithing ?? {}),
     },
+    summoning: {
+      ...initial.skillStats.summoning,
+      ...(rawSkillStats.summoning ?? {}),
+    },
   };
   repairedSkills.woodcutting.activeTreeId = getActiveTree(repairedSkills.woodcutting).id;
   repairedSkills.mining.activeRockId = getActiveMiningRock(repairedSkills.mining).id;
+  const initialSummoning = createInitialSummoningState();
+  const rawSummoning = (state.summoning ?? {}) as Partial<GameState['summoning']>;
+  const repairedSummoning = {
+    ...initial.summoning,
+    ...rawSummoning,
+    pets: {
+      ...initialSummoning.pets,
+      ...(rawSummoning.pets ?? {}),
+    },
+  };
+  const normalizedSummoning = {
+    ...repairedSummoning,
+    activePetId: repairedSummoning.activePetId
+      && repairedSummoning.pets[repairedSummoning.activePetId]?.unlocked
+      ? repairedSummoning.activePetId
+      : initialSummoning.activePetId,
+  };
   const repairedMultipliers = {
     ...initial.multipliers,
     ...(state.multipliers ?? {}),
@@ -188,6 +216,22 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
   );
   const rawAutomationRecipeId = (state.crafting as any)?.automation?.recipeId ?? initial.crafting.automation.recipeId;
   const automationRecipeId = typeof rawAutomationRecipeId === 'string' ? rawAutomationRecipeId : null;
+  const repairedCombatSkills = {
+    ...initial.combat.combatSkills,
+    ...(state.combat?.combatSkills ?? {}),
+  };
+  const petBonuses = getSummoningCombatBonuses(normalizedSummoning, repairedSkills.summoning.level);
+  const repairedPlayerMaxHp = calculateMaxHp(repairedCombatSkills, petBonuses.maxHpBonus);
+  const activeCombat = state.combat?.activeCombat
+    ? {
+        ...state.combat.activeCombat,
+        petNextAttackAt: state.combat.activeCombat.petNextAttackAt
+          ?? Math.min(
+            state.combat.activeCombat.playerNextAttackAt,
+            state.combat.activeCombat.enemyNextAttackAt
+          ),
+      }
+    : null;
 
   return {
     player: repairedPlayer,
@@ -202,19 +246,6 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...state.resources,
     },
     bag: normalizeBag(state.bag ?? initial.bag),
-    combat: {
-      ...initial.combat,
-      ...(state.combat ?? {}),
-      combatSkills: {
-        ...initial.combat.combatSkills,
-        ...(state.combat?.combatSkills ?? {}),
-      },
-      equipment: {
-        ...initial.combat.equipment,
-        ...(state.combat?.equipment ?? {}),
-      },
-      selectedEnemyByZone: (state.combat as any)?.selectedEnemyByZone ?? initial.combat.selectedEnemyByZone,
-    },
     bagSettings: {
       autoSort: state.bagSettings?.autoSort ?? initial.bagSettings.autoSort,
       sortMode: state.bagSettings?.sortMode ?? initial.bagSettings.sortMode,
@@ -237,6 +268,23 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
         quantity: automationQuantity,
         tickProgress: automationTickProgress,
       },
+    },
+    summoning: normalizedSummoning,
+    combat: {
+      ...initial.combat,
+      ...(state.combat ?? {}),
+      combatSkills: repairedCombatSkills,
+      equipment: {
+        ...initial.combat.equipment,
+        ...(state.combat?.equipment ?? {}),
+      },
+      selectedEnemyByZone: (state.combat as any)?.selectedEnemyByZone ?? initial.combat.selectedEnemyByZone,
+      playerMaxHp: repairedPlayerMaxHp,
+      playerCurrentHp: Math.min(
+        state.combat?.playerCurrentHp ?? initial.combat.playerCurrentHp,
+        repairedPlayerMaxHp
+      ),
+      activeCombat,
     },
     timestamps: {
       lastActive: state.timestamps?.lastActive ?? initial.timestamps.lastActive,

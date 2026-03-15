@@ -1,5 +1,7 @@
 import type { EquipmentSlot, ItemId, TrainingMode } from '@/game/types';
 import {
+  getPlayerAttackSpeed,
+  getSummoningCombatBonuses,
   equipItem as equipItemLogic,
   fleeCombat as fleeCombatLogic,
   selectEnemyForZone as selectEnemyForZoneLogic,
@@ -27,7 +29,9 @@ export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
     startCombat: (zoneId: string) => {
       const state = get();
       const now = Date.now();
-      const newCombat = startCombatLogic(state.combat, zoneId, now);
+      const petBonuses = getSummoningCombatBonuses(state.summoning, state.skills.summoning.level);
+      const attackSpeed = getPlayerAttackSpeed(state.combat, petBonuses);
+      const newCombat = startCombatLogic(state.combat, zoneId, now, attackSpeed);
       set({ combat: newCombat });
     },
 

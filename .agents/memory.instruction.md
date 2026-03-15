@@ -106,3 +106,19 @@ applyTo: '**'
     - High (troll/demon): steel/mithril gear + accessories at 1-3% chance
     - Late (banshee/dragon_whelp/elder_demon): mithril/rune/arcane gear at 1-3% chance
   - Equipment is now obtainable via combat drops (previously unobtainable)
+- Summoning System (v15 save schema):
+  - Types in /game/types/summoning.ts (PetId, PetRole, PetEvolutionStageId, SummoningState, PetDefinition, etc.)
+  - Data in /game/data/summoning.data.ts (PET_DEFINITIONS, PET_EVOLUTION_STAGES, createInitialSummoningState)
+  - Logic in /game/logic/summoning.ts (xpForPetLevel, addPetXp, getPetEvolutionStage, processSummoningRituals, rewardActivePetForCombatKill, getSummoningCombatBonuses, getActivePetCombatProfile)
+  - 5 pets: emberling(1), gravewisp(8), shellback(18), storm_gryphon(32), void_mantis(50)
+  - 4 evolution stages: dormant → awakened(lv5/summ10) → ascended(lv15/summ30) → mythic(lv30/summ60)
+  - Summoning skill added to SkillId; spirit_essence resource; drop table in skill-drops.data.ts
+  - Pets unlock by summoning level + rituals completed; active pet set via summoning.activePetId
+  - processSummoningRituals called in skills/tick.ts on summoning skill actions
+  - Pet attacks integrated into processCombatTick (combat/tick.ts) using petNextAttackAt in ActiveCombat
+  - Summoning bonuses (attack, strength, defense, maxHp, attackSpeed, damageReduction) applied each combat step
+  - rewardActivePetForCombatKill called directly in combat/tick.ts on enemy kill
+  - Pet role passives: cinder_drive(speed), soul_siphon(lifesteal), bastion_shell(tank), tempest_feathers(vanguard), void_hunt(execute)
+  - Event bus: PET_UNLOCKED, PET_LEVEL_UP, PET_EVOLVED, COMBAT_PET_ATTACK in events.types.ts
+  - Handler in /game/systems/summoning-handler.ts; registered via /game/modules/summoning/register.ts
+  - Current save version: 15

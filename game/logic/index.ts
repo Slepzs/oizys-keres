@@ -12,6 +12,7 @@ export * from "./resources";
 export * from "./rng";
 export * from "./shop";
 export * from "./stats/selectors";
+export * from "./summoning";
 export * from "./tick";
 export * from "./woodcutting";
 export * from "./xp";

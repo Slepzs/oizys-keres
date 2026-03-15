@@ -2,11 +2,20 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from './gameStore';
 import { xpForPlayerLevel, xpForSkillLevel } from '@/game/data';
-import type { SkillId, CombatSkillId, TrainingMode, EquipmentSlot } from '@/game/types';
-import { SKILL_IDS, COMBAT_SKILL_DEFINITIONS, WOODCUTTING_TREES, ENEMY_DEFINITIONS } from '@/game/data';
+import type { SkillId, CombatSkillId, PetId } from '@/game/types';
+import {
+  SKILL_IDS,
+  COMBAT_SKILL_DEFINITIONS,
+  ENEMY_DEFINITIONS,
+  PET_DEFINITIONS,
+  WOODCUTTING_TREES,
+} from '@/game/data';
 import {
   getCombatSkillLevel,
   getCombatSkillXpProgress,
+  getActivePetCombatProfile,
+  getPetEvolutionStage,
+  getSummoningCombatBonuses,
   calculateCombatLevel,
   getPlayerAttack,
   getPlayerStrength,
@@ -17,6 +26,7 @@ import {
   getActiveTree,
   getMiningRocksForLevel,
   getActiveMiningRock,
+  xpForPetLevel,
 } from '@/game/logic';
 import { COMBAT_SKILL_IDS } from '@/game/types';
 
@@ -93,14 +103,22 @@ export function useTotalSkillLevels() {
 }
 
 export function useCombatSummary() {
-  const combat = useGameStore(useShallow((state) => state.combat));
+  const { combat, summoning, summoningLevel } = useGameStore(
+    useShallow((state) => ({
+      combat: state.combat,
+      summoning: state.summoning,
+      summoningLevel: state.skills.summoning.level,
+    }))
+  );
 
   return useMemo(() => {
+    const petBonuses = getSummoningCombatBonuses(summoning, summoningLevel);
+    const activePet = getActivePetCombatProfile(summoning, summoningLevel);
     const combatLevel = calculateCombatLevel(combat.combatSkills);
-    const effectiveAttack = getPlayerAttack(combat);
-    const effectiveStrength = getPlayerStrength(combat);
-    const effectiveDefense = getPlayerDefense(combat);
-    const attackSpeed = getPlayerAttackSpeed(combat);
+    const effectiveAttack = getPlayerAttack(combat, petBonuses);
+    const effectiveStrength = getPlayerStrength(combat, petBonuses);
+    const effectiveDefense = getPlayerDefense(combat, petBonuses);
+    const attackSpeed = getPlayerAttackSpeed(combat, petBonuses);
     const equipmentStats = getTotalEquipmentStats(combat.equipment);
 
     const skillSummaries: Record<
@@ -160,8 +178,10 @@ export function useCombatSummary() {
       totalDeaths: combat.totalDeaths,
       selectedZoneId: combat.selectedZoneId,
       selectedEnemyByZone: combat.selectedEnemyByZone,
+      activePet,
+      petBonuses,
     };
-  }, [combat]);
+  }, [combat, summoning, summoningLevel]);
 }
 
 export function useActiveCombat() {
@@ -253,6 +273,74 @@ export function useCombatActions() {
       unequipSlot: state.unequipSlot,
       selectZone: state.selectZone,
       selectEnemyForZone: state.selectEnemyForZone,
+      setActivePet: state.setActivePet,
+    }))
+  );
+}
+
+export function useSummoningSummary() {
+  const { summoningSkill, summoning, essenceAmount } = useGameStore(
+    useShallow((state) => ({
+      summoningSkill: state.skills.summoning,
+      summoning: state.summoning,
+      essenceAmount: state.resources.spirit_essence.amount,
+    }))
+  );
+
+  return useMemo(() => {
+    const activePet = summoning.activePetId ? PET_DEFINITIONS[summoning.activePetId] : null;
+    const petSummaries = (Object.keys(summoning.pets) as PetId[]).map((petId) => {
+      const pet = summoning.pets[petId];
+      const definition = PET_DEFINITIONS[petId];
+      const stage = getPetEvolutionStage(pet, summoningSkill.level);
+      const combatProfile = pet.unlocked
+        ? getActivePetCombatProfile(
+            {
+              activePetId: petId,
+              ritualsCompleted: summoning.ritualsCompleted,
+              pets: {
+                ...summoning.pets,
+                [petId]: pet,
+              },
+            },
+            summoningSkill.level
+          )
+        : null;
+
+      return {
+        ...definition,
+        unlocked: pet.unlocked,
+        level: pet.level,
+        xp: pet.xp,
+        xpRequired: xpForPetLevel(pet.level + 1),
+        ritualsChanneled: pet.ritualsChanneled,
+        combatKills: pet.combatKills,
+        stage,
+        isActive: summoning.activePetId === petId,
+        combatProfile,
+      };
+    });
+
+    return {
+      skillLevel: summoningSkill.level,
+      skillXp: summoningSkill.xp,
+      skillXpRequired: xpForSkillLevel(summoningSkill.level + 1),
+      automationUnlocked: summoningSkill.automationUnlocked,
+      automationEnabled: summoningSkill.automationEnabled,
+      ritualsCompleted: summoning.ritualsCompleted,
+      essenceAmount,
+      activePet,
+      pets: petSummaries,
+    };
+  }, [essenceAmount, summoning, summoningSkill]);
+}
+
+export function useSummoningActions() {
+  return useGameStore(
+    useShallow((state) => ({
+      setActivePet: state.setActivePet,
+      toggleAutomation: state.toggleAutomation,
+      setActiveSkill: state.setActiveSkill,
     }))
   );
 }

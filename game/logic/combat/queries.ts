@@ -7,6 +7,7 @@ import type {
   TrainingMode,
 } from '../../types/combat';
 import type { ItemId } from '../../types/items';
+import type { SummoningCombatBonuses } from '../../types/summoning';
 import { COMBAT_SKILL_IDS, EQUIPMENT_SLOTS } from '../../types/combat';
 import { isEquipment } from '../../types/items';
 import { combatSkillLevelFromXp, totalXpForCombatSkillLevel, xpForCombatSkillLevel } from '../../data/curves';
@@ -55,9 +56,12 @@ export function calculateCombatLevel(combatSkills: CombatSkillsState): number {
 /**
  * Calculate max HP based on defense level.
  */
-export function calculateMaxHp(combatSkills: CombatSkillsState): number {
+export function calculateMaxHp(
+  combatSkills: CombatSkillsState,
+  bonusMaxHp: number = 0
+): number {
   const defenseLevel = getCombatSkillLevel(combatSkills.defense.xp);
-  return BASE_PLAYER_HP + (defenseLevel - 1) * HP_PER_DEFENSE_LEVEL;
+  return BASE_PLAYER_HP + (defenseLevel - 1) * HP_PER_DEFENSE_LEVEL + bonusMaxHp;
 }
 
 /**
@@ -94,36 +98,50 @@ export function getTotalEquipmentStats(equipment: EquipmentState): EquipmentStat
 /**
  * Get effective player attack (skill level + equipment bonus).
  */
-export function getPlayerAttack(combatState: CombatState): number {
+export function getPlayerAttack(
+  combatState: CombatState,
+  bonuses?: Pick<SummoningCombatBonuses, 'attackBonus'>
+): number {
   const level = getCombatSkillLevel(combatState.combatSkills.attack.xp);
   const equipStats = getTotalEquipmentStats(combatState.equipment);
-  return level + equipStats.attackBonus;
+  return level + equipStats.attackBonus + (bonuses?.attackBonus ?? 0);
 }
 
 /**
  * Get effective player strength (skill level + equipment bonus).
  */
-export function getPlayerStrength(combatState: CombatState): number {
+export function getPlayerStrength(
+  combatState: CombatState,
+  bonuses?: Pick<SummoningCombatBonuses, 'strengthBonus'>
+): number {
   const level = getCombatSkillLevel(combatState.combatSkills.strength.xp);
   const equipStats = getTotalEquipmentStats(combatState.equipment);
-  return level + equipStats.strengthBonus;
+  return level + equipStats.strengthBonus + (bonuses?.strengthBonus ?? 0);
 }
 
 /**
  * Get effective player defense (skill level + equipment bonus).
  */
-export function getPlayerDefense(combatState: CombatState): number {
+export function getPlayerDefense(
+  combatState: CombatState,
+  bonuses?: Pick<SummoningCombatBonuses, 'defenseBonus'>
+): number {
   const level = getCombatSkillLevel(combatState.combatSkills.defense.xp);
   const equipStats = getTotalEquipmentStats(combatState.equipment);
-  return level + equipStats.defenseBonus;
+  return level + equipStats.defenseBonus + (bonuses?.defenseBonus ?? 0);
 }
 
 /**
  * Get player attack speed in seconds.
  */
-export function getPlayerAttackSpeed(combatState: CombatState): number {
+export function getPlayerAttackSpeed(
+  combatState: CombatState,
+  bonuses?: Pick<SummoningCombatBonuses, 'attackSpeedMultiplier'>
+): number {
   const equipStats = getTotalEquipmentStats(combatState.equipment);
-  return equipStats.attackSpeed ?? DEFAULT_ATTACK_SPEED;
+  const baseAttackSpeed = equipStats.attackSpeed ?? DEFAULT_ATTACK_SPEED;
+  const multiplier = bonuses?.attackSpeedMultiplier ?? 1;
+  return Math.max(1, baseAttackSpeed / Math.max(0.25, multiplier));
 }
 
 /**
