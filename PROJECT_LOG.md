@@ -1,5 +1,11 @@
 # Project Log
 
+## 2026-03-15 20:01:00 +0100
+- What was improved: Corrected the endgame recipe gates so every adamantite-consuming recipe, including the Master Forge, now requires mining level 70, and updated the crafting screen to derive the infrastructure total from the live definitions so the new forge tier is counted correctly.
+- Why it was improved: The late-game ore loop had already been expanded, but several recipes were still visible before adamantite could actually be mined and the summary UI still reported the pre-forge infrastructure cap, which undermined progression clarity.
+- Strategic direction chosen: Refine the newly added late-game economy for internal consistency before adding more content, with emphasis on matching resource unlock thresholds to recipe requirements.
+- Next potential vector: Expose forge bonuses and top-tier ore demand more explicitly in the UI so players can immediately understand the payoff of unlocking mithril and adamantite.
+
 ## 2026-03-15 19:30:00 +0100
 - What was improved: Wired mithril_ore and adamantite_ore into the full crafting progression. All mithril-tier armor and weapons now consume mithril_ore instead of iron_ore (mining req bumped to 55). Runic-tier gear now requires mithril_ore as primary metal (mining req 60–62). Arcane-tier gear and late accessories now require mithril_ore + adamantite_ore alongside coal (mining req 65–67). Added the Master Forge infrastructure (build_forge recipe), a permanent +15% mining XP / +15% crafting XP structure requiring mithril_ore 600 + adamantite_ore 200 to construct — the first concrete endgame sink for both high-tier ores.
 - Why it was improved: The previous state had a naming/value mismatch: "mithril" gear used generic iron ore, and mithril_ore/adamantite_ore accumulated without any meaningful downstream demand. The Master Forge creates a concrete production goal that motivates players to grind the mithril and adamantite tiers instead of idling on iron/coal.

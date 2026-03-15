@@ -61,6 +61,9 @@ export function CraftingScreen() {
   const builtInfrastructureCount = useMemo(() => {
     return Object.values(crafting.infrastructureLevels).filter((level) => level > 0).length;
   }, [crafting.infrastructureLevels]);
+  const totalInfrastructureCount = useMemo(() => {
+    return Object.keys(INFRASTRUCTURE_DEFINITIONS).length;
+  }, []);
 
   const craftingState = useMemo(
     () => ({ skills, resources, bag, crafting }),
@@ -94,7 +97,7 @@ export function CraftingScreen() {
         <Card style={styles.summaryCard}>
           <View style={styles.summaryHeader}>
             <Text style={styles.summaryTitle}>Infrastructure Progress</Text>
-            <Text style={styles.summaryValue}>{builtInfrastructureCount}/4 built</Text>
+            <Text style={styles.summaryValue}>{builtInfrastructureCount}/{totalInfrastructureCount} built</Text>
           </View>
           <View style={styles.summaryAutoRow}>
             <Text style={styles.summaryAutoLabel}>Auto Craft</Text>
