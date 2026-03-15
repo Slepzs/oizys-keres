@@ -81,6 +81,8 @@ export const RESOURCE_DEFINITIONS: Record<ResourceId, ResourceDefinition> = {
   },
 };
 
+export const RESOURCE_IDS = Object.keys(RESOURCE_DEFINITIONS) as ResourceId[];
+
 export function createInitialResourceState(): ResourceState {
   return {
     amount: 0,

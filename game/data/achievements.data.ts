@@ -89,6 +89,33 @@ export const ACHIEVEMENT_DEFINITIONS: Record<string, AchievementDefinition> = {
     condition: { type: 'skill_level', skillId: 'mining', level: 50 },
     rewards: [{ type: 'multiplier', target: 'mining', bonus: 0.15 }],
   },
+  coal_stockpile: {
+    id: 'coal_stockpile',
+    name: 'Smelter Fuel',
+    description: 'Gather 150 Coal',
+    icon: '🖤',
+    category: 'collection',
+    condition: { type: 'total_resources', resourceId: 'coal', amount: 150 },
+    rewards: [{ type: 'multiplier', target: 'crafting', bonus: 0.05 }],
+  },
+  mithril_stockpile: {
+    id: 'mithril_stockpile',
+    name: 'Mithril Prospector',
+    description: 'Gather 100 Mithril Ore',
+    icon: '💠',
+    category: 'collection',
+    condition: { type: 'total_resources', resourceId: 'mithril_ore', amount: 100 },
+    rewards: [{ type: 'multiplier', target: 'drops', bonus: 0.05 }],
+  },
+  adamantite_stockpile: {
+    id: 'adamantite_stockpile',
+    name: 'Deep Vein Harvester',
+    description: 'Gather 75 Adamantite Ore',
+    icon: '⬛',
+    category: 'collection',
+    condition: { type: 'total_resources', resourceId: 'adamantite_ore', amount: 75 },
+    rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.04 }],
+  },
 
   // Crafting achievements
   smith_10: {

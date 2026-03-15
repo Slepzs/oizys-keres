@@ -166,7 +166,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     costs: [
       { type: 'resource', resourceId: 'willow_wood', amount: 180 },
       { type: 'resource', resourceId: 'maple_wood', amount: 120 },
-      { type: 'resource', resourceId: 'ore', amount: 420 },
+      { type: 'resource', resourceId: 'copper_ore', amount: 420 },
     ],
     output: { type: 'infrastructure', infrastructureId: 'armory', levels: 1 },
     repeatable: false,
@@ -203,7 +203,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'oak_wood', amount: 120 },
-      { type: 'resource', resourceId: 'ore', amount: 150 },
+      { type: 'resource', resourceId: 'copper_ore', amount: 150 },
     ],
     output: { type: 'item', itemId: 'iron_sword', quantity: 1 },
   },
@@ -221,7 +221,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'willow_wood', amount: 140 },
-      { type: 'resource', resourceId: 'ore', amount: 260 },
+      { type: 'resource', resourceId: 'copper_ore', amount: 260 },
     ],
     output: { type: 'item', itemId: 'steel_sword', quantity: 1 },
   },
@@ -240,7 +240,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     costs: [
       { type: 'resource', resourceId: 'maple_wood', amount: 180 },
       { type: 'resource', resourceId: 'yew_wood', amount: 130 },
-      { type: 'resource', resourceId: 'ore', amount: 540 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 540 },
       { type: 'item', itemId: 'ruby', amount: 4 },
     ],
     output: { type: 'item', itemId: 'mithril_sword', quantity: 1 },
@@ -259,7 +259,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 220 },
-      { type: 'resource', resourceId: 'ore', amount: 720 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 720 },
       { type: 'item', itemId: 'ruby', amount: 6 },
       { type: 'item', itemId: 'orc_tusk', amount: 3 },
     ],
@@ -281,7 +281,8 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 280 },
       { type: 'resource', resourceId: 'maple_wood', amount: 160 },
-      { type: 'resource', resourceId: 'ore', amount: 900 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 560 },
+      { type: 'resource', resourceId: 'coal', amount: 340 },
       { type: 'item', itemId: 'sapphire', amount: 5 },
       { type: 'item', itemId: 'troll_toe', amount: 4 },
     ],
@@ -302,7 +303,8 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 320 },
-      { type: 'resource', resourceId: 'ore', amount: 1200 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 720 },
+      { type: 'resource', resourceId: 'coal', amount: 480 },
       { type: 'item', itemId: 'demon_essence', amount: 8 },
       { type: 'item', itemId: 'sapphire', amount: 8 },
       { type: 'item', itemId: 'geode', amount: 2 },
@@ -379,7 +381,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'oak_wood', amount: 80 },
-      { type: 'resource', resourceId: 'ore', amount: 95 },
+      { type: 'resource', resourceId: 'copper_ore', amount: 95 },
     ],
     output: { type: 'item', itemId: 'iron_helmet', quantity: 1 },
   },
@@ -396,7 +398,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'oak_wood', amount: 110 },
-      { type: 'resource', resourceId: 'ore', amount: 140 },
+      { type: 'resource', resourceId: 'copper_ore', amount: 140 },
     ],
     output: { type: 'item', itemId: 'iron_chestplate', quantity: 1 },
   },
@@ -413,7 +415,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'oak_wood', amount: 95 },
-      { type: 'resource', resourceId: 'ore', amount: 120 },
+      { type: 'resource', resourceId: 'copper_ore', amount: 120 },
     ],
     output: { type: 'item', itemId: 'iron_platelegs', quantity: 1 },
   },
@@ -430,7 +432,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'oak_wood', amount: 70 },
-      { type: 'resource', resourceId: 'ore', amount: 80 },
+      { type: 'resource', resourceId: 'copper_ore', amount: 80 },
     ],
     output: { type: 'item', itemId: 'iron_boots', quantity: 1 },
   },
@@ -447,7 +449,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'willow_wood', amount: 90 },
-      { type: 'resource', resourceId: 'ore', amount: 190 },
+      { type: 'resource', resourceId: 'copper_ore', amount: 190 },
     ],
     output: { type: 'item', itemId: 'steel_helmet', quantity: 1 },
   },
@@ -464,7 +466,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'willow_wood', amount: 130 },
-      { type: 'resource', resourceId: 'ore', amount: 270 },
+      { type: 'resource', resourceId: 'copper_ore', amount: 270 },
     ],
     output: { type: 'item', itemId: 'steel_chestplate', quantity: 1 },
   },
@@ -481,7 +483,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'willow_wood', amount: 110 },
-      { type: 'resource', resourceId: 'ore', amount: 230 },
+      { type: 'resource', resourceId: 'copper_ore', amount: 230 },
     ],
     output: { type: 'item', itemId: 'steel_platelegs', quantity: 1 },
   },
@@ -498,7 +500,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'willow_wood', amount: 85 },
-      { type: 'resource', resourceId: 'ore', amount: 155 },
+      { type: 'resource', resourceId: 'copper_ore', amount: 155 },
     ],
     output: { type: 'item', itemId: 'steel_boots', quantity: 1 },
   },
@@ -517,7 +519,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     costs: [
       { type: 'resource', resourceId: 'maple_wood', amount: 100 },
       { type: 'resource', resourceId: 'yew_wood', amount: 60 },
-      { type: 'resource', resourceId: 'ore', amount: 260 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 260 },
       { type: 'item', itemId: 'ruby', amount: 2 },
     ],
     output: { type: 'item', itemId: 'mithril_helmet', quantity: 1 },
@@ -537,7 +539,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     costs: [
       { type: 'resource', resourceId: 'maple_wood', amount: 150 },
       { type: 'resource', resourceId: 'yew_wood', amount: 90 },
-      { type: 'resource', resourceId: 'ore', amount: 420 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 420 },
       { type: 'item', itemId: 'ruby', amount: 3 },
       { type: 'item', itemId: 'orc_tusk', amount: 1 },
     ],
@@ -558,7 +560,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     costs: [
       { type: 'resource', resourceId: 'maple_wood', amount: 130 },
       { type: 'resource', resourceId: 'yew_wood', amount: 80 },
-      { type: 'resource', resourceId: 'ore', amount: 340 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 340 },
       { type: 'item', itemId: 'ruby', amount: 2 },
     ],
     output: { type: 'item', itemId: 'mithril_platelegs', quantity: 1 },
@@ -578,7 +580,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     costs: [
       { type: 'resource', resourceId: 'maple_wood', amount: 90 },
       { type: 'resource', resourceId: 'yew_wood', amount: 50 },
-      { type: 'resource', resourceId: 'ore', amount: 220 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 220 },
       { type: 'item', itemId: 'sapphire', amount: 1 },
     ],
     output: { type: 'item', itemId: 'mithril_boots', quantity: 1 },
@@ -598,7 +600,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 130 },
-      { type: 'resource', resourceId: 'ore', amount: 420 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 420 },
       { type: 'item', itemId: 'sapphire', amount: 3 },
       { type: 'item', itemId: 'orc_tusk', amount: 2 },
     ],
@@ -619,7 +621,8 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 200 },
-      { type: 'resource', resourceId: 'ore', amount: 680 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 420 },
+      { type: 'resource', resourceId: 'coal', amount: 260 },
       { type: 'item', itemId: 'sapphire', amount: 4 },
       { type: 'item', itemId: 'troll_toe', amount: 2 },
     ],
@@ -640,7 +643,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 170 },
-      { type: 'resource', resourceId: 'ore', amount: 560 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 560 },
       { type: 'item', itemId: 'sapphire', amount: 3 },
       { type: 'item', itemId: 'troll_toe', amount: 1 },
     ],
@@ -661,7 +664,7 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 120 },
-      { type: 'resource', resourceId: 'ore', amount: 360 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 360 },
       { type: 'item', itemId: 'sapphire', amount: 2 },
       { type: 'item', itemId: 'orc_tusk', amount: 1 },
     ],
@@ -682,7 +685,8 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 160 },
-      { type: 'resource', resourceId: 'ore', amount: 560 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 340 },
+      { type: 'resource', resourceId: 'coal', amount: 220 },
       { type: 'item', itemId: 'demon_essence', amount: 3 },
       { type: 'item', itemId: 'sapphire', amount: 4 },
       { type: 'item', itemId: 'geode', amount: 1 },
@@ -704,7 +708,8 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 240 },
-      { type: 'resource', resourceId: 'ore', amount: 900 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 560 },
+      { type: 'resource', resourceId: 'coal', amount: 340 },
       { type: 'item', itemId: 'demon_essence', amount: 5 },
       { type: 'item', itemId: 'sapphire', amount: 6 },
       { type: 'item', itemId: 'geode', amount: 2 },
@@ -726,7 +731,8 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 210 },
-      { type: 'resource', resourceId: 'ore', amount: 760 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 470 },
+      { type: 'resource', resourceId: 'coal', amount: 290 },
       { type: 'item', itemId: 'demon_essence', amount: 4 },
       { type: 'item', itemId: 'sapphire', amount: 5 },
       { type: 'item', itemId: 'geode', amount: 1 },
@@ -748,7 +754,8 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 150 },
-      { type: 'resource', resourceId: 'ore', amount: 520 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 320 },
+      { type: 'resource', resourceId: 'coal', amount: 200 },
       { type: 'item', itemId: 'demon_essence', amount: 3 },
       { type: 'item', itemId: 'sapphire', amount: 3 },
       { type: 'item', itemId: 'geode', amount: 1 },
@@ -770,7 +777,8 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 180 },
-      { type: 'resource', resourceId: 'ore', amount: 520 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 320 },
+      { type: 'resource', resourceId: 'coal', amount: 200 },
       { type: 'item', itemId: 'ruby', amount: 5 },
       { type: 'item', itemId: 'orc_tusk', amount: 4 },
       { type: 'item', itemId: 'demon_essence', amount: 2 },
@@ -792,7 +800,8 @@ export const CRAFTING_RECIPES: Record<CraftingRecipeId, CraftingRecipe> = {
     ],
     costs: [
       { type: 'resource', resourceId: 'yew_wood', amount: 150 },
-      { type: 'resource', resourceId: 'ore', amount: 600 },
+      { type: 'resource', resourceId: 'iron_ore', amount: 370 },
+      { type: 'resource', resourceId: 'coal', amount: 230 },
       { type: 'item', itemId: 'sapphire', amount: 6 },
       { type: 'item', itemId: 'troll_toe', amount: 3 },
       { type: 'item', itemId: 'demon_essence', amount: 3 },

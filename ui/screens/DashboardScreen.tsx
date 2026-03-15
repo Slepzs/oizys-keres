@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { SafeContainer } from '../components/layout/SafeContainer';
@@ -12,8 +12,11 @@ import { useGame } from '@/hooks/useGame';
 import { useSave } from '@/hooks/useSave';
 import { usePlayerSummary } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
+import { RESOURCE_DEFINITIONS, RESOURCE_IDS } from '@/game/data';
 import { playerXpProgress } from '@/game/logic';
 import type { ResourceId } from '@/game/types';
+
+const DEFAULT_DASHBOARD_RESOURCE_IDS: ResourceId[] = ['wood', 'stone', 'ore'];
 
 export function DashboardScreen() {
   const { state } = useGame();
@@ -21,6 +24,12 @@ export function DashboardScreen() {
 
   const playerProgress = playerXpProgress(state.player);
   const playerSummary = usePlayerSummary();
+  const visibleResourceIds = useMemo(() => {
+    return RESOURCE_IDS.filter((resourceId) => {
+      return DEFAULT_DASHBOARD_RESOURCE_IDS.includes(resourceId)
+        || state.resources[resourceId].amount > 0;
+    });
+  }, [state.resources]);
 
   return (
     <SafeContainer>
@@ -52,14 +61,17 @@ export function DashboardScreen() {
         </Pressable>
 
         {/* Resources Row */}
-        <View style={styles.resourcesRow}>
-          {(['wood', 'stone', 'ore'] as ResourceId[]).map((resourceId) => (
+        <View style={styles.resourcesGrid}>
+          {visibleResourceIds.map((resourceId) => (
             <Card key={resourceId} style={styles.resourceCard}>
               <ResourceCounter
                 resourceId={resourceId}
                 amount={state.resources[resourceId].amount}
                 size="lg"
               />
+              <Text style={styles.resourceLabel}>
+                {RESOURCE_DEFINITIONS[resourceId].name}
+              </Text>
             </Card>
           ))}
         </View>
@@ -113,14 +125,22 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
   },
-  resourcesRow: {
+  resourcesGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     marginBottom: spacing.lg,
   },
   resourceCard: {
-    flex: 1,
+    minWidth: '31%',
+    flexGrow: 1,
     alignItems: 'center',
     paddingVertical: spacing.md,
+    gap: spacing.xs,
+  },
+  resourceLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textAlign: 'center',
   },
 });
