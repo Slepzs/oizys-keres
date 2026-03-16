@@ -309,6 +309,20 @@ const migrations: Record<number, MigrationFn> = {
     },
   }),
 
+  // Migration from v17 to v18: Add autoEat and autoEatThreshold to combat state
+  17: (save) => ({
+    ...save,
+    version: 18,
+    state: {
+      ...save.state,
+      combat: {
+        ...save.state.combat,
+        autoEat: false,
+        autoEatThreshold: 0.5,
+      },
+    },
+  }),
+
   // Migration from v16 to v17: Add cooking skill
   16: (save) => ({
     ...save,

@@ -1,8 +1,12 @@
 import type { GameState } from '../../types';
 import type { CombatState } from '../../types/combat';
+import type { ItemId } from '../../types';
 import type { GameEvent } from '../../systems/events.types';
 import { ENEMY_DEFINITIONS } from '../../data/enemies.data';
 import { ZONE_DEFINITIONS } from '../../data/zones.data';
+import { ITEM_DEFINITIONS } from '../../data/items.data';
+import { isFood } from '../../types/items';
+import { removeItemFromBag } from '../bag';
 import { getActivePetCombatProfile, getSummoningCombatBonuses, rewardActivePetForCombatKill } from '../summoning';
 import {
   calculateDamage,
@@ -176,6 +180,57 @@ function handleEnemyKilled(
   }
 
   return nextState;
+}
+
+/**
+ * Auto-eat the best available food from the bag until HP is above the threshold,
+ * or until no food remains. Only runs if combat.autoEat is enabled.
+ */
+function tryAutoEat(state: GameState): GameState {
+  if (!state.combat.autoEat) {
+    return state;
+  }
+
+  let current = state;
+
+  while (
+    current.combat.playerCurrentHp <
+    current.combat.playerMaxHp * current.combat.autoEatThreshold
+  ) {
+    let bestItemId: ItemId | null = null;
+    let bestHealAmount = 0;
+
+    for (const slot of current.bag.slots) {
+      if (!slot) continue;
+      const def = ITEM_DEFINITIONS[slot.itemId as ItemId];
+      if (!def || !isFood(def)) continue;
+      if (def.healAmount > bestHealAmount) {
+        bestHealAmount = def.healAmount;
+        bestItemId = slot.itemId as ItemId;
+      }
+    }
+
+    if (!bestItemId) break;
+
+    const bagResult = removeItemFromBag(current.bag, bestItemId, 1);
+    if (bagResult.removed < 1) break;
+
+    const newHp = Math.min(
+      current.combat.playerMaxHp,
+      current.combat.playerCurrentHp + bestHealAmount
+    );
+
+    current = {
+      ...current,
+      bag: bagResult.bag,
+      combat: {
+        ...current.combat,
+        playerCurrentHp: newHp,
+      },
+    };
+  }
+
+  return current;
 }
 
 /**
@@ -353,7 +408,10 @@ export function processCombatTick(
         },
       };
 
-      if (playerHpRemaining <= 0) {
+      // Auto-eat: consume food to recover HP if below threshold
+      newState = tryAutoEat(newState);
+
+      if (newState.combat.playerCurrentHp <= 0) {
         events.push({ type: 'COMBAT_PLAYER_DIED' });
 
         const currentBonuses = getCurrentBonuses(newState);

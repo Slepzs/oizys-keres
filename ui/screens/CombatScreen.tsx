@@ -21,6 +21,7 @@ export function CombatScreen() {
     fleeCombat,
     setTrainingMode,
     toggleAutoFight,
+    toggleAutoEat,
     unequipSlot,
     selectZone,
     selectEnemyForZone,
@@ -104,6 +105,20 @@ export function CombatScreen() {
                   </Pressable>
                 </View>
               ))}
+            </View>
+            <View style={styles.autoEatRow}>
+              <View>
+                <Text style={styles.autoEatLabel}>Auto-Eat</Text>
+                <Text style={styles.autoEatDescription}>
+                  Eat best food when HP drops below 50%
+                </Text>
+              </View>
+              <Switch
+                value={combatSummary.autoEat}
+                onValueChange={toggleAutoEat}
+                trackColor={{ false: colors.surfaceLight, true: colors.primaryDark }}
+                thumbColor={combatSummary.autoEat ? colors.primary : colors.textMuted}
+              />
             </View>
           </Card>
         )}
@@ -319,5 +334,24 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
     color: colors.text,
+  },
+  autoEatRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+  },
+  autoEatLabel: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  autoEatDescription: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
 });

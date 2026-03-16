@@ -91,6 +91,26 @@ export function toggleAutoFight(combatState: CombatState): CombatState {
 }
 
 /**
+ * Toggle auto-eat.
+ */
+export function toggleAutoEat(combatState: CombatState): CombatState {
+  return {
+    ...combatState,
+    autoEat: !combatState.autoEat,
+  };
+}
+
+/**
+ * Set auto-eat HP threshold (fraction of max HP, 0.1–1.0).
+ */
+export function setAutoEatThreshold(combatState: CombatState, threshold: number): CombatState {
+  return {
+    ...combatState,
+    autoEatThreshold: Math.max(0.1, Math.min(1.0, threshold)),
+  };
+}
+
+/**
  * Equip an item from the bag.
  */
 export function equipItem(
@@ -204,6 +224,8 @@ export function createInitialCombatState(): CombatState {
     selectedZoneId: null,
     selectedEnemyByZone: {},
     autoFight: false,
+    autoEat: false,
+    autoEatThreshold: 0.5,
     totalKills: 0,
     totalDeaths: 0,
   };

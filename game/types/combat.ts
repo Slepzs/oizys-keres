@@ -59,6 +59,8 @@ export interface CombatState {
   selectedZoneId: string | null;
   selectedEnemyByZone: Record<string, string>;
   autoFight: boolean;
+  autoEat: boolean;
+  autoEatThreshold: number;
   totalKills: number;
   totalDeaths: number;
 }

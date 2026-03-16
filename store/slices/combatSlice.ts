@@ -12,6 +12,8 @@ import {
   setTrainingMode as setTrainingModeLogic,
   startCombat as startCombatLogic,
   toggleAutoFight as toggleAutoFightLogic,
+  toggleAutoEat as toggleAutoEatLogic,
+  setAutoEatThreshold as setAutoEatThresholdLogic,
   unequipSlot as unequipSlotLogic,
 } from '@/game/logic';
 import type { SliceGet, SliceSet, StoreHelpers } from './types';
@@ -21,6 +23,8 @@ export interface CombatSlice {
   fleeCombat: () => void;
   setTrainingMode: (mode: TrainingMode) => void;
   toggleAutoFight: () => void;
+  toggleAutoEat: () => void;
+  setAutoEatThreshold: (threshold: number) => void;
   equipItem: (itemId: ItemId) => { unequippedItemId: ItemId | null; success: boolean };
   unequipSlot: (slot: EquipmentSlot) => { unequippedItemId: ItemId | null };
   selectZone: (zoneId: string | null) => void;
@@ -54,6 +58,18 @@ export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
     toggleAutoFight: () => {
       const state = get();
       const newCombat = toggleAutoFightLogic(state.combat);
+      set({ combat: newCombat });
+    },
+
+    toggleAutoEat: () => {
+      const state = get();
+      const newCombat = toggleAutoEatLogic(state.combat);
+      set({ combat: newCombat });
+    },
+
+    setAutoEatThreshold: (threshold: number) => {
+      const state = get();
+      const newCombat = setAutoEatThresholdLogic(state.combat, threshold);
       set({ combat: newCombat });
     },
 
