@@ -1,5 +1,5 @@
-import type { CookingRecipeId, FishingSpotId, RockTierId, SkillId, TreeTierId } from '@/game/types';
-import { WOODCUTTING_TREES, MINING_ROCKS, FISHING_SPOTS, COOKING_RECIPES } from '@/game/data';
+import type { CookingRecipeId, FishingSpotId, HerbloreRecipeId, RockTierId, SkillId, TreeTierId } from '@/game/types';
+import { WOODCUTTING_TREES, MINING_ROCKS, FISHING_SPOTS, COOKING_RECIPES, HERBLORE_RECIPES } from '@/game/data';
 import type { SliceGet, SliceSet, StoreHelpers } from './types';
 
 export interface SkillsSlice {
@@ -9,6 +9,7 @@ export interface SkillsSlice {
   setActiveRock: (rockId: RockTierId) => void;
   setActiveFishingSpot: (spotId: FishingSpotId) => void;
   setActiveCookingRecipe: (recipeId: CookingRecipeId) => void;
+  setActiveHerbloreRecipe: (recipeId: HerbloreRecipeId) => void;
 }
 
 export function createSkillsSlice(set: SliceSet, get: SliceGet, _helpers: StoreHelpers): SkillsSlice {
@@ -109,6 +110,26 @@ export function createSkillsSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
           cooking: {
             ...cookingSkill,
             activeCookingRecipeId: recipeId,
+          },
+        },
+      });
+    },
+
+    setActiveHerbloreRecipe: (recipeId: HerbloreRecipeId) => {
+      const state = get();
+      const herbloreSkill = state.skills.herblore;
+      const recipe = HERBLORE_RECIPES[recipeId];
+
+      if (!recipe || herbloreSkill.level < recipe.herbloreLevelRequired) {
+        return;
+      }
+
+      set({
+        skills: {
+          ...state.skills,
+          herblore: {
+            ...herbloreSkill,
+            activeHerbloreRecipeId: recipeId,
           },
         },
       });

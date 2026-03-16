@@ -67,6 +67,17 @@ export const SKILL_DEFINITIONS: Record<SkillId, SkillDefinition> = {
     automationUnlockLevel: 15,
     ticksPerAction: 25,
   },
+  herblore: {
+    id: 'herblore',
+    name: 'Herblore',
+    description: 'Brew herbs into potions that boost combat stats.',
+    icon: '🧪',
+    baseXpPerAction: 35,
+    baseResourcePerAction: 0,
+    resourceProduced: 'wood', // Unused — herblore produces bag items directly
+    automationUnlockLevel: 20,
+    ticksPerAction: 30,
+  },
 };
 
 export function createInitialSkillState(overrides: Partial<SkillState> = {}): SkillState {
@@ -88,6 +99,7 @@ export function createInitialSkillsState(): SkillsState {
     summoning: createInitialSkillState(),
     fishing: createInitialSkillState(),
     cooking: createInitialSkillState(),
+    herblore: createInitialSkillState(),
   };
 }
 

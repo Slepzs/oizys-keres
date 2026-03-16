@@ -6,6 +6,7 @@ import { calculateMaxHp } from '../logic/combat';
 import { getActiveMiningRock } from '../logic/mining';
 import { getActiveFishingSpot } from '../logic/fishing';
 import { getActiveCookingRecipe } from '../logic/cooking';
+import { getActiveHerbloreRecipe } from '../logic/herblore';
 import { normalizePlayerVitals } from '../logic/player';
 import { getSummoningCombatBonuses } from '../logic/summoning';
 import { getActiveTree } from '../logic/woodcutting';
@@ -162,6 +163,10 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...initial.skills.cooking,
       ...(rawSkills.cooking ?? {}),
     },
+    herblore: {
+      ...initial.skills.herblore,
+      ...(rawSkills.herblore ?? {}),
+    },
   };
   const repairedSkillStats = {
     woodcutting: {
@@ -188,11 +193,16 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...initial.skillStats.cooking,
       ...(rawSkillStats.cooking ?? {}),
     },
+    herblore: {
+      ...initial.skillStats.herblore,
+      ...(rawSkillStats.herblore ?? {}),
+    },
   };
   repairedSkills.woodcutting.activeTreeId = getActiveTree(repairedSkills.woodcutting).id;
   repairedSkills.mining.activeRockId = getActiveMiningRock(repairedSkills.mining).id;
   repairedSkills.fishing.activeFishingSpotId = getActiveFishingSpot(repairedSkills.fishing).id;
   repairedSkills.cooking.activeCookingRecipeId = getActiveCookingRecipe(repairedSkills.cooking).id;
+  repairedSkills.herblore.activeHerbloreRecipeId = getActiveHerbloreRecipe(repairedSkills.herblore).id;
   const initialSummoning = createInitialSummoningState();
   const rawSummoning = (state.summoning ?? {}) as Partial<GameState['summoning']>;
   const repairedSummoning = {

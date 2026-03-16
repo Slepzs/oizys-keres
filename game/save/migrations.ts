@@ -323,6 +323,30 @@ const migrations: Record<number, MigrationFn> = {
     },
   }),
 
+  // Migration from v18 to v19: Add herblore skill and autoDrink/potionBuffs to combat state
+  18: (save) => ({
+    ...save,
+    version: 19,
+    state: {
+      ...save.state,
+      skills: {
+        ...save.state.skills,
+        herblore: {
+          level: 1,
+          xp: 0,
+          automationUnlocked: false,
+          automationEnabled: false,
+          tickProgress: 0,
+        },
+      },
+      combat: {
+        ...save.state.combat,
+        autoDrink: false,
+        potionBuffs: [],
+      },
+    },
+  }),
+
   // Migration from v16 to v17: Add cooking skill
   16: (save) => ({
     ...save,

@@ -7,7 +7,7 @@ import { CombatPetCard } from '../components/game/CombatPetCard';
 import { EnemyDisplay } from '../components/game/EnemyDisplay';
 import { EquipmentPanel } from '../components/game/EquipmentPanel';
 import { CombatZoneCard } from '../components/game/CombatZoneCard';
-import { useCombatSummary, useActiveCombat, useEquipment, useCombatActions, useBagFood } from '@/store';
+import { useCombatSummary, useActiveCombat, useEquipment, useCombatActions, useBagFood, useBagPotions } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { ZONE_IDS } from '@/game/data';
 import type { TrainingMode, EquipmentSlot } from '@/game/types';
@@ -24,13 +24,16 @@ export function CombatScreen() {
     setTrainingMode,
     toggleAutoFight,
     toggleAutoEat,
+    toggleAutoDrink,
     setAutoEatThreshold,
     unequipSlot,
     selectZone,
     selectEnemyForZone,
     eatFood,
+    drinkPotion,
   } = useCombatActions();
   const bagFood = useBagFood();
+  const bagPotions = useBagPotions();
   const autoEatThresholdPercent = Math.round(combatSummary.autoEatThreshold * 100);
 
   const handleTrainingModeChange = (mode: TrainingMode) => {
@@ -152,6 +155,76 @@ export function CombatScreen() {
                 </Pressable>
               );
             })}
+          </View>
+        </Card>
+
+        {/* Potions */}
+        <Card style={styles.section}>
+          <Text style={styles.foodTitle}>Potions</Text>
+          <Text style={styles.foodSubtitle}>Brew with Herblore to gain combat stat buffs</Text>
+
+          {/* Active buffs */}
+          {combatSummary.potionBuffs.length > 0 && (
+            <View style={styles.activBuffsRow}>
+              {combatSummary.potionBuffs.map((buff) => {
+                const remaining = Math.max(0, buff.expiresAt - Date.now());
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                return (
+                  <View key={buff.buffType} style={styles.activeBuff}>
+                    <Text style={styles.activeBuffText}>
+                      +{buff.value} {buff.buffType}
+                    </Text>
+                    <Text style={styles.activeBuffTimer}>
+                      {minutes}:{seconds.toString().padStart(2, '0')}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {bagPotions.length > 0 ? (
+            <View style={styles.foodList}>
+              {bagPotions.map((potion) => (
+                <View key={potion.itemId} style={styles.foodItem}>
+                  <Text style={styles.foodIcon}>{potion.icon}</Text>
+                  <View style={styles.foodInfo}>
+                    <Text style={styles.foodName}>{potion.name}</Text>
+                    <Text style={styles.foodHeal}>+{potion.buffValue} {potion.buffType}</Text>
+                  </View>
+                  <Text style={styles.foodQty}>×{potion.quantity}</Text>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.eatButton,
+                      pressed && styles.eatButtonPressed,
+                    ]}
+                    onPress={() => drinkPotion(potion.itemId)}
+                  >
+                    <Text style={styles.eatButtonText}>Drink</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.emptyFoodText}>
+              No potions in bag. Train Herblore to brew potions.
+            </Text>
+          )}
+
+          <View style={styles.autoEatRow}>
+            <View style={styles.autoEatCopy}>
+              <Text style={styles.autoEatLabel}>Auto-Drink</Text>
+              <Text style={styles.autoEatDescription}>
+                Automatically drink potions when entering combat.
+              </Text>
+            </View>
+            <Switch
+              value={combatSummary.autoDrink}
+              onValueChange={toggleAutoDrink}
+              trackColor={{ false: colors.surfaceLight, true: colors.primaryDark }}
+              thumbColor={combatSummary.autoDrink ? colors.primary : colors.textMuted}
+            />
           </View>
         </Card>
 
@@ -423,5 +496,29 @@ const styles = StyleSheet.create({
   emptyFoodText: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
+  },
+  activBuffsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  activeBuff: {
+    backgroundColor: colors.primaryDark,
+    borderRadius: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    alignItems: 'center',
+  },
+  activeBuffText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+    textTransform: 'capitalize',
+  },
+  activeBuffTimer: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
 });

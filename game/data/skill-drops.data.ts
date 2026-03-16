@@ -29,6 +29,27 @@ export const SKILL_DROP_TABLES: Record<SkillId, SkillDropTable> = {
       maxQuantity: 1,
       minLevel: 10,
     },
+    {
+      itemId: 'guam_herb',
+      chance: 0.06,
+      minQuantity: 1,
+      maxQuantity: 2,
+      minLevel: 15,
+    },
+    {
+      itemId: 'marrentill_herb',
+      chance: 0.04,
+      minQuantity: 1,
+      maxQuantity: 1,
+      minLevel: 30,
+    },
+    {
+      itemId: 'ranarr_herb',
+      chance: 0.01,
+      minQuantity: 1,
+      maxQuantity: 1,
+      minLevel: 60,
+    },
   ],
 
   mining: [
@@ -124,7 +145,30 @@ export const SKILL_DROP_TABLES: Record<SkillId, SkillDropTable> = {
       maxQuantity: 1,
       minLevel: 35,
     },
+    {
+      itemId: 'tarromin_herb',
+      chance: 0.05,
+      minQuantity: 1,
+      maxQuantity: 1,
+      minLevel: 20,
+    },
+    {
+      itemId: 'harralander_herb',
+      chance: 0.03,
+      minQuantity: 1,
+      maxQuantity: 1,
+      minLevel: 40,
+    },
+    {
+      itemId: 'ranarr_herb',
+      chance: 0.01,
+      minQuantity: 1,
+      maxQuantity: 1,
+      minLevel: 65,
+    },
   ],
   // Cooking output is deterministic (recipe-driven), not random drops
   cooking: [],
+  // Herblore output is deterministic (recipe-driven), not random drops
+  herblore: [],
 };

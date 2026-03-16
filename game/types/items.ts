@@ -1,4 +1,4 @@
-import type { EquipmentSlot, EquipmentStats } from './combat';
+import type { EquipmentSlot, EquipmentStats, PotionBuffType } from './combat';
 
 export type ItemId =
   // Smithing products
@@ -77,9 +77,21 @@ export type ItemId =
   | 'salmon'
   | 'lobster'
   | 'swordfish'
-  | 'shark';
+  | 'shark'
+  // Herbs (dropped from Woodcutting / Fishing, used in Herblore)
+  | 'guam_herb'
+  | 'marrentill_herb'
+  | 'tarromin_herb'
+  | 'harralander_herb'
+  | 'ranarr_herb'
+  // Potions (from Herblore skill)
+  | 'attack_potion'
+  | 'defence_potion'
+  | 'strength_potion'
+  | 'super_attack_potion'
+  | 'super_strength_potion';
 
-export type ItemCategory = 'material' | 'tool' | 'equipment' | 'misc' | 'food';
+export type ItemCategory = 'material' | 'tool' | 'equipment' | 'misc' | 'food' | 'potion';
 
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic';
 
@@ -123,10 +135,21 @@ export interface FoodDefinition extends ItemDefinition {
   healAmount: number;
 }
 
+export interface PotionDefinition extends ItemDefinition {
+  category: 'potion';
+  buffType: PotionBuffType;
+  buffValue: number;
+  durationMs: number;
+}
+
 export function isEquipment(item: ItemDefinition): item is EquipmentDefinition {
   return item.category === 'equipment';
 }
 
 export function isFood(item: ItemDefinition): item is FoodDefinition {
   return item.category === 'food';
+}
+
+export function isPotion(item: ItemDefinition): item is PotionDefinition {
+  return item.category === 'potion';
 }

@@ -13,6 +13,8 @@ import {
   startCombat as startCombatLogic,
   toggleAutoFight as toggleAutoFightLogic,
   toggleAutoEat as toggleAutoEatLogic,
+  toggleAutoDrink as toggleAutoDrinkLogic,
+  drinkPotion as drinkPotionLogic,
   setAutoEatThreshold as setAutoEatThresholdLogic,
   unequipSlot as unequipSlotLogic,
 } from '@/game/logic';
@@ -24,12 +26,14 @@ export interface CombatSlice {
   setTrainingMode: (mode: TrainingMode) => void;
   toggleAutoFight: () => void;
   toggleAutoEat: () => void;
+  toggleAutoDrink: () => void;
   setAutoEatThreshold: (threshold: number) => void;
   equipItem: (itemId: ItemId) => { unequippedItemId: ItemId | null; success: boolean };
   unequipSlot: (slot: EquipmentSlot) => { unequippedItemId: ItemId | null };
   selectZone: (zoneId: string | null) => void;
   selectEnemyForZone: (zoneId: string, enemyId: string) => void;
   eatFood: (itemId: ItemId) => void;
+  drinkPotion: (itemId: ItemId) => void;
 }
 
 export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreHelpers): CombatSlice {
@@ -67,6 +71,12 @@ export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
       set({ combat: newCombat });
     },
 
+    toggleAutoDrink: () => {
+      const state = get();
+      const newCombat = toggleAutoDrinkLogic(state.combat);
+      set({ combat: newCombat });
+    },
+
     setAutoEatThreshold: (threshold: number) => {
       const state = get();
       const newCombat = setAutoEatThresholdLogic(state.combat, threshold);
@@ -97,6 +107,16 @@ export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
       const state = get();
       const newCombat = selectEnemyForZoneLogic(state.combat, zoneId, enemyId);
       set({ combat: newCombat });
+    },
+
+    drinkPotion: (itemId: ItemId) => {
+      const state = get();
+      const now = Date.now();
+      const newCombat = drinkPotionLogic(state.combat, itemId, now);
+      if (newCombat === state.combat) return;
+      const bagResult = removeItemFromBag(state.bag, itemId, 1);
+      if (bagResult.removed < 1) return;
+      set({ combat: newCombat, bag: bagResult.bag });
     },
 
     eatFood: (itemId: ItemId) => {

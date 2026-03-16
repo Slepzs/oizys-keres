@@ -19,3 +19,4 @@ export * from "./xp";
 export * from './mining';
 export * from './fishing';
 export * from './cooking';
+export * from './herblore';

@@ -49,6 +49,14 @@ export interface ActiveCombat {
   playerRegenAt: number;
 }
 
+export type PotionBuffType = 'attack' | 'strength' | 'defence';
+
+export interface PotionBuff {
+  buffType: PotionBuffType;
+  value: number;
+  expiresAt: number;
+}
+
 export interface CombatState {
   combatSkills: CombatSkillsState;
   equipment: EquipmentState;
@@ -61,6 +69,8 @@ export interface CombatState {
   autoFight: boolean;
   autoEat: boolean;
   autoEatThreshold: number;
+  autoDrink: boolean;
+  potionBuffs: PotionBuff[];
   totalKills: number;
   totalDeaths: number;
 }

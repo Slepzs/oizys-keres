@@ -5,7 +5,7 @@ import type { GameEvent } from '../../systems/events.types';
 import { ENEMY_DEFINITIONS } from '../../data/enemies.data';
 import { ZONE_DEFINITIONS } from '../../data/zones.data';
 import { ITEM_DEFINITIONS } from '../../data/items.data';
-import { isFood } from '../../types/items';
+import { isFood, isPotion } from '../../types/items';
 import { removeItemFromBag } from '../bag';
 import { getActivePetCombatProfile, getSummoningCombatBonuses, rewardActivePetForCombatKill } from '../summoning';
 import {
@@ -261,6 +261,68 @@ function tryAutoEat(state: GameState): GameState {
 }
 
 /**
+ * Auto-drink potions from bag when autoDrink is enabled and no buff of that type is active.
+ * Runs at the start of each combat tick step to refresh expired or missing buffs.
+ */
+function tryAutoDrink(state: GameState, now: number): GameState {
+  if (!state.combat.autoDrink || !state.combat.activeCombat) {
+    return state;
+  }
+
+  // Track which buff types are already active (non-expired)
+  const activePotionTypes = new Set(
+    (state.combat.potionBuffs ?? [])
+      .filter((b) => b.expiresAt > now)
+      .map((b) => b.buffType)
+  );
+
+  let current = state;
+
+  for (const slot of current.bag.slots) {
+    if (!slot) {
+      continue;
+    }
+    const def = ITEM_DEFINITIONS[slot.itemId as ItemId];
+    if (!def || !isPotion(def)) {
+      continue;
+    }
+    if (activePotionTypes.has(def.buffType)) {
+      continue; // Already have a buff of this type
+    }
+
+    // Drink the potion
+    const bagResult = removeItemFromBag(current.bag, slot.itemId as ItemId, 1);
+    if (bagResult.removed < 1) {
+      continue;
+    }
+
+    const newBuff = {
+      buffType: def.buffType,
+      value: def.buffValue,
+      expiresAt: now + def.durationMs,
+    };
+
+    current = {
+      ...current,
+      bag: bagResult.bag,
+      combat: {
+        ...current.combat,
+        potionBuffs: [
+          ...(current.combat.potionBuffs ?? []).filter(
+            (b) => b.expiresAt > now && b.buffType !== def.buffType
+          ),
+          newBuff,
+        ],
+      },
+    };
+
+    activePotionTypes.add(def.buffType);
+  }
+
+  return current;
+}
+
+/**
  * Process combat forward to `now` using the scheduled attack timestamps in `activeCombat`.
  * This is deterministic and safe for long gaps (offline/background) because it can
  * simulate multiple attacks in one call.
@@ -276,6 +338,18 @@ export function processCombatTick(
   if (!newState.combat.activeCombat) {
     return { state: newState, events };
   }
+
+  // Filter expired potion buffs at the start of each tick
+  const activeBuffs = (newState.combat.potionBuffs ?? []).filter((b) => b.expiresAt > now);
+  if (activeBuffs.length !== (newState.combat.potionBuffs ?? []).length) {
+    newState = {
+      ...newState,
+      combat: { ...newState.combat, potionBuffs: activeBuffs },
+    };
+  }
+
+  // Auto-drink: drink available potions if autoDrink is enabled and buff slot is empty
+  newState = tryAutoDrink(newState, now);
 
   let steps = 0;
 

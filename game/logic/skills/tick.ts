@@ -28,6 +28,7 @@ export function processSkillsTick(state: GameState, ticksElapsed: number): Skill
     state.activeSkill
     && state.activeSkill !== 'crafting'
     && state.activeSkill !== 'cooking'
+    && state.activeSkill !== 'herblore'
     && state.activeSkill in SKILL_DEFINITIONS
   ) {
     const result = processSkillTick(newState, state.activeSkill as SkillId, ticksElapsed);
@@ -37,7 +38,7 @@ export function processSkillsTick(state: GameState, ticksElapsed: number): Skill
 
   // Process automated skills
   for (const skillId of Object.keys(state.skills) as SkillId[]) {
-    if (skillId === 'crafting' || skillId === 'cooking') {
+    if (skillId === 'crafting' || skillId === 'cooking' || skillId === 'herblore') {
       continue;
     }
     const skill = state.skills[skillId];

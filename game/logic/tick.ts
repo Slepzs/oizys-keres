@@ -5,6 +5,7 @@ import { advanceSeed } from './rng';
 import { processCombatTick } from './combat/tick';
 import { processCraftingAutomationTick } from './crafting';
 import { processCookingTick } from './cooking';
+import { processHerbloreTick } from './herblore';
 import { regeneratePlayerVitals } from './player';
 import { processSkillsTick } from './skills/tick';
 
@@ -39,6 +40,10 @@ export function processTick(state: GameState, deltaMs: number, ctx: GameContext)
   const cookingResult = processCookingTick(newState, ticksElapsed);
   newState = cookingResult.state;
   events.push(...cookingResult.events);
+
+  const herbloreResult = processHerbloreTick(newState, ticksElapsed);
+  newState = herbloreResult.state;
+  events.push(...herbloreResult.events);
 
   // Process combat if active
   if (newState.combat.activeCombat) {

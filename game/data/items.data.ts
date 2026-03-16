@@ -1,8 +1,8 @@
-import type { ItemDefinition, EquipmentDefinition, FoodDefinition, ItemId, BagState } from '../types/items';
+import type { ItemDefinition, EquipmentDefinition, FoodDefinition, PotionDefinition, ItemId, BagState } from '../types/items';
 
 export const DEFAULT_BAG_SIZE = 99;
 
-export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefinition | FoodDefinition> = {
+export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefinition | FoodDefinition | PotionDefinition> = {
   // Smithing products
   bronze_ingot: {
     id: 'bronze_ingot',
@@ -787,6 +787,125 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     maxStack: 20,
     sellPrice: 200,
   },
+
+  // Herbs (dropped from Woodcutting / Fishing, consumed by Herblore)
+  guam_herb: {
+    id: 'guam_herb',
+    name: 'Guam Herb',
+    description: 'A common forest herb. Used to brew Attack Potions.',
+    icon: '🌿',
+    category: 'material',
+    rarity: 'common',
+    maxStack: 200,
+    sellPrice: 8,
+  },
+  marrentill_herb: {
+    id: 'marrentill_herb',
+    name: 'Marrentill Herb',
+    description: 'A bitter herb with defensive properties. Brewed into Defence Potions.',
+    icon: '🪴',
+    category: 'material',
+    rarity: 'uncommon',
+    maxStack: 200,
+    sellPrice: 15,
+  },
+  tarromin_herb: {
+    id: 'tarromin_herb',
+    name: 'Tarromin Herb',
+    description: 'A tough aquatic herb that strengthens muscle. Brewed into Strength Potions.',
+    icon: '🌱',
+    category: 'material',
+    rarity: 'uncommon',
+    maxStack: 200,
+    sellPrice: 15,
+  },
+  harralander_herb: {
+    id: 'harralander_herb',
+    name: 'Harralander Herb',
+    description: 'A potent deep-sea herb. Brewed into Super Attack Potions.',
+    icon: '🌾',
+    category: 'material',
+    rarity: 'rare',
+    maxStack: 100,
+    sellPrice: 40,
+  },
+  ranarr_herb: {
+    id: 'ranarr_herb',
+    name: 'Ranarr Herb',
+    description: 'An exceptionally rare herb. Brewed into Super Strength Potions.',
+    icon: '🍀',
+    category: 'material',
+    rarity: 'rare',
+    maxStack: 100,
+    sellPrice: 40,
+  },
+
+  // Potions (from Herblore skill)
+  attack_potion: {
+    id: 'attack_potion',
+    name: 'Attack Potion',
+    description: 'Temporarily boosts attack by +15 for 5 minutes.',
+    icon: '⚗️',
+    category: 'potion',
+    rarity: 'common',
+    maxStack: 50,
+    sellPrice: 25,
+    buffType: 'attack',
+    buffValue: 15,
+    durationMs: 5 * 60 * 1000,
+  } satisfies PotionDefinition,
+  defence_potion: {
+    id: 'defence_potion',
+    name: 'Defence Potion',
+    description: 'Temporarily boosts defence by +15 for 5 minutes.',
+    icon: '🛡️',
+    category: 'potion',
+    rarity: 'uncommon',
+    maxStack: 50,
+    sellPrice: 35,
+    buffType: 'defence',
+    buffValue: 15,
+    durationMs: 5 * 60 * 1000,
+  } satisfies PotionDefinition,
+  strength_potion: {
+    id: 'strength_potion',
+    name: 'Strength Potion',
+    description: 'Temporarily boosts strength by +15 for 5 minutes.',
+    icon: '💪',
+    category: 'potion',
+    rarity: 'uncommon',
+    maxStack: 50,
+    sellPrice: 35,
+    buffType: 'strength',
+    buffValue: 15,
+    durationMs: 5 * 60 * 1000,
+  } satisfies PotionDefinition,
+  super_attack_potion: {
+    id: 'super_attack_potion',
+    name: 'Super Attack Potion',
+    description: 'Greatly boosts attack by +30 for 5 minutes.',
+    icon: '⚗️',
+    category: 'potion',
+    rarity: 'rare',
+    maxStack: 50,
+    sellPrice: 80,
+    buffType: 'attack',
+    buffValue: 30,
+    durationMs: 5 * 60 * 1000,
+  } satisfies PotionDefinition,
+  super_strength_potion: {
+    id: 'super_strength_potion',
+    name: 'Super Strength Potion',
+    description: 'Greatly boosts strength by +30 for 5 minutes.',
+    icon: '💪',
+    category: 'potion',
+    rarity: 'rare',
+    maxStack: 50,
+    sellPrice: 80,
+    buffType: 'strength',
+    buffValue: 30,
+    durationMs: 5 * 60 * 1000,
+  } satisfies PotionDefinition,
 };
 
 export const ITEM_IDS = Object.keys(ITEM_DEFINITIONS) as ItemId[];

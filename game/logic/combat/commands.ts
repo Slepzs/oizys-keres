@@ -1,6 +1,6 @@
-import type { CombatState, EquipmentSlot, TrainingMode } from '../../types/combat';
+import type { CombatState, EquipmentSlot, PotionBuff, TrainingMode } from '../../types/combat';
 import type { EquipmentDefinition, ItemId } from '../../types/items';
-import { isEquipment } from '../../types/items';
+import { isEquipment, isPotion } from '../../types/items';
 import { ENEMY_DEFINITIONS } from '../../data/enemies.data';
 import { ITEM_DEFINITIONS } from '../../data/items.data';
 import { ZONE_DEFINITIONS } from '../../data/zones.data';
@@ -97,6 +97,47 @@ export function toggleAutoEat(combatState: CombatState): CombatState {
   return {
     ...combatState,
     autoEat: !combatState.autoEat,
+  };
+}
+
+/**
+ * Toggle auto-drink (automatically drink potions when entering combat).
+ */
+export function toggleAutoDrink(combatState: CombatState): CombatState {
+  return {
+    ...combatState,
+    autoDrink: !combatState.autoDrink,
+  };
+}
+
+/**
+ * Manually drink a potion from the bag. Adds or overwrites the buff for its type.
+ * Returns null bagItem if not found or not a potion.
+ */
+export function drinkPotion(
+  combatState: CombatState,
+  itemId: ItemId,
+  now: number
+): CombatState {
+  const item = ITEM_DEFINITIONS[itemId];
+  if (!item || !isPotion(item)) {
+    return combatState;
+  }
+
+  const newBuff: PotionBuff = {
+    buffType: item.buffType,
+    value: item.buffValue,
+    expiresAt: now + item.durationMs,
+  };
+
+  // Replace any existing buff of the same type, add the new one
+  const filteredBuffs = (combatState.potionBuffs ?? []).filter(
+    (b) => b.buffType !== item.buffType
+  );
+
+  return {
+    ...combatState,
+    potionBuffs: [...filteredBuffs, newBuff],
   };
 }
 
@@ -226,6 +267,8 @@ export function createInitialCombatState(): CombatState {
     autoFight: false,
     autoEat: false,
     autoEatThreshold: 0.5,
+    autoDrink: false,
+    potionBuffs: [],
     totalKills: 0,
     totalDeaths: 0,
   };

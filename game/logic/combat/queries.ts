@@ -104,7 +104,16 @@ export function getTotalEquipmentStats(equipment: EquipmentState): EquipmentStat
 }
 
 /**
- * Get effective player attack (skill level + equipment bonus).
+ * Sum active potion buffs of a given type (already pre-filtered for expiry).
+ */
+function getPotionBonus(combatState: CombatState, buffType: import('../../types/combat').PotionBuffType): number {
+  return (combatState.potionBuffs ?? [])
+    .filter((b) => b.buffType === buffType)
+    .reduce((sum, b) => sum + b.value, 0);
+}
+
+/**
+ * Get effective player attack (skill level + equipment bonus + potion bonus).
  */
 export function getPlayerAttack(
   combatState: CombatState,
@@ -112,11 +121,12 @@ export function getPlayerAttack(
 ): number {
   const level = getCombatSkillLevel(combatState.combatSkills.attack.xp);
   const equipStats = getTotalEquipmentStats(combatState.equipment);
-  return level + equipStats.attackBonus + (bonuses?.attackBonus ?? 0);
+  const potionBonus = getPotionBonus(combatState, 'attack');
+  return level + equipStats.attackBonus + (bonuses?.attackBonus ?? 0) + potionBonus;
 }
 
 /**
- * Get effective player strength (skill level + equipment bonus).
+ * Get effective player strength (skill level + equipment bonus + potion bonus).
  */
 export function getPlayerStrength(
   combatState: CombatState,
@@ -124,11 +134,12 @@ export function getPlayerStrength(
 ): number {
   const level = getCombatSkillLevel(combatState.combatSkills.strength.xp);
   const equipStats = getTotalEquipmentStats(combatState.equipment);
-  return level + equipStats.strengthBonus + (bonuses?.strengthBonus ?? 0);
+  const potionBonus = getPotionBonus(combatState, 'strength');
+  return level + equipStats.strengthBonus + (bonuses?.strengthBonus ?? 0) + potionBonus;
 }
 
 /**
- * Get effective player defense (skill level + equipment bonus).
+ * Get effective player defense (skill level + equipment bonus + potion bonus).
  */
 export function getPlayerDefense(
   combatState: CombatState,
@@ -136,7 +147,8 @@ export function getPlayerDefense(
 ): number {
   const level = getCombatSkillLevel(combatState.combatSkills.defense.xp);
   const equipStats = getTotalEquipmentStats(combatState.equipment);
-  return level + equipStats.defenseBonus + (bonuses?.defenseBonus ?? 0);
+  const potionBonus = getPotionBonus(combatState, 'defence');
+  return level + equipStats.defenseBonus + (bonuses?.defenseBonus ?? 0) + potionBonus;
 }
 
 /**

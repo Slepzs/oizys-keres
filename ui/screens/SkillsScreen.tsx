@@ -9,9 +9,10 @@ import { TreeSelector } from '../components/game/TreeSelector';
 import { RockSelector } from '../components/game/RockSelector';
 import { FishingSpotSelector } from '../components/game/FishingSpotSelector';
 import { CookingRecipeSelector } from '../components/game/CookingRecipeSelector';
+import { HerbloreRecipeSelector } from '../components/game/HerbloreRecipeSelector';
 import { SummoningSkillPanel } from '../components/game/SummoningSkillPanel';
 import { useGame } from '@/hooks/useGame';
-import { useGameActions, useMiningRocks, useSummoningSummary, useWoodcuttingTrees, useFishingSpots, useCookingRecipes } from '@/store';
+import { useGameActions, useMiningRocks, useSummoningSummary, useWoodcuttingTrees, useFishingSpots, useCookingRecipes, useHerbloreRecipes } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { SKILL_DEFINITIONS, SKILL_IDS } from '@/game/data';
 import type { SkillId } from '@/game/types';
@@ -23,19 +24,22 @@ const SKILL_CRAFTING_PLACEHOLDER: Record<SkillId, string> = {
   summoning: 'Perform rituals to strengthen your active companion.',
   fishing: 'Fish are gathered as resources for cooking.',
   cooking: 'Cook raw fish into food to restore HP in combat.',
+  herblore: 'Brew herbs into potions to buff combat stats.',
 };
 
 export function SkillsScreen() {
   const { state, setActiveSkill, toggleAutomation } = useGame();
-  const { setActiveTree, setActiveRock, setActivePet, setActiveFishingSpot, setActiveCookingRecipe } = useGameActions();
+  const { setActiveTree, setActiveRock, setActivePet, setActiveFishingSpot, setActiveCookingRecipe, setActiveHerbloreRecipe } = useGameActions();
   const [showTreeSelector, setShowTreeSelector] = useState(false);
   const [showRockSelector, setShowRockSelector] = useState(false);
   const [showFishingSpotSelector, setShowFishingSpotSelector] = useState(false);
   const [showCookingRecipeSelector, setShowCookingRecipeSelector] = useState(false);
+  const [showHerbloreRecipeSelector, setShowHerbloreRecipeSelector] = useState(false);
   const woodcuttingTrees = useWoodcuttingTrees();
   const miningRocks = useMiningRocks();
   const fishingSpots = useFishingSpots();
   const cookingRecipes = useCookingRecipes();
+  const herbloreRecipes = useHerbloreRecipes();
   const summoning = useSummoningSummary();
 
   const handleSkillPress = (skillId: SkillId) => {
@@ -55,6 +59,7 @@ export function SkillsScreen() {
   const miningSkill = state.skills.mining;
   const fishingSkill = state.skills.fishing;
   const cookingSkill = state.skills.cooking;
+  const herbloreSkill = state.skills.herblore;
 
   return (
     <SafeContainer padTop={false}>
@@ -67,7 +72,8 @@ export function SkillsScreen() {
           const isTrainable = skillId !== 'crafting';
           const isActive = isTrainable && state.activeSkill === skillId;
           const hasCraftingSystem = skillId === 'crafting';
-          const hasCookingSystem = skillId === 'cooking';
+          const hasCookingSystem = skillId === 'cooking' || skillId === 'herblore';
+          const hasHerbloreSystem = skillId === 'herblore';
 
           const cardStyle = isActive
             ? { ...styles.skillCard, ...styles.activeCard }
@@ -196,6 +202,22 @@ export function SkillsScreen() {
                 </View>
               )}
 
+              {/* Herblore Recipe Selector for Herblore */}
+              {hasHerbloreSystem && (
+                <View style={styles.treeRow}>
+                  <Text style={styles.treeLabel}>Recipe:</Text>
+                  <Text style={styles.treeValue}>
+                    {`${herbloreRecipes.active.icon} ${herbloreRecipes.active.name}`}
+                  </Text>
+                  <Text
+                    style={styles.treeChangeButton}
+                    onPress={() => setShowHerbloreRecipeSelector(true)}
+                  >
+                    Change
+                  </Text>
+                </View>
+              )}
+
               {/* Automation Toggle */}
               {skill.automationUnlocked ? (
                 <View style={styles.automationRow}>
@@ -256,6 +278,16 @@ export function SkillsScreen() {
           activeCookingRecipeId={cookingRecipes.activeCookingRecipeId}
           onSelectRecipe={setActiveCookingRecipe}
           onClose={() => setShowCookingRecipeSelector(false)}
+        />
+      )}
+
+      {/* Herblore Recipe Selector Modal */}
+      {showHerbloreRecipeSelector && (
+        <HerbloreRecipeSelector
+          currentLevel={herbloreSkill.level}
+          activeHerbloreRecipeId={herbloreRecipes.activeHerbloreRecipeId}
+          onSelectRecipe={setActiveHerbloreRecipe}
+          onClose={() => setShowHerbloreRecipeSelector(false)}
         />
       )}
     </SafeContainer>

@@ -254,7 +254,10 @@ export const useGameActions = () =>
       setActiveRock: state.setActiveRock,
       setActiveFishingSpot: state.setActiveFishingSpot,
       setActiveCookingRecipe: state.setActiveCookingRecipe,
+      setActiveHerbloreRecipe: state.setActiveHerbloreRecipe,
       eatFood: state.eatFood,
+      toggleAutoDrink: state.toggleAutoDrink,
+      drinkPotion: state.drinkPotion,
       // Notification actions
       addNotification: state.addNotification,
       removeNotification: state.removeNotification,

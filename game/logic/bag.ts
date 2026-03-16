@@ -13,7 +13,8 @@ const CATEGORY_ORDER: Record<ItemCategory, number> = {
   tool: 1,
   material: 2,
   food: 3,
-  misc: 4,
+  potion: 4,
+  misc: 5,
 };
 
 export interface AddItemResult {

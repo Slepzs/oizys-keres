@@ -31,9 +31,11 @@ import {
   getActiveFishingSpot,
   getActiveCookingRecipe,
   getCookingRecipesForLevel,
+  getActiveHerbloreRecipe,
+  getHerbloreRecipesForLevel,
 } from '@/game/logic';
 import { ITEM_DEFINITIONS, ITEM_IDS } from '@/game/data';
-import { isFood } from '@/game/types/items';
+import { isFood, isPotion } from '@/game/types/items';
 import { COMBAT_SKILL_IDS } from '@/game/types';
 
 export function usePlayerSummary() {
@@ -182,6 +184,8 @@ export function useCombatSummary() {
       autoFight: combat.autoFight,
       autoEat: combat.autoEat,
       autoEatThreshold: combat.autoEatThreshold,
+      autoDrink: combat.autoDrink,
+      potionBuffs: combat.potionBuffs,
       totalKills: combat.totalKills,
       totalDeaths: combat.totalDeaths,
       selectedZoneId: combat.selectedZoneId,
@@ -278,6 +282,7 @@ export function useCombatActions() {
       setTrainingMode: state.setTrainingMode,
       toggleAutoFight: state.toggleAutoFight,
       toggleAutoEat: state.toggleAutoEat,
+      toggleAutoDrink: state.toggleAutoDrink,
       setAutoEatThreshold: state.setAutoEatThreshold,
       equipItem: state.equipItem,
       unequipSlot: state.unequipSlot,
@@ -285,6 +290,7 @@ export function useCombatActions() {
       selectEnemyForZone: state.selectEnemyForZone,
       setActivePet: state.setActivePet,
       eatFood: state.eatFood,
+      drinkPotion: state.drinkPotion,
     }))
   );
 }
@@ -473,4 +479,52 @@ export function useBagFood() {
       })
       .filter((entry): entry is NonNullable<typeof entry> => entry !== null && entry.quantity > 0);
   }, [bag]);
+}
+
+export function useBagPotions() {
+  const bag = useGameStore(useShallow((state) => state.bag));
+
+  return useMemo(() => {
+    return ITEM_IDS
+      .filter((itemId) => {
+        const def = ITEM_DEFINITIONS[itemId];
+        return isPotion(def);
+      })
+      .map((itemId) => {
+        const def = ITEM_DEFINITIONS[itemId];
+        if (!isPotion(def)) return null;
+        const quantity = bag.slots
+          .filter((slot): slot is NonNullable<typeof slot> => slot !== null && slot.itemId === itemId)
+          .reduce((sum, slot) => sum + slot.quantity, 0);
+        return {
+          itemId,
+          name: def.name,
+          icon: def.icon,
+          buffType: def.buffType,
+          buffValue: def.buffValue,
+          durationMs: def.durationMs,
+          quantity,
+        };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null && entry.quantity > 0);
+  }, [bag]);
+}
+
+export function useHerbloreRecipes() {
+  const { level, activeHerbloreRecipeId } = useGameStore(
+    useShallow((state) => ({
+      level: state.skills.herblore.level,
+      activeHerbloreRecipeId: state.skills.herblore.activeHerbloreRecipeId,
+    }))
+  );
+
+  return useMemo(() => {
+    const active = getActiveHerbloreRecipe({ level, activeHerbloreRecipeId });
+    return {
+      available: getHerbloreRecipesForLevel(level),
+      active,
+      level,
+      activeHerbloreRecipeId: active.id,
+    };
+  }, [level, activeHerbloreRecipeId]);
 }

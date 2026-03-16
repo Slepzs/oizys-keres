@@ -33,4 +33,7 @@ export {
   useActiveMultipliers,
   useCookingRecipes,
   useBagFood,
+  useBagPotions,
+  useHerbloreRecipes,
+  useNotificationActions,
 } from './selectors';
