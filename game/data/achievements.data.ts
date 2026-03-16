@@ -544,6 +544,53 @@ export const ACHIEVEMENT_DEFINITIONS: Record<string, AchievementDefinition> = {
     condition: { type: 'skill_level', skillId: 'cooking', level: 99 },
     rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.05 }],
   },
+
+  // Herblore achievements
+  herb_10: {
+    id: 'herb_10',
+    name: 'Herb Picker',
+    description: 'Reach Herblore level 10',
+    icon: '🌿',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'herblore', level: 10 },
+    rewards: [{ type: 'multiplier', target: 'herblore', bonus: 0.05 }],
+  },
+  herb_25: {
+    id: 'herb_25',
+    name: 'Potion Maker',
+    description: 'Reach Herblore level 25',
+    icon: '⚗️',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'herblore', level: 25 },
+    rewards: [{ type: 'multiplier', target: 'herblore', bonus: 0.08 }],
+  },
+  herb_50: {
+    id: 'herb_50',
+    name: 'Expert Alchemist',
+    description: 'Reach Herblore level 50',
+    icon: '🧪',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'herblore', level: 50 },
+    rewards: [{ type: 'multiplier', target: 'herblore', bonus: 0.10 }],
+  },
+  herb_75: {
+    id: 'herb_75',
+    name: 'Master Brewer',
+    description: 'Reach Herblore level 75',
+    icon: '💜',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'herblore', level: 75 },
+    rewards: [{ type: 'multiplier', target: 'herblore', bonus: 0.12 }],
+  },
+  herb_99: {
+    id: 'herb_99',
+    name: 'Grandmaster Herbalist',
+    description: 'Reach Herblore level 99 — your potions are pure combat gold.',
+    icon: '🌟',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'herblore', level: 99 },
+    rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.05 }],
+  },
 };
 
 /**

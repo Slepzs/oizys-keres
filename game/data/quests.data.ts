@@ -931,6 +931,92 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
       { type: 'xp', skill: 'cooking', amount: 2500 },
     ],
   },
+
+  // Herblore Chain
+  first_brew: {
+    id: 'first_brew',
+    name: 'First Brew',
+    description: 'Crush your first herb and concoct a basic potion from the forest floor.',
+    icon: '⚗️',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'first_steps' }],
+    objectives: [
+      { id: 'xp', type: 'gain_xp', target: 'herblore', amount: 300 },
+      { id: 'potion', type: 'collect_item', target: 'attack_potion', amount: 1 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 100 },
+      { type: 'xp', skill: 'herblore', amount: 200 },
+    ],
+  },
+
+  junior_alchemist: {
+    id: 'junior_alchemist',
+    name: 'Junior Alchemist',
+    description: 'Refine your technique and brew a stockpile of defensive concoctions.',
+    icon: '🛡️',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'first_brew' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'herblore', level: 15 },
+      { id: 'potion', type: 'collect_item', target: 'defence_potion', amount: 3 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 200 },
+      { type: 'xp', skill: 'herblore', amount: 500 },
+    ],
+  },
+
+  combat_chemist: {
+    id: 'combat_chemist',
+    name: 'Combat Chemist',
+    description: 'Master the art of strength-enhancing brews for the heat of battle.',
+    icon: '💪',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'junior_alchemist' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'herblore', level: 25 },
+      { id: 'potion', type: 'collect_item', target: 'strength_potion', amount: 5 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 350 },
+      { type: 'xp', skill: 'herblore', amount: 900 },
+    ],
+  },
+
+  master_herbalist: {
+    id: 'master_herbalist',
+    name: 'Master Herbalist',
+    description: 'Unlock superior attack formulas using rare harralander from deep waters.',
+    icon: '🌿',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'combat_chemist' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'herblore', level: 45 },
+      { id: 'potion', type: 'collect_item', target: 'super_attack_potion', amount: 3 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 500 },
+      { type: 'xp', skill: 'herblore', amount: 1500 },
+    ],
+  },
+
+  supreme_brewer: {
+    id: 'supreme_brewer',
+    name: 'Supreme Brewer',
+    description: 'Brew the most potent strength elixirs from the rarest ranarr herbs.',
+    icon: '🧪',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'master_herbalist' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'herblore', level: 65 },
+      { id: 'potion', type: 'collect_item', target: 'super_strength_potion', amount: 3 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 800 },
+      { type: 'xp', skill: 'herblore', amount: 2500 },
+    ],
+  },
 };
 
 export const QUEST_IDS = Object.keys(QUEST_DEFINITIONS);

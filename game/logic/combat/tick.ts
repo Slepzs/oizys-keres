@@ -6,6 +6,7 @@ import { ENEMY_DEFINITIONS } from '../../data/enemies.data';
 import { ZONE_DEFINITIONS } from '../../data/zones.data';
 import { ITEM_DEFINITIONS } from '../../data/items.data';
 import { isFood, isPotion } from '../../types/items';
+import { createRng, rollChance } from '../rng';
 import { removeItemFromBag } from '../bag';
 import { getActivePetCombatProfile, getSummoningCombatBonuses, rewardActivePetForCombatKill } from '../summoning';
 import {
@@ -334,6 +335,7 @@ export function processCombatTick(
 ): CombatTickResult {
   const events: GameEvent[] = [];
   let newState = { ...state };
+  const rng = createRng(state.rngSeed);
 
   if (!newState.combat.activeCombat) {
     return { state: newState, events };
@@ -420,7 +422,7 @@ export function processCombatTick(
       };
     } else if (isPlayerTurn) {
       const playerStrength = getPlayerStrength(newState.combat, bonuses);
-      const isCritical = Math.random() < PLAYER_CRIT_CHANCE;
+      const isCritical = rollChance(rng, PLAYER_CRIT_CHANCE);
       const baseDamagePlayer = calculateDamage(playerStrength, enemy.defense);
       const damage = isCritical ? Math.floor(baseDamagePlayer * CRIT_DAMAGE_MULTIPLIER) : baseDamagePlayer;
       const enemyHpRemaining = Math.max(0, combat.enemyCurrentHp - damage);
@@ -485,7 +487,7 @@ export function processCombatTick(
     } else {
       const playerDefense = getPlayerDefense(newState.combat, bonuses);
       const baseDamage = calculateDamage(enemy.strength, playerDefense);
-      const isCritical = Math.random() < ENEMY_CRIT_CHANCE;
+      const isCritical = rollChance(rng, ENEMY_CRIT_CHANCE);
       const damageAfterReduction = Math.max(1, baseDamage - bonuses.damageReduction);
       const damage = isCritical ? Math.floor(damageAfterReduction * CRIT_DAMAGE_MULTIPLIER) : damageAfterReduction;
       const playerHpRemaining = Math.max(0, newState.combat.playerCurrentHp - damage);
