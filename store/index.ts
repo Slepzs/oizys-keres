@@ -6,6 +6,7 @@ export {
   useBag,
   useBagSettings,
   useQuests,
+  useAchievements,
   useSummoning,
   useCombat,
   useCrafting,

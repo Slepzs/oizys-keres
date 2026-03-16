@@ -1,13 +1,14 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { router } from 'expo-router';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { Card } from '../components/common/Card';
 import { ProgressBar } from '../components/common/ProgressBar';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { getAllStatDefinitions } from '@/game/systems';
 import type { AttributeStatDefinition, SkillStatDefinition, StatDefinition } from '@/game/types';
-import { usePlayerSummary, useSkillSummaries, useCombatSummary, useActiveMultipliers } from '@/store';
-import { COMBAT_SKILL_DEFINITIONS } from '@/game/data';
+import { usePlayerSummary, useSkillSummaries, useCombatSummary, useActiveMultipliers, useAchievements } from '@/store';
+import { ACHIEVEMENT_DEFINITIONS, COMBAT_SKILL_DEFINITIONS } from '@/game/data';
 import { COMBAT_SKILL_IDS } from '@/game/types';
 
 const SHOW_SUMMARY = true;
@@ -17,6 +18,10 @@ export function StatsScreen() {
   const skillSummaries = useSkillSummaries();
   const combatSummary = useCombatSummary();
   const activeMultipliers = useActiveMultipliers();
+  const achievements = useAchievements();
+
+  const totalAchievements = Object.keys(ACHIEVEMENT_DEFINITIONS).length;
+  const unlockedAchievements = achievements.unlocked.length;
 
   const visibleStats = useMemo(() => {
     return getAllStatDefinitions()
@@ -91,6 +96,27 @@ export function StatsScreen() {
             />
           </Card>
         )}
+
+        <Pressable onPress={() => router.push('/achievements')}>
+          <Card style={styles.achievementsCard}>
+            <View style={styles.achievementsRow}>
+              <Text style={styles.achievementsIcon}>🏆</Text>
+              <View style={styles.achievementsInfo}>
+                <Text style={styles.achievementsTitle}>Achievements</Text>
+                <Text style={styles.achievementsSubtitle}>
+                  {unlockedAchievements} / {totalAchievements} unlocked
+                </Text>
+              </View>
+              <Text style={styles.achievementsChevron}>›</Text>
+            </View>
+            <ProgressBar
+              progress={totalAchievements > 0 ? unlockedAchievements / totalAchievements : 0}
+              color={colors.warning}
+              height={4}
+              style={styles.achievementsProgress}
+            />
+          </Card>
+        </Pressable>
 
         <Text style={styles.sectionTitle}>Attributes</Text>
         {attributes.map((stat) => (
@@ -238,6 +264,37 @@ function formatMultiplierSource(source: string): string {
 }
 
 const styles = StyleSheet.create({
+  achievementsCard: {
+    marginBottom: spacing.lg,
+  },
+  achievementsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  achievementsIcon: {
+    fontSize: 28,
+  },
+  achievementsInfo: {
+    flex: 1,
+  },
+  achievementsTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  achievementsSubtitle: {
+    fontSize: fontSize.sm,
+    color: colors.warning,
+    marginTop: spacing.xs,
+  },
+  achievementsChevron: {
+    fontSize: fontSize.xl,
+    color: colors.textMuted,
+  },
+  achievementsProgress: {
+    marginTop: spacing.sm,
+  },
   summaryCard: {
     marginBottom: spacing.lg,
   },

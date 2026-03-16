@@ -332,6 +332,124 @@ export const ACHIEVEMENT_DEFINITIONS: Record<string, AchievementDefinition> = {
     condition: { type: 'player_level', level: 25 },
     rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.05 }],
   },
+  player_level_50: {
+    id: 'player_level_50',
+    name: 'Champion',
+    description: 'Reach player level 50',
+    icon: '👑',
+    category: 'progression',
+    condition: { type: 'player_level', level: 50 },
+    rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.08 }],
+  },
+  player_level_75: {
+    id: 'player_level_75',
+    name: 'Legend',
+    description: 'Reach player level 75',
+    icon: '🔱',
+    category: 'progression',
+    condition: { type: 'player_level', level: 75 },
+    rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.12 }],
+  },
+  player_level_100: {
+    id: 'player_level_100',
+    name: 'Immortal',
+    description: 'Reach player level 100',
+    icon: '💫',
+    category: 'progression',
+    condition: { type: 'player_level', level: 100 },
+    rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.20 }],
+  },
+
+  // High-tier skill achievements
+  woodcutter_75: {
+    id: 'woodcutter_75',
+    name: 'Master Woodcutter',
+    description: 'Reach Woodcutting level 75',
+    icon: '🏆',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'woodcutting', level: 75 },
+    rewards: [{ type: 'multiplier', target: 'woodcutting', bonus: 0.20 }],
+  },
+  miner_75: {
+    id: 'miner_75',
+    name: 'Master Miner',
+    description: 'Reach Mining level 75',
+    icon: '🏆',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'mining', level: 75 },
+    rewards: [{ type: 'multiplier', target: 'mining', bonus: 0.20 }],
+  },
+  smith_75: {
+    id: 'smith_75',
+    name: 'Master Crafter',
+    description: 'Reach Crafting level 75',
+    icon: '🏆',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'crafting', level: 75 },
+    rewards: [{ type: 'multiplier', target: 'crafting', bonus: 0.20 }],
+  },
+  summoner_75: {
+    id: 'summoner_75',
+    name: 'Grand Summoner',
+    description: 'Reach Summoning level 75',
+    icon: '🏆',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'summoning', level: 75 },
+    rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.08 }],
+  },
+
+  // Late-game kill milestones
+  kill_count_2000: {
+    id: 'kill_count_2000',
+    name: 'Executioner',
+    description: 'Defeat 2,000 enemies',
+    icon: '💀',
+    category: 'progression',
+    condition: { type: 'total_kills', count: 2000 },
+    rewards: [{ type: 'multiplier', target: 'drops', bonus: 0.06 }],
+  },
+  kill_count_10000: {
+    id: 'kill_count_10000',
+    name: 'Annihilator',
+    description: 'Defeat 10,000 enemies',
+    icon: '🩸',
+    category: 'progression',
+    condition: { type: 'total_kills', count: 10000 },
+    rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.10 }],
+  },
+
+  // Late-game combat level milestones
+  combatant_100: {
+    id: 'combatant_100',
+    name: 'Overlord',
+    description: 'Reach Combat level 100',
+    icon: '👹',
+    category: 'skill',
+    condition: { type: 'combat_level', level: 100 },
+    rewards: [{ type: 'multiplier', target: 'drops', bonus: 0.12 }],
+  },
+
+  // Collection milestones for late-game ores
+  spirit_essence_hoard: {
+    id: 'spirit_essence_hoard',
+    name: 'Spirit Hoarder',
+    description: 'Gather 500 Spirit Essence',
+    icon: '🌌',
+    category: 'collection',
+    condition: { type: 'total_resources', resourceId: 'spirit_essence', amount: 500 },
+    rewards: [{ type: 'multiplier', target: 'summoning', bonus: 0.10 }],
+  },
+
+  // Quest progression milestones
+  quest_master_100: {
+    id: 'quest_master_100',
+    name: 'Quest Legend',
+    description: 'Complete 100 quests',
+    icon: '📜',
+    category: 'progression',
+    condition: { type: 'quests_completed', count: 100 },
+    rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.15 }],
+  },
 };
 
 /**
