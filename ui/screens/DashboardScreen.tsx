@@ -8,6 +8,7 @@ import { ResourceCounter } from '../components/game/ResourceCounter';
 import { QuestSummaryCard } from '../components/game/QuestSummaryCard';
 import { ShopSummaryCard } from '../components/game/ShopSummaryCard';
 import { GachaSummaryCard } from '../components/game/GachaSummaryCard';
+import { ActiveSessionCard } from '../components/game/ActiveSessionCard';
 import { useGame } from '@/hooks/useGame';
 import { useSave } from '@/hooks/useSave';
 import { usePlayerSummary } from '@/store';
@@ -59,6 +60,9 @@ export function DashboardScreen() {
             </View>
           </Card>
         </Pressable>
+
+        {/* Active Session */}
+        <ActiveSessionCard />
 
         {/* Resources Row */}
         <View style={styles.resourcesGrid}>

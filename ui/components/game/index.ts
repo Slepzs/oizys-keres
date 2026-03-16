@@ -17,3 +17,4 @@ export { EquipmentPanel } from './EquipmentPanel';
 export { CombatZoneCard } from './CombatZoneCard';
 export { RockSelector } from './RockSelector';
 export { SummoningSkillPanel } from './SummoningSkillPanel';
+export { ActiveSessionCard } from './ActiveSessionCard';
