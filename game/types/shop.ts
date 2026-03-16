@@ -1,13 +1,21 @@
 import type { ItemId } from './items';
+import type { ResourceId } from './resources';
+import type { MultiplierTarget } from './multipliers';
 
-export type ShopOfferTier = 'normal' | 'premium';
+export type ShopOfferTier = 'normal' | 'premium' | 'forge';
 
 export type ShopOfferId =
   | 'supply_mystery_pack'
   | 'supply_bronze_pickaxe'
   | 'supply_bronze_hatchet'
   | 'supply_bronze_sword'
-  | 'premium_bag_tab';
+  | 'premium_bag_tab'
+  | 'forge_sigil_mining_i'
+  | 'forge_sigil_mining_ii'
+  | 'forge_sigil_woodcutting_i'
+  | 'forge_sigil_combat_i'
+  | 'forge_sigil_combat_ii'
+  | 'forge_sigil_wisdom';
 
 export type GachaPackId = 'shopkeeper_starter_pack';
 
@@ -24,6 +32,11 @@ export interface GachaPackDefinition {
   drops: readonly GachaPackDrop[];
 }
 
+export interface ResourceCost {
+  resourceId: ResourceId;
+  amount: number;
+}
+
 export type ShopPricing =
   | {
       kind: 'fixed';
@@ -36,6 +49,10 @@ export type ShopPricing =
       baseAmount: number;
       multiplier: number;
       basedOn: 'bag_extra_tabs';
+    }
+  | {
+      kind: 'resource';
+      costs: readonly ResourceCost[];
     };
 
 export type ShopOfferEffect =
@@ -51,6 +68,13 @@ export type ShopOfferEffect =
   | {
       kind: 'open_gacha_pack';
       packId: GachaPackId;
+    }
+  | {
+      kind: 'grant_multiplier';
+      multiplierId: string;
+      target: MultiplierTarget;
+      value: number;
+      multiplierType: 'additive' | 'multiplicative';
     };
 
 export interface ShopOffer {

@@ -1,11 +1,13 @@
 import type { GameState } from '../types/state';
 import type { ItemId } from '../types/items';
 import type { GachaPackDefinition, GachaPackId, ShopOffer, ShopOfferId } from '../types/shop';
+import type { ResourceId } from '../types/resources';
 import { DEFAULT_BAG_SIZE, ITEM_DEFINITIONS } from '../data/items.data';
 import { GACHA_PACKS } from '../data/gacha.data';
 import { SHOP_OFFERS } from '../data/shop.data';
 import { addItemToBag, expandBag, hasSpaceForItem } from './bag';
 import { advanceSeed, createRng } from './rng';
+import { addMultiplier } from './multipliers';
 
 export const MAX_BAG_TABS = 12;
 
@@ -27,6 +29,35 @@ export interface BuyShopOfferResult {
   };
 }
 
+/**
+ * Returns true if a forge upgrade has already been purchased (multiplier already active).
+ */
+export function isForgeUpgradePurchased(state: GameState, multiplierId: string): boolean {
+  return state.multipliers.active.some((m) => m.id === multiplierId);
+}
+
+/**
+ * Returns the resource amounts the player has for all costs in a resource-priced offer.
+ */
+export function getResourceCostAffordability(
+  state: GameState,
+  offerId: ShopOfferId
+): { canAfford: boolean; costs: Array<{ resourceId: ResourceId; required: number; available: number }> } {
+  const offer = getShopOffer(offerId);
+  if (!offer || offer.pricing.kind !== 'resource') {
+    return { canAfford: false, costs: [] };
+  }
+
+  const costs = offer.pricing.costs.map((cost) => ({
+    resourceId: cost.resourceId,
+    required: cost.amount,
+    available: state.resources[cost.resourceId]?.amount ?? 0,
+  }));
+
+  const canAfford = costs.every((c) => c.available >= c.required);
+  return { canAfford, costs };
+}
+
 export function getShopOffer(offerId: ShopOfferId): ShopOffer | null {
   return SHOP_OFFERS[offerId] ?? null;
 }
@@ -41,7 +72,7 @@ export function getShopOfferUnitPriceCoinsFromBagSlots(bagMaxSlots: number, offe
   if (!offer) return Infinity;
 
   const pricing = offer.pricing;
-  if (pricing.currency !== 'coins') return Infinity;
+  if (pricing.kind === 'resource') return Infinity;
 
   if (pricing.kind === 'fixed') {
     return pricing.amount;
@@ -180,6 +211,12 @@ export function buyShopOffer(state: GameState, offerId: ShopOfferId, quantity: n
   }
 
   const q = Math.max(1, Math.floor(quantity));
+
+  // Handle resource-priced offers differently from coin-priced ones
+  if (offer.pricing.kind === 'resource') {
+    return buyResourcePricedOffer(state, offer, q);
+  }
+
   const totalCostCoins = getShopOfferTotalPriceCoins(state, offerId, q);
 
   if (!Number.isFinite(totalCostCoins) || totalCostCoins <= 0) {
@@ -256,6 +293,10 @@ export function buyShopOffer(state: GameState, offerId: ShopOfferId, quantity: n
       };
       break;
     }
+
+    case 'grant_multiplier':
+      // Not reachable for coin-priced offers, handled in buyResourcePricedOffer
+      return { success: false, error: 'Invalid offer configuration', state };
   }
 
   return {
@@ -266,6 +307,68 @@ export function buyShopOffer(state: GameState, offerId: ShopOfferId, quantity: n
       offerId,
       quantity: q,
       totalCostCoins,
+    },
+  };
+}
+
+function buyResourcePricedOffer(
+  state: GameState,
+  offer: ShopOffer,
+  quantity: number
+): BuyShopOfferResult {
+  if (offer.pricing.kind !== 'resource') {
+    return { success: false, error: 'Unexpected pricing kind', state };
+  }
+
+  // Forge upgrades are one-time purchases
+  if (offer.effect.kind === 'grant_multiplier') {
+    if (isForgeUpgradePurchased(state, offer.effect.multiplierId)) {
+      return { success: false, error: 'Already purchased', state };
+    }
+  }
+
+  // Verify resource costs
+  for (const cost of offer.pricing.costs) {
+    const available = state.resources[cost.resourceId]?.amount ?? 0;
+    const required = cost.amount * quantity;
+    if (available < required) {
+      return { success: false, error: `Not enough ${cost.resourceId.replace('_', ' ')}`, state };
+    }
+  }
+
+  // Deduct resources
+  let newResources = { ...state.resources };
+  for (const cost of offer.pricing.costs) {
+    const required = cost.amount * quantity;
+    newResources = {
+      ...newResources,
+      [cost.resourceId]: {
+        ...newResources[cost.resourceId],
+        amount: (newResources[cost.resourceId]?.amount ?? 0) - required,
+      },
+    };
+  }
+
+  let newState: GameState = { ...state, resources: newResources };
+
+  // Apply effect
+  if (offer.effect.kind === 'grant_multiplier') {
+    newState = addMultiplier(newState, {
+      id: offer.effect.multiplierId,
+      source: 'upgrade',
+      target: offer.effect.target,
+      type: offer.effect.multiplierType,
+      value: offer.effect.value,
+    });
+  }
+
+  return {
+    success: true,
+    state: newState,
+    purchase: {
+      offerId: offer.id,
+      quantity,
+      totalCostCoins: 0,
     },
   };
 }

@@ -6,6 +6,12 @@ export const SHOP_OFFER_IDS: ShopOfferId[] = [
   'supply_bronze_pickaxe',
   'supply_bronze_hatchet',
   'supply_bronze_sword',
+  'forge_sigil_mining_i',
+  'forge_sigil_mining_ii',
+  'forge_sigil_woodcutting_i',
+  'forge_sigil_combat_i',
+  'forge_sigil_combat_ii',
+  'forge_sigil_wisdom',
 ];
 
 export const SHOP_OFFERS: Record<ShopOfferId, ShopOffer> = {
@@ -96,6 +102,126 @@ export const SHOP_OFFERS: Record<ShopOfferId, ShopOffer> = {
       kind: 'grant_item',
       itemId: 'bronze_sword',
       quantity: 1,
+    },
+  },
+
+  forge_sigil_mining_i: {
+    id: 'forge_sigil_mining_i',
+    tier: 'forge',
+    name: 'Mithril Mining Sigil',
+    description: 'Permanently enchant your pickaxe. Grants +8% mining XP forever.',
+    icon: '🔷',
+    pricing: {
+      kind: 'resource',
+      costs: [{ resourceId: 'mithril_ore', amount: 150 }],
+    },
+    effect: {
+      kind: 'grant_multiplier',
+      multiplierId: 'shop_forge_mining_i',
+      target: 'mining',
+      value: 0.08,
+      multiplierType: 'additive',
+    },
+  },
+
+  forge_sigil_mining_ii: {
+    id: 'forge_sigil_mining_ii',
+    tier: 'forge',
+    name: 'Adamantite Mining Sigil',
+    description: 'A powerful rune carved from the hardest ore. Grants +12% mining XP forever.',
+    icon: '🟪',
+    pricing: {
+      kind: 'resource',
+      costs: [{ resourceId: 'adamantite_ore', amount: 100 }],
+    },
+    effect: {
+      kind: 'grant_multiplier',
+      multiplierId: 'shop_forge_mining_ii',
+      target: 'mining',
+      value: 0.12,
+      multiplierType: 'additive',
+    },
+  },
+
+  forge_sigil_woodcutting_i: {
+    id: 'forge_sigil_woodcutting_i',
+    tier: 'forge',
+    name: 'Mithril Lumberjack Sigil',
+    description: 'Imbue your hatchet with mithril runes. Grants +8% woodcutting XP forever.',
+    icon: '🪵',
+    pricing: {
+      kind: 'resource',
+      costs: [{ resourceId: 'mithril_ore', amount: 150 }],
+    },
+    effect: {
+      kind: 'grant_multiplier',
+      multiplierId: 'shop_forge_woodcutting_i',
+      target: 'woodcutting',
+      value: 0.08,
+      multiplierType: 'additive',
+    },
+  },
+
+  forge_sigil_combat_i: {
+    id: 'forge_sigil_combat_i',
+    tier: 'forge',
+    name: 'Mithril Battle Sigil',
+    description: 'Forge a war rune from mithril. Grants +8% crafting XP forever.',
+    icon: '⚔️',
+    pricing: {
+      kind: 'resource',
+      costs: [{ resourceId: 'mithril_ore', amount: 150 }],
+    },
+    effect: {
+      kind: 'grant_multiplier',
+      multiplierId: 'shop_forge_combat_i',
+      target: 'crafting',
+      value: 0.08,
+      multiplierType: 'additive',
+    },
+  },
+
+  forge_sigil_combat_ii: {
+    id: 'forge_sigil_combat_ii',
+    tier: 'forge',
+    name: 'Adamantite Warlord Sigil',
+    description: 'The mightiest battle rune. Grants +12% XP to all gathering skills forever.',
+    icon: '🗡️',
+    pricing: {
+      kind: 'resource',
+      costs: [
+        { resourceId: 'mithril_ore', amount: 100 },
+        { resourceId: 'adamantite_ore', amount: 75 },
+      ],
+    },
+    effect: {
+      kind: 'grant_multiplier',
+      multiplierId: 'shop_forge_combat_ii',
+      target: 'all_skills',
+      value: 0.12,
+      multiplierType: 'additive',
+    },
+  },
+
+  forge_sigil_wisdom: {
+    id: 'forge_sigil_wisdom',
+    tier: 'forge',
+    name: 'Grand Sigil of Wisdom',
+    description: 'The pinnacle of forge craft. Grants +5% XP to all skills forever.',
+    icon: '✨',
+    pricing: {
+      kind: 'resource',
+      costs: [
+        { resourceId: 'mithril_ore', amount: 200 },
+        { resourceId: 'adamantite_ore', amount: 100 },
+      ],
+    },
+    effect: {
+      kind: 'grant_multiplier',
+      multiplierId: 'shop_forge_wisdom',
+      target: 'all_skills',
+      value: 0.05,
+      multiplierType: 'additive',
     },
   },
 };
