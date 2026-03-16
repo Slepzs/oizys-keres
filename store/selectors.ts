@@ -27,6 +27,8 @@ import {
   getMiningRocksForLevel,
   getActiveMiningRock,
   xpForPetLevel,
+  getFishingSpotsForLevel,
+  getActiveFishingSpot,
 } from '@/game/logic';
 import { COMBAT_SKILL_IDS } from '@/game/types';
 
@@ -381,6 +383,25 @@ export function useMiningRocks() {
       activeRockId: active.id,
     };
   }, [level, activeRockId]);
+}
+
+export function useFishingSpots() {
+  const { level, activeFishingSpotId } = useGameStore(
+    useShallow((state) => ({
+      level: state.skills.fishing.level,
+      activeFishingSpotId: state.skills.fishing.activeFishingSpotId,
+    }))
+  );
+
+  return useMemo(() => {
+    const active = getActiveFishingSpot({ level, activeFishingSpotId });
+    return {
+      available: getFishingSpotsForLevel(level),
+      active,
+      level,
+      activeFishingSpotId: active.id,
+    };
+  }, [level, activeFishingSpotId]);
 }
 
 export function useNotificationActions() {

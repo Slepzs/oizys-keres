@@ -450,6 +450,53 @@ export const ACHIEVEMENT_DEFINITIONS: Record<string, AchievementDefinition> = {
     condition: { type: 'quests_completed', count: 100 },
     rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.15 }],
   },
+
+  // Fishing achievements
+  fisher_10: {
+    id: 'fisher_10',
+    name: 'Apprentice Fisher',
+    description: 'Reach Fishing level 10',
+    icon: '🎣',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'fishing', level: 10 },
+    rewards: [{ type: 'multiplier', target: 'fishing', bonus: 0.05 }],
+  },
+  fisher_25: {
+    id: 'fisher_25',
+    name: 'Skilled Fisher',
+    description: 'Reach Fishing level 25',
+    icon: '🎣',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'fishing', level: 25 },
+    rewards: [{ type: 'multiplier', target: 'fishing', bonus: 0.08 }],
+  },
+  fisher_50: {
+    id: 'fisher_50',
+    name: 'Expert Angler',
+    description: 'Reach Fishing level 50',
+    icon: '🦞',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'fishing', level: 50 },
+    rewards: [{ type: 'multiplier', target: 'fishing', bonus: 0.10 }],
+  },
+  fisher_75: {
+    id: 'fisher_75',
+    name: 'Deep Sea Hunter',
+    description: 'Reach Fishing level 75',
+    icon: '🌍',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'fishing', level: 75 },
+    rewards: [{ type: 'multiplier', target: 'fishing', bonus: 0.12 }],
+  },
+  fisher_99: {
+    id: 'fisher_99',
+    name: 'Master of the Depths',
+    description: 'Reach Fishing level 99 — the abyss holds no secrets from you.',
+    icon: '🦈',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'fishing', level: 99 },
+    rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.05 }],
+  },
 };
 
 /**

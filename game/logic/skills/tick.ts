@@ -10,6 +10,7 @@ import { createRng, randomInt, rollChance } from '../rng';
 import { getEffectiveMultiplier, getSkillXpMultiplier } from '../multipliers';
 import { getActiveTree } from '../woodcutting';
 import { getActiveMiningRock } from '../mining';
+import { getActiveFishingSpot } from '../fishing';
 import { getSummoningCombatBonuses, processSummoningRituals } from '../summoning';
 import { calculateMaxHp } from '../combat';
 
@@ -296,6 +297,23 @@ function getEffectiveSkillDefinition(
       baseResourcePerAction: rockTier.baseResourcePerAction,
       resourceProduced: rockTier.resourceProduced,
       ticksPerAction: rockTier.ticksPerAction,
+    };
+  }
+
+  if (skillId === 'fishing') {
+    const skill = state.skills[skillId];
+    const fishingSpot = getActiveFishingSpot(skill);
+
+    if (!fishingSpot || skill.level < fishingSpot.levelRequired) {
+      return baseDefinition;
+    }
+
+    return {
+      ...baseDefinition,
+      baseXpPerAction: fishingSpot.baseXpPerAction,
+      baseResourcePerAction: fishingSpot.baseResourcePerAction,
+      resourceProduced: fishingSpot.resourceProduced,
+      ticksPerAction: fishingSpot.ticksPerAction,
     };
   }
 

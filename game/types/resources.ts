@@ -12,7 +12,14 @@ export type ResourceId =
   | 'coal'
   | 'mithril_ore'
   | 'adamantite_ore'
-  | 'spirit_essence';
+  | 'spirit_essence'
+  | 'raw_shrimp'
+  | 'raw_sardine'
+  | 'raw_trout'
+  | 'raw_salmon'
+  | 'raw_lobster'
+  | 'raw_swordfish'
+  | 'raw_shark';
 
 export interface ResourceState {
   amount: number;

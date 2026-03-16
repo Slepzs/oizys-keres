@@ -758,6 +758,93 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
       { type: 'resource', resource: 'ore', amount: 110 },
     ],
   },
+
+  // ==========================================================================
+  // Fishing Chain
+  // ==========================================================================
+  first_cast: {
+    id: 'first_cast',
+    name: 'First Cast',
+    description: 'Try your luck at the pond and reel in some shrimp.',
+    icon: '🎣',
+    category: 'skill',
+    objectives: [
+      { id: 'xp', type: 'gain_xp', target: 'fishing', amount: 200 },
+      { id: 'shrimp', type: 'gain_resource', target: 'raw_shrimp', amount: 30 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 80 },
+      { type: 'resource', resource: 'raw_shrimp', amount: 20 },
+    ],
+  },
+
+  weekend_angler: {
+    id: 'weekend_angler',
+    name: 'Weekend Angler',
+    description: 'Build a real stockpile and push deeper into the skill.',
+    icon: '🪣',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'first_cast' }],
+    objectives: [
+      { id: 'xp', type: 'gain_xp', target: 'fishing', amount: 1200 },
+      { id: 'sardine', type: 'gain_resource', target: 'raw_sardine', amount: 50 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 160 },
+      { type: 'xp', skill: 'fishing', amount: 300 },
+    ],
+  },
+
+  river_run: {
+    id: 'river_run',
+    name: 'River Run',
+    description: 'Head to the mountain river and catch trout.',
+    icon: '🏞️',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'weekend_angler' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'fishing', level: 20 },
+      { id: 'trout', type: 'gain_resource', target: 'raw_trout', amount: 40 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 240 },
+      { type: 'xp', skill: 'fishing', amount: 500 },
+    ],
+  },
+
+  deep_sea_expedition: {
+    id: 'deep_sea_expedition',
+    name: 'Deep Sea Expedition',
+    description: 'Brave the open waters and haul in lobsters from the seabed.',
+    icon: '🦞',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'river_run' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'fishing', level: 50 },
+      { id: 'lobster', type: 'gain_resource', target: 'raw_lobster', amount: 30 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 400 },
+      { type: 'xp', skill: 'fishing', amount: 1000 },
+    ],
+  },
+
+  shark_hunter: {
+    id: 'shark_hunter',
+    name: 'Shark Hunter',
+    description: 'Descend into the abyssal trench and face the apex predator.',
+    icon: '🦈',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'deep_sea_expedition' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'fishing', level: 80 },
+      { id: 'shark', type: 'gain_resource', target: 'raw_shark', amount: 20 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 700 },
+      { type: 'xp', skill: 'fishing', amount: 2000 },
+    ],
+  },
 };
 
 export const QUEST_IDS = Object.keys(QUEST_DEFINITIONS);

@@ -17,3 +17,4 @@ export * from "./tree-tiers.data";
 export * from "./zones.data";
 export * from './rock-tiers.data';
 export * from './summoning.data';
+export * from './fishing-spots.data';

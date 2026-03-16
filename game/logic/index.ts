@@ -17,3 +17,4 @@ export * from "./tick";
 export * from "./woodcutting";
 export * from "./xp";
 export * from './mining';
+export * from './fishing';

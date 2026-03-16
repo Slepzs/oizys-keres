@@ -45,6 +45,17 @@ export const SKILL_DEFINITIONS: Record<SkillId, SkillDefinition> = {
     automationUnlockLevel: 12,
     ticksPerAction: 50,
   },
+  fishing: {
+    id: 'fishing',
+    name: 'Fishing',
+    description: 'Cast your line and reel in fish from ponds, rivers, and the deep sea.',
+    icon: '🎣',
+    baseXpPerAction: 12,
+    baseResourcePerAction: 1,
+    resourceProduced: 'raw_shrimp',
+    automationUnlockLevel: 20,
+    ticksPerAction: 30,
+  },
 };
 
 export function createInitialSkillState(overrides: Partial<SkillState> = {}): SkillState {
@@ -64,6 +75,7 @@ export function createInitialSkillsState(): SkillsState {
     mining: createInitialSkillState(),
     crafting: createInitialSkillState({ automationUnlocked: true }),
     summoning: createInitialSkillState(),
+    fishing: createInitialSkillState(),
   };
 }
 

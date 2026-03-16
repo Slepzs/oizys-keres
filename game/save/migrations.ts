@@ -308,6 +308,42 @@ const migrations: Record<number, MigrationFn> = {
       summoning: createInitialSummoningState(),
     },
   }),
+
+  // Migration from v15 to v16: Add fishing skill and fish resources
+  15: (save) => ({
+    ...save,
+    version: 16,
+    state: {
+      ...save.state,
+      skills: {
+        ...save.state.skills,
+        fishing: {
+          level: 1,
+          xp: 0,
+          automationUnlocked: false,
+          automationEnabled: false,
+          tickProgress: 0,
+        },
+      },
+      skillStats: {
+        ...(save.state.skillStats as any),
+        fishing: {
+          level: 1,
+          xp: 0,
+        },
+      },
+      resources: {
+        ...save.state.resources,
+        raw_shrimp: { amount: 0, totalGained: 0 },
+        raw_sardine: { amount: 0, totalGained: 0 },
+        raw_trout: { amount: 0, totalGained: 0 },
+        raw_salmon: { amount: 0, totalGained: 0 },
+        raw_lobster: { amount: 0, totalGained: 0 },
+        raw_swordfish: { amount: 0, totalGained: 0 },
+        raw_shark: { amount: 0, totalGained: 0 },
+      },
+    },
+  }),
 };
 
 /**

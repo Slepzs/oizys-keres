@@ -85,6 +85,48 @@ export const RESOURCE_DEFINITIONS: Record<ResourceId, ResourceDefinition> = {
     description: 'Condensed ritual energy used to call and strengthen companions.',
     icon: '🔮',
   },
+  raw_shrimp: {
+    id: 'raw_shrimp',
+    name: 'Raw Shrimp',
+    description: 'Small crustaceans caught in shallow ponds.',
+    icon: '🦐',
+  },
+  raw_sardine: {
+    id: 'raw_sardine',
+    name: 'Raw Sardine',
+    description: 'Small silver fish from freshwater lakes.',
+    icon: '🐟',
+  },
+  raw_trout: {
+    id: 'raw_trout',
+    name: 'Raw Trout',
+    description: 'A firm fish found in mountain rivers.',
+    icon: '🐠',
+  },
+  raw_salmon: {
+    id: 'raw_salmon',
+    name: 'Raw Salmon',
+    description: 'A prized coastal fish with rich pink flesh.',
+    icon: '🐡',
+  },
+  raw_lobster: {
+    id: 'raw_lobster',
+    name: 'Raw Lobster',
+    description: 'A large crustacean hauled from the deep sea floor.',
+    icon: '🦞',
+  },
+  raw_swordfish: {
+    id: 'raw_swordfish',
+    name: 'Raw Swordfish',
+    description: 'A powerful open-ocean fish with a deadly bill.',
+    icon: '🗡️',
+  },
+  raw_shark: {
+    id: 'raw_shark',
+    name: 'Raw Shark',
+    description: 'Apex predator of the abyssal trench. Fearless anglers only.',
+    icon: '🦈',
+  },
 };
 
 export const RESOURCE_IDS = Object.keys(RESOURCE_DEFINITIONS) as ResourceId[];
@@ -112,5 +154,12 @@ export function createInitialResourcesState(): ResourcesState {
     mithril_ore: createInitialResourceState(),
     adamantite_ore: createInitialResourceState(),
     spirit_essence: createInitialResourceState(),
+    raw_shrimp: createInitialResourceState(),
+    raw_sardine: createInitialResourceState(),
+    raw_trout: createInitialResourceState(),
+    raw_salmon: createInitialResourceState(),
+    raw_lobster: createInitialResourceState(),
+    raw_swordfish: createInitialResourceState(),
+    raw_shark: createInitialResourceState(),
   };
 }

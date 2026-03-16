@@ -687,6 +687,27 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     stats: { attackBonus: 5, strengthBonus: 8, defenseBonus: 12 },
     levelRequired: 66,
   },
+  // Fishing drops
+  pearl: {
+    id: 'pearl',
+    name: 'Pearl',
+    description: 'A lustrous pearl found inside an oyster at sea.',
+    icon: '🫧',
+    category: 'misc',
+    rarity: 'uncommon',
+    maxStack: 50,
+    sellPrice: 80,
+  },
+  oyster: {
+    id: 'oyster',
+    name: 'Oyster',
+    description: 'A sealed oyster from the deep sea. May contain a pearl.',
+    icon: '🐚',
+    category: 'misc',
+    rarity: 'rare',
+    maxStack: 20,
+    sellPrice: 200,
+  },
 };
 
 export const ITEM_IDS = Object.keys(ITEM_DEFINITIONS) as ItemId[];

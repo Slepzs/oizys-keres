@@ -66,7 +66,10 @@ export type ItemId =
   | 'power_amulet'
   | 'defense_ring'
   | 'berserker_charm'
-  | 'runed_war_ring';
+  | 'runed_war_ring'
+  // Fishing drops
+  | 'pearl'
+  | 'oyster';
 
 export type ItemCategory = 'material' | 'tool' | 'equipment' | 'misc';
 

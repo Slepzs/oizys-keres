@@ -4,6 +4,7 @@ import { SKILL_IDS } from '../data/skills.data';
 import { createInitialSummoningState } from '../data/summoning.data';
 import { calculateMaxHp } from '../logic/combat';
 import { getActiveMiningRock } from '../logic/mining';
+import { getActiveFishingSpot } from '../logic/fishing';
 import { normalizePlayerVitals } from '../logic/player';
 import { getSummoningCombatBonuses } from '../logic/summoning';
 import { getActiveTree } from '../logic/woodcutting';
@@ -152,6 +153,10 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...initial.skills.summoning,
       ...(rawSkills.summoning ?? {}),
     },
+    fishing: {
+      ...initial.skills.fishing,
+      ...(rawSkills.fishing ?? {}),
+    },
   };
   const repairedSkillStats = {
     woodcutting: {
@@ -170,9 +175,14 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...initial.skillStats.summoning,
       ...(rawSkillStats.summoning ?? {}),
     },
+    fishing: {
+      ...initial.skillStats.fishing,
+      ...(rawSkillStats.fishing ?? {}),
+    },
   };
   repairedSkills.woodcutting.activeTreeId = getActiveTree(repairedSkills.woodcutting).id;
   repairedSkills.mining.activeRockId = getActiveMiningRock(repairedSkills.mining).id;
+  repairedSkills.fishing.activeFishingSpotId = getActiveFishingSpot(repairedSkills.fishing).id;
   const initialSummoning = createInitialSummoningState();
   const rawSummoning = (state.summoning ?? {}) as Partial<GameState['summoning']>;
   const repairedSummoning = {

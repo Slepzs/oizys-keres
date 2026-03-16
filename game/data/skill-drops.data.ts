@@ -109,4 +109,20 @@ export const SKILL_DROP_TABLES: Record<SkillId, SkillDropTable> = {
       minLevel: 45,
     },
   ],
+  fishing: [
+    {
+      itemId: 'pearl',
+      chance: 0.04,
+      minQuantity: 1,
+      maxQuantity: 1,
+      minLevel: 10,
+    },
+    {
+      itemId: 'oyster',
+      chance: 0.015,
+      minQuantity: 1,
+      maxQuantity: 1,
+      minLevel: 35,
+    },
+  ],
 };

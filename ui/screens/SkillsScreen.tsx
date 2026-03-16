@@ -7,9 +7,10 @@ import { Button } from '../components/common/Button';
 import { SkillProgressBar } from '../components/game/SkillProgressBar';
 import { TreeSelector } from '../components/game/TreeSelector';
 import { RockSelector } from '../components/game/RockSelector';
+import { FishingSpotSelector } from '../components/game/FishingSpotSelector';
 import { SummoningSkillPanel } from '../components/game/SummoningSkillPanel';
 import { useGame } from '@/hooks/useGame';
-import { useGameActions, useMiningRocks, useSummoningSummary, useWoodcuttingTrees } from '@/store';
+import { useGameActions, useMiningRocks, useSummoningSummary, useWoodcuttingTrees, useFishingSpots } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { SKILL_DEFINITIONS, SKILL_IDS } from '@/game/data';
 import type { SkillId } from '@/game/types';
@@ -19,15 +20,18 @@ const SKILL_CRAFTING_PLACEHOLDER: Record<SkillId, string> = {
   mining: 'Gather ore and stone for advanced recipes.',
   crafting: 'Crafting XP comes from crafting completed recipes.',
   summoning: 'Perform rituals to strengthen your active companion.',
+  fishing: 'Fish are gathered as resources for future cooking recipes.',
 };
 
 export function SkillsScreen() {
   const { state, setActiveSkill, toggleAutomation } = useGame();
-  const { setActiveTree, setActiveRock, setActivePet } = useGameActions();
+  const { setActiveTree, setActiveRock, setActivePet, setActiveFishingSpot } = useGameActions();
   const [showTreeSelector, setShowTreeSelector] = useState(false);
   const [showRockSelector, setShowRockSelector] = useState(false);
+  const [showFishingSpotSelector, setShowFishingSpotSelector] = useState(false);
   const woodcuttingTrees = useWoodcuttingTrees();
   const miningRocks = useMiningRocks();
+  const fishingSpots = useFishingSpots();
   const summoning = useSummoningSummary();
 
   const handleSkillPress = (skillId: SkillId) => {
@@ -45,6 +49,7 @@ export function SkillsScreen() {
 
   const woodcuttingSkill = state.skills.woodcutting;
   const miningSkill = state.skills.mining;
+  const fishingSkill = state.skills.fishing;
 
   return (
     <SafeContainer padTop={false}>
@@ -151,6 +156,22 @@ export function SkillsScreen() {
                 </View>
               )}
 
+              {/* Fishing Spot Selector for Fishing */}
+              {skillId === 'fishing' && (
+                <View style={styles.treeRow}>
+                  <Text style={styles.treeLabel}>Spot:</Text>
+                  <Text style={styles.treeValue}>
+                    {`${fishingSpots.active.icon} ${fishingSpots.active.name}`}
+                  </Text>
+                  <Text
+                    style={styles.treeChangeButton}
+                    onPress={() => setShowFishingSpotSelector(true)}
+                  >
+                    Change
+                  </Text>
+                </View>
+              )}
+
               {/* Automation Toggle */}
               {skill.automationUnlocked ? (
                 <View style={styles.automationRow}>
@@ -191,6 +212,16 @@ export function SkillsScreen() {
           activeRockId={miningRocks.activeRockId}
           onSelectRock={setActiveRock}
           onClose={() => setShowRockSelector(false)}
+        />
+      )}
+
+      {/* Fishing Spot Selector Modal */}
+      {showFishingSpotSelector && (
+        <FishingSpotSelector
+          currentLevel={fishingSkill.level}
+          activeFishingSpotId={fishingSpots.activeFishingSpotId}
+          onSelectSpot={setActiveFishingSpot}
+          onClose={() => setShowFishingSpotSelector(false)}
         />
       )}
     </SafeContainer>

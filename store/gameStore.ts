@@ -250,6 +250,7 @@ export const useGameActions = () =>
       reset: state.reset,
       setActiveTree: state.setActiveTree,
       setActiveRock: state.setActiveRock,
+      setActiveFishingSpot: state.setActiveFishingSpot,
       // Notification actions
       addNotification: state.addNotification,
       removeNotification: state.removeNotification,
