@@ -61,15 +61,33 @@ export function processOfflineProgress(
 export function summarizeOfflineProgress(result: OfflineProgressResult): OfflineProgressSummary {
   const skillXpGained: Record<string, number> = {};
   const resourcesGained: Record<string, number> = {};
+  const itemsGained: Record<string, number> = {};
   const levelsGained: Record<string, number> = {};
+  const combatSkillLevelsGained: Record<string, number> = {};
+  let enemyKills = 0;
 
   for (const event of result.events) {
     switch (event.type) {
       case 'SKILL_ACTION':
         skillXpGained[event.skillId] = (skillXpGained[event.skillId] || 0) + event.xpGained;
+        if (event.resourceGained > 0) {
+          resourcesGained[event.resourceId] = (resourcesGained[event.resourceId] || 0) + event.resourceGained;
+        }
         break;
       case 'SKILL_LEVEL_UP':
         levelsGained[event.skillId] = (levelsGained[event.skillId] || 0) + 1;
+        break;
+      case 'ITEM_DROPPED':
+        itemsGained[event.itemId] = (itemsGained[event.itemId] || 0) + event.quantity;
+        break;
+      case 'COMBAT_ITEM_DROPPED':
+        itemsGained[event.itemId] = (itemsGained[event.itemId] || 0) + event.quantity;
+        break;
+      case 'COMBAT_ENEMY_KILLED':
+        enemyKills += 1;
+        break;
+      case 'COMBAT_SKILL_LEVEL_UP':
+        combatSkillLevelsGained[event.skillId] = (combatSkillLevelsGained[event.skillId] || 0) + 1;
         break;
     }
   }
@@ -80,7 +98,10 @@ export function summarizeOfflineProgress(result: OfflineProgressResult): Offline
     wasCapped: result.wasCapped,
     skillXpGained,
     resourcesGained,
+    itemsGained,
     levelsGained,
+    combatSkillLevelsGained,
+    enemyKills,
     totalEvents: result.events.length,
   };
 }
@@ -91,6 +112,9 @@ export interface OfflineProgressSummary {
   wasCapped: boolean;
   skillXpGained: Record<string, number>;
   resourcesGained: Record<string, number>;
+  itemsGained: Record<string, number>;
   levelsGained: Record<string, number>;
+  combatSkillLevelsGained: Record<string, number>;
+  enemyKills: number;
   totalEvents: number;
 }

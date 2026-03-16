@@ -49,3 +49,9 @@
 - Strategic direction chosen: Expand core gathering progression with data-driven specialization rather than adding new surface-level systems.
 - Next potential vector: Normalize selected gathering targets and integrate the new ore outputs into downstream crafting/economy systems.
 - Source: commit `ec48450a3d47f03ca9657be9bf3c7f1afc04961c`
+
+## 2026-03-16 — Offline Progress Summary
+- What was improved: Added full offline progress summary UX. Fixed `summarizeOfflineProgress` which was silently dropping all resource gains, item drops, and combat kills from the offline summary. Added `offlineSummary` as transient store state computed at boot, then built `OfflineProgressModal` that shows on Dashboard after being away 60+ seconds — displays skill XP gained, level-ups (highlighted), resources collected, items found, and enemies defeated.
+- Why it was improved: The offline tick engine already processed progress correctly but showed players nothing — a core idle-game mechanic was completely invisible. Players returning after hours away had no feedback about what happened, which breaks the game feel of idle progression.
+- Strategic direction chosen: Improve player feedback and session loop before expanding systems further. The modal gives clear value to each return visit and makes offline progress tangible.
+- Next potential vector: Add an "offline efficiency" multiplier or cap visible in the modal to motivate players to upgrade infrastructure for better idle returns. Or expand mid/late quest chains (current last combat quest is goblin_intel at ~level 15 equivalent).

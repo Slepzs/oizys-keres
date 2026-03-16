@@ -9,9 +9,10 @@ import { QuestSummaryCard } from '../components/game/QuestSummaryCard';
 import { ShopSummaryCard } from '../components/game/ShopSummaryCard';
 import { GachaSummaryCard } from '../components/game/GachaSummaryCard';
 import { ActiveSessionCard } from '../components/game/ActiveSessionCard';
+import { OfflineProgressModal } from '../components/game/OfflineProgressModal';
 import { useGame } from '@/hooks/useGame';
 import { useSave } from '@/hooks/useSave';
-import { usePlayerSummary } from '@/store';
+import { useOfflineSummary, usePlayerSummary } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { RESOURCE_DEFINITIONS, RESOURCE_IDS } from '@/game/data';
 import { playerXpProgress } from '@/game/logic';
@@ -24,6 +25,7 @@ export function DashboardScreen() {
   useSave(); // Enable auto-save
 
   const playerProgress = playerXpProgress(state.player);
+  const { summary: offlineSummary, dismiss: dismissOfflineSummary } = useOfflineSummary();
   const playerSummary = usePlayerSummary();
   const visibleResourceIds = useMemo(() => {
     return RESOURCE_IDS.filter((resourceId) => {
@@ -33,6 +35,7 @@ export function DashboardScreen() {
   }, [state.resources]);
 
   return (
+    <>
     <SafeContainer>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Player Level Card */}
@@ -88,6 +91,14 @@ export function DashboardScreen() {
         <QuestSummaryCard />
       </ScrollView>
     </SafeContainer>
+
+      {offlineSummary && (
+        <OfflineProgressModal
+          summary={offlineSummary}
+          onDismiss={dismissOfflineSummary}
+        />
+      )}
+    </>
   );
 }
 

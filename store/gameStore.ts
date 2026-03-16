@@ -10,7 +10,7 @@ import {
   serializeState,
   saveToJson,
 } from '@/game/save';
-import { processOfflineProgress } from '@/game/logic';
+import { processOfflineProgress, summarizeOfflineProgress, type OfflineProgressSummary } from '@/game/logic';
 import { registerGameModules } from '@/game/modules';
 import { eventBus, setNotificationCallback } from '@/game/systems';
 import { storage } from '@/services/mmkv-storage';
@@ -42,6 +42,8 @@ registerGameModules();
 
 interface HydrationState {
   isHydrated: boolean;
+  offlineSummary: OfflineProgressSummary | null;
+  dismissOfflineSummary: () => void;
 }
 
 export type GameActions =
@@ -148,6 +150,10 @@ export const useGameStore = create<GameStore>()((set, get) => {
 
   const offlineResult = processOfflineProgress(loaded, bootNow);
   const afterOffline = eventBus.dispatch(offlineResult.events, offlineResult.state, getGameContext(bootNow));
+  const MIN_OFFLINE_SHOW_MS = 60_000;
+  const bootOfflineSummary = offlineResult.elapsedMs >= MIN_OFFLINE_SHOW_MS
+    ? summarizeOfflineProgress(offlineResult)
+    : null;
 
   // Wire notifications to this store instance after it exists to avoid circular deps.
   setTimeout(() => {
@@ -171,6 +177,8 @@ export const useGameStore = create<GameStore>()((set, get) => {
   return {
     ...afterOffline,
     isHydrated: true,
+    offlineSummary: bootOfflineSummary,
+    dismissOfflineSummary: () => set({ offlineSummary: null }),
     ...createTickSlice(set, get, helpers),
     ...createPersistenceSlice(set, get, helpers),
     ...createSkillsSlice(set, get, helpers),
@@ -260,3 +268,10 @@ export const useGameActions = () =>
       maxAllSkills: state.maxAllSkills,
     }))
   );
+
+export const useOfflineSummary = () => useGameStore(
+  useShallow((state) => ({
+    summary: state.offlineSummary,
+    dismiss: state.dismissOfflineSummary,
+  }))
+);

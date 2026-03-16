@@ -12,6 +12,7 @@ export {
   useActiveSkill,
   useIsHydrated,
   useGameActions,
+  useOfflineSummary,
   type GameStore,
 } from './gameStore';
 export {
