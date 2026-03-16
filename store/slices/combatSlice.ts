@@ -111,6 +111,9 @@ export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
       }
       const currentHp = state.combat.playerCurrentHp;
       const maxHp = state.combat.playerMaxHp;
+      if (currentHp >= maxHp) {
+        return;
+      }
       const newHp = Math.min(maxHp, currentHp + itemDef.healAmount);
       set({
         bag: bagResult.bag,

@@ -243,6 +243,8 @@ export const useGameActions = () =>
       fleeCombat: state.fleeCombat,
       setTrainingMode: state.setTrainingMode,
       toggleAutoFight: state.toggleAutoFight,
+      toggleAutoEat: state.toggleAutoEat,
+      setAutoEatThreshold: state.setAutoEatThreshold,
       equipItem: state.equipItem,
       unequipSlot: state.unequipSlot,
       selectZone: state.selectZone,

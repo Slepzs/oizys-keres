@@ -183,41 +183,68 @@ function handleEnemyKilled(
 }
 
 /**
- * Auto-eat the best available food from the bag until HP is above the threshold,
- * or until no food remains. Only runs if combat.autoEat is enabled.
+ * Choose the most efficient food for auto-eat:
+ * - prefer the smallest heal that reaches the threshold
+ * - otherwise use the largest available heal to climb out of danger
+ */
+function getAutoEatFood(state: GameState): { itemId: ItemId; healAmount: number } | null {
+  const thresholdHp = state.combat.playerMaxHp * state.combat.autoEatThreshold;
+  const hpNeeded = Math.max(1, thresholdHp - state.combat.playerCurrentHp);
+  let smallestSufficientFood: { itemId: ItemId; healAmount: number } | null = null;
+  let largestFood: { itemId: ItemId; healAmount: number } | null = null;
+
+  for (const slot of state.bag.slots) {
+    if (!slot) {
+      continue;
+    }
+
+    const def = ITEM_DEFINITIONS[slot.itemId as ItemId];
+    if (!def || !isFood(def)) {
+      continue;
+    }
+
+    const candidate = { itemId: slot.itemId as ItemId, healAmount: def.healAmount };
+
+    if (!largestFood || candidate.healAmount > largestFood.healAmount) {
+      largestFood = candidate;
+    }
+
+    if (
+      candidate.healAmount >= hpNeeded
+      && (!smallestSufficientFood || candidate.healAmount < smallestSufficientFood.healAmount)
+    ) {
+      smallestSufficientFood = candidate;
+    }
+  }
+
+  return smallestSufficientFood ?? largestFood;
+}
+
+/**
+ * Auto-eat until HP is above the configured threshold, or until no food remains.
  */
 function tryAutoEat(state: GameState): GameState {
-  if (!state.combat.autoEat) {
+  if (!state.combat.autoEat || state.combat.playerCurrentHp <= 0) {
     return state;
   }
 
   let current = state;
+  const thresholdHp = current.combat.playerMaxHp * current.combat.autoEatThreshold;
 
-  while (
-    current.combat.playerCurrentHp <
-    current.combat.playerMaxHp * current.combat.autoEatThreshold
-  ) {
-    let bestItemId: ItemId | null = null;
-    let bestHealAmount = 0;
-
-    for (const slot of current.bag.slots) {
-      if (!slot) continue;
-      const def = ITEM_DEFINITIONS[slot.itemId as ItemId];
-      if (!def || !isFood(def)) continue;
-      if (def.healAmount > bestHealAmount) {
-        bestHealAmount = def.healAmount;
-        bestItemId = slot.itemId as ItemId;
-      }
+  while (current.combat.playerCurrentHp < thresholdHp) {
+    const selectedFood = getAutoEatFood(current);
+    if (!selectedFood) {
+      break;
     }
 
-    if (!bestItemId) break;
-
-    const bagResult = removeItemFromBag(current.bag, bestItemId, 1);
-    if (bagResult.removed < 1) break;
+    const bagResult = removeItemFromBag(current.bag, selectedFood.itemId, 1);
+    if (bagResult.removed < 1) {
+      break;
+    }
 
     const newHp = Math.min(
       current.combat.playerMaxHp,
-      current.combat.playerCurrentHp + bestHealAmount
+      current.combat.playerCurrentHp + selectedFood.healAmount
     );
 
     current = {

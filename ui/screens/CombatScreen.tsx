@@ -12,6 +12,8 @@ import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { ZONE_IDS } from '@/game/data';
 import type { TrainingMode, EquipmentSlot } from '@/game/types';
 
+const AUTO_EAT_THRESHOLDS = [0.25, 0.5, 0.75] as const;
+
 export function CombatScreen() {
   const combatSummary = useCombatSummary();
   const activeCombat = useActiveCombat();
@@ -22,12 +24,14 @@ export function CombatScreen() {
     setTrainingMode,
     toggleAutoFight,
     toggleAutoEat,
+    setAutoEatThreshold,
     unequipSlot,
     selectZone,
     selectEnemyForZone,
     eatFood,
   } = useCombatActions();
   const bagFood = useBagFood();
+  const autoEatThresholdPercent = Math.round(combatSummary.autoEatThreshold * 100);
 
   const handleTrainingModeChange = (mode: TrainingMode) => {
     setTrainingMode(mode);
@@ -80,11 +84,10 @@ export function CombatScreen() {
           </View>
         )}
 
-        {/* Food Panel */}
-        {bagFood.length > 0 && (
-          <Card style={styles.section}>
-            <Text style={styles.foodTitle}>Food</Text>
-            <Text style={styles.foodSubtitle}>Eat food to restore HP during combat</Text>
+        <Card style={styles.section}>
+          <Text style={styles.foodTitle}>Food</Text>
+          <Text style={styles.foodSubtitle}>Manual healing and auto-eat for long combat runs</Text>
+          {bagFood.length > 0 ? (
             <View style={styles.foodList}>
               {bagFood.map((food) => (
                 <View key={food.itemId} style={styles.foodItem}>
@@ -106,22 +109,51 @@ export function CombatScreen() {
                 </View>
               ))}
             </View>
-            <View style={styles.autoEatRow}>
-              <View>
-                <Text style={styles.autoEatLabel}>Auto-Eat</Text>
-                <Text style={styles.autoEatDescription}>
-                  Eat best food when HP drops below 50%
-                </Text>
-              </View>
-              <Switch
-                value={combatSummary.autoEat}
-                onValueChange={toggleAutoEat}
-                trackColor={{ false: colors.surfaceLight, true: colors.primaryDark }}
-                thumbColor={combatSummary.autoEat ? colors.primary : colors.textMuted}
-              />
+          ) : (
+            <Text style={styles.emptyFoodText}>
+              No cooked food stocked. Train Cooking to prepare food for combat.
+            </Text>
+          )}
+          <View style={styles.autoEatRow}>
+            <View style={styles.autoEatCopy}>
+              <Text style={styles.autoEatLabel}>Auto-Eat</Text>
+              <Text style={styles.autoEatDescription}>
+                Automatically eat when HP drops below {autoEatThresholdPercent}%.
+              </Text>
             </View>
-          </Card>
-        )}
+            <Switch
+              value={combatSummary.autoEat}
+              onValueChange={toggleAutoEat}
+              trackColor={{ false: colors.surfaceLight, true: colors.primaryDark }}
+              thumbColor={combatSummary.autoEat ? colors.primary : colors.textMuted}
+            />
+          </View>
+          <View style={styles.thresholdRow}>
+            {AUTO_EAT_THRESHOLDS.map((threshold) => {
+              const isSelected = combatSummary.autoEatThreshold === threshold;
+              return (
+                <Pressable
+                  key={threshold}
+                  style={({ pressed }) => [
+                    styles.thresholdButton,
+                    isSelected && styles.thresholdButtonSelected,
+                    pressed && styles.thresholdButtonPressed,
+                  ]}
+                  onPress={() => setAutoEatThreshold(threshold)}
+                >
+                  <Text
+                    style={[
+                      styles.thresholdButtonText,
+                      isSelected && styles.thresholdButtonTextSelected,
+                    ]}
+                  >
+                    {Math.round(threshold * 100)}%
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Card>
 
         {/* Combat Stats */}
         <View style={styles.section}>
@@ -344,6 +376,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.surfaceLight,
   },
+  autoEatCopy: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
   autoEatLabel: {
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
@@ -353,5 +389,39 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  thresholdRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  thresholdButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceLight,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+  },
+  thresholdButtonSelected: {
+    backgroundColor: colors.primaryDark,
+    borderColor: colors.primary,
+  },
+  thresholdButtonPressed: {
+    opacity: 0.85,
+  },
+  thresholdButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSecondary,
+  },
+  thresholdButtonTextSelected: {
+    color: colors.text,
+  },
+  emptyFoodText: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
 });
