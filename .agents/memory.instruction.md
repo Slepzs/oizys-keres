@@ -24,7 +24,7 @@ applyTo: '**'
 - Bag/inventory system with 20 slots and item stacking
 - Save migrations pattern: version bump in schema.ts (CURRENT_SAVE_VERSION), migration fn in migrations.ts
 - When adding state: update GameState in types/state.ts, initial-state.ts, deserialize.ts, gameStore.ts (partialize + rehydration + selector hooks)
-- Current save version: 7 (added woodcutting tree tiers with activeTreeId)
+- Current save version: 19 (added herblore skill + autoDrink/potionBuffs to combat)
 - Event Bus Architecture:
   - /game/systems/events.ts - EventBus class for decoupling producers/consumers
   - /game/systems/events.types.ts - GameEvent union type (replaces TickEvent)
@@ -121,4 +121,4 @@ applyTo: '**'
   - Pet role passives: cinder_drive(speed), soul_siphon(lifesteal), bastion_shell(tank), tempest_feathers(vanguard), void_hunt(execute)
   - Event bus: PET_UNLOCKED, PET_LEVEL_UP, PET_EVOLVED, COMBAT_PET_ATTACK in events.types.ts
   - Handler in /game/systems/summoning-handler.ts; registered via /game/modules/summoning/register.ts
-  - Current save version: 15
+  - Current save version: 19
