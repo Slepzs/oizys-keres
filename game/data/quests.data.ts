@@ -90,6 +90,92 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     ],
   },
 
+  // Mining Tier Chain (continues from ore_collector)
+  copper_vein: {
+    id: 'copper_vein',
+    name: 'Copper Vein',
+    description: 'Reach copper-tier mining and build your first ore stockpile.',
+    icon: '🟠',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'ore_collector' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'mining', level: 10 },
+      { id: 'copper', type: 'gain_resource', target: 'copper_ore', amount: 50 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 250 },
+      { type: 'xp', skill: 'mining', amount: 400 },
+    ],
+  },
+
+  iron_hand: {
+    id: 'iron_hand',
+    name: 'Iron Hand',
+    description: 'Push into iron-tier mining and gather enough for early crafting.',
+    icon: '⚙️',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'copper_vein' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'mining', level: 25 },
+      { id: 'iron', type: 'gain_resource', target: 'iron_ore', amount: 80 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 500 },
+      { type: 'xp', skill: 'mining', amount: 800 },
+    ],
+  },
+
+  coal_runner: {
+    id: 'coal_runner',
+    name: 'Coal Runner',
+    description: 'Reach coal-tier and fuel your forge with a solid coal supply.',
+    icon: '🖤',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'iron_hand' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'mining', level: 40 },
+      { id: 'coal', type: 'gain_resource', target: 'coal', amount: 60 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 800 },
+      { type: 'xp', skill: 'mining', amount: 1500 },
+    ],
+  },
+
+  mithril_seeker: {
+    id: 'mithril_seeker',
+    name: 'Mithril Seeker',
+    description: 'Unearth the legendary mithril veins and stockpile their ore.',
+    icon: '🌀',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'coal_runner' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'mining', level: 55 },
+      { id: 'mithril', type: 'gain_resource', target: 'mithril_ore', amount: 40 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 1400 },
+      { type: 'xp', skill: 'mining', amount: 3000 },
+    ],
+  },
+
+  adamantite_lord: {
+    id: 'adamantite_lord',
+    name: 'Adamantite Lord',
+    description: 'Master the hardest ore in the realm — crack the adamantite seam.',
+    icon: '💜',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'mithril_seeker' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'mining', level: 70 },
+      { id: 'adamantite', type: 'gain_resource', target: 'adamantite_ore', amount: 20 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 2500 },
+      { type: 'xp', skill: 'mining', amount: 6000 },
+    ],
+  },
+
   // Crafting Chain
   forge_apprentice: {
     id: 'forge_apprentice',
@@ -195,6 +281,206 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     ],
   },
 
+  // Mid/Late Combat Chain (continues from goblin_intel)
+  crypt_clearer: {
+    id: 'crypt_clearer',
+    name: 'Crypt Clearer',
+    description: 'Push into the Ancient Crypt and bring back proof of your kills.',
+    icon: '💀',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'goblin_intel' }],
+    objectives: [
+      { id: 'skeleton_kills', type: 'kill', target: 'skeleton', amount: 10 },
+      { id: 'shards', type: 'have_item', target: 'bone_shard', amount: 5 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 450 },
+      { type: 'resource', resource: 'stone', amount: 150 },
+    ],
+  },
+
+  undead_nemesis: {
+    id: 'undead_nemesis',
+    name: 'Undead Nemesis',
+    description: 'Prove dominance in the crypt by putting down twenty skeletons.',
+    icon: '🦴',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'crypt_clearer' }],
+    objectives: [
+      { id: 'skeleton_kills', type: 'kill', target: 'skeleton', amount: 20 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 600 },
+      { type: 'resource', resource: 'ore', amount: 120 },
+    ],
+  },
+
+  orc_bane: {
+    id: 'orc_bane',
+    name: 'Orc Bane',
+    description: 'Storm the Orc Stronghold and collect trophies.',
+    icon: '👹',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'undead_nemesis' }],
+    objectives: [
+      { id: 'orc_kills', type: 'kill', target: 'orc', amount: 8 },
+      { id: 'tusks', type: 'have_item', target: 'orc_tusk', amount: 2 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 850 },
+      { type: 'resource', resource: 'ore', amount: 200 },
+    ],
+  },
+
+  stronghold_stormer: {
+    id: 'stronghold_stormer',
+    name: 'Stronghold Stormer',
+    description: 'Drive the orcs from their stronghold entirely.',
+    icon: '🏰',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'orc_bane' }],
+    objectives: [
+      { id: 'orc_kills', type: 'kill', target: 'orc', amount: 15 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 1200 },
+      { type: 'resource', resource: 'copper_ore', amount: 100 },
+    ],
+  },
+
+  troll_slayer: {
+    id: 'troll_slayer',
+    name: 'Troll Slayer',
+    description: 'Venture into the Troll Caves and claim a troll trophy.',
+    icon: '🧌',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'stronghold_stormer' }],
+    objectives: [
+      { id: 'troll_kills', type: 'kill', target: 'troll', amount: 6 },
+      { id: 'toe', type: 'have_item', target: 'troll_toe', amount: 1 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 1600 },
+      { type: 'resource', resource: 'iron_ore', amount: 80 },
+    ],
+  },
+
+  troll_cave_purge: {
+    id: 'troll_cave_purge',
+    name: 'Cave Purge',
+    description: 'Clear out the troll infestation from the deepest caves.',
+    icon: '🕳️',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'troll_slayer' }],
+    objectives: [
+      { id: 'troll_kills', type: 'kill', target: 'troll', amount: 12 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 2000 },
+      { type: 'resource', resource: 'coal', amount: 60 },
+    ],
+  },
+
+  demon_contract: {
+    id: 'demon_contract',
+    name: 'Demon Contract',
+    description: 'Descend into the Demonic Abyss and extract demon essence.',
+    icon: '👿',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'troll_cave_purge' }],
+    objectives: [
+      { id: 'demon_kills', type: 'kill', target: 'demon', amount: 5 },
+      { id: 'essence', type: 'have_item', target: 'demon_essence', amount: 1 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 2800 },
+      { type: 'item', itemId: 'mithril_sword', quantity: 1 },
+    ],
+  },
+
+  abyss_walker: {
+    id: 'abyss_walker',
+    name: 'Abyss Walker',
+    description: 'Master the Demonic Abyss — no demon escapes your blade.',
+    icon: '🔥',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'demon_contract' }],
+    objectives: [
+      { id: 'demon_kills', type: 'kill', target: 'demon', amount: 10 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 3500 },
+      { type: 'resource', resource: 'mithril_ore', amount: 30 },
+    ],
+  },
+
+  silencer: {
+    id: 'silencer',
+    name: 'The Silencer',
+    description: 'Quiet the banshees of the Haunted Ruins and return with their wisps.',
+    icon: '👻',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'abyss_walker' }],
+    objectives: [
+      { id: 'banshee_kills', type: 'kill', target: 'banshee', amount: 8 },
+      { id: 'wisps', type: 'have_item', target: 'banshee_wisp', amount: 2 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 4500 },
+      { type: 'resource', resource: 'spirit_essence', amount: 50 },
+    ],
+  },
+
+  ruins_warden: {
+    id: 'ruins_warden',
+    name: 'Ruins Warden',
+    description: 'Become the unchallenged protector of the Haunted Ruins.',
+    icon: '🏚️',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'silencer' }],
+    objectives: [
+      { id: 'banshee_kills', type: 'kill', target: 'banshee', amount: 15 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 5500 },
+      { type: 'item', itemId: 'runic_helmet', quantity: 1 },
+    ],
+  },
+
+  dragonkin: {
+    id: 'dragonkin',
+    name: 'Dragonkin',
+    description: "Slay dragon whelps in their volcanic lair and take their scales.",
+    icon: '🐲',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'ruins_warden' }],
+    objectives: [
+      { id: 'dragon_kills', type: 'kill', target: 'dragon_whelp', amount: 5 },
+      { id: 'scales', type: 'have_item', target: 'dragon_scale', amount: 2 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 7000 },
+      { type: 'item', itemId: 'rune_sword', quantity: 1 },
+    ],
+  },
+
+  elder_nemesis: {
+    id: 'elder_nemesis',
+    name: 'Elder Nemesis',
+    description: 'Descend to the Abyssal Depths and slay an Elder Demon.',
+    icon: '😈',
+    category: 'exploration',
+    unlock: [{ type: 'quest_completed', questId: 'dragonkin' }],
+    objectives: [
+      { id: 'elder_demon_kills', type: 'kill', target: 'elder_demon', amount: 3 },
+      { id: 'core', type: 'have_item', target: 'elder_demon_core', amount: 1 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 10000 },
+      { type: 'item', itemId: 'arcane_warblade', quantity: 1 },
+    ],
+  },
+
   // Summoning Chain
   first_ritual: {
     id: 'first_ritual',
@@ -227,6 +513,57 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     rewards: [
       { type: 'player_xp', amount: 200 },
       { type: 'xp', skill: 'summoning', amount: 500 },
+    ],
+  },
+
+  awakened_bond: {
+    id: 'awakened_bond',
+    name: 'Awakened Bond',
+    description: 'Deepen your ritual practice until your companion awakens fully.',
+    icon: '✨',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'bonded_companion' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'summoning', level: 18 },
+      { id: 'essence', type: 'gain_resource', target: 'spirit_essence', amount: 120 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 350 },
+      { type: 'xp', skill: 'summoning', amount: 1500 },
+    ],
+  },
+
+  ascending_spirit: {
+    id: 'ascending_spirit',
+    name: 'Ascending Spirit',
+    description: 'Channel enough essence to lift your companion into ascension.',
+    icon: '🌙',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'awakened_bond' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'summoning', level: 30 },
+      { id: 'essence', type: 'gain_resource', target: 'spirit_essence', amount: 300 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 700 },
+      { type: 'xp', skill: 'summoning', amount: 4000 },
+    ],
+  },
+
+  mythic_pact: {
+    id: 'mythic_pact',
+    name: 'Mythic Pact',
+    description: 'Forge an unbreakable pact with a mythic-tier companion.',
+    icon: '🌌',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'ascending_spirit' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'summoning', level: 60 },
+      { id: 'essence', type: 'gain_resource', target: 'spirit_essence', amount: 800 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 1800 },
+      { type: 'xp', skill: 'summoning', amount: 12000 },
     ],
   },
 
@@ -318,6 +655,42 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     rewards: [
       { type: 'player_xp', amount: 90 },
       { type: 'resource', resource: 'wood', amount: 40 },
+    ],
+  },
+
+  daily_goblin_hunt: {
+    id: 'daily_goblin_hunt',
+    name: 'Daily: Goblin Hunt',
+    description: 'Keep the Goblin Forest in check.',
+    icon: '📅',
+    category: 'daily',
+    repeatable: true,
+    cooldownMs: 86400000,
+    unlock: [{ type: 'player_level_at_least', value: 6 }],
+    objectives: [
+      { id: 'goblin_kills', type: 'kill', target: 'goblin', amount: 8 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 120 },
+      { type: 'resource', resource: 'ore', amount: 60 },
+    ],
+  },
+
+  daily_undead_hunter: {
+    id: 'daily_undead_hunter',
+    name: 'Daily: Undead Hunt',
+    description: 'Keep the undead in the crypt from spreading.',
+    icon: '📅',
+    category: 'daily',
+    repeatable: true,
+    cooldownMs: 86400000,
+    unlock: [{ type: 'player_level_at_least', value: 12 }],
+    objectives: [
+      { id: 'skeleton_kills', type: 'kill', target: 'skeleton', amount: 6 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 180 },
+      { type: 'resource', resource: 'stone', amount: 80 },
     ],
   },
 
