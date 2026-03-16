@@ -125,4 +125,6 @@ export const SKILL_DROP_TABLES: Record<SkillId, SkillDropTable> = {
       minLevel: 35,
     },
   ],
+  // Cooking output is deterministic (recipe-driven), not random drops
+  cooking: [],
 };

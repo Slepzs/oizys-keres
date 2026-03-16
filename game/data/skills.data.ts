@@ -56,6 +56,17 @@ export const SKILL_DEFINITIONS: Record<SkillId, SkillDefinition> = {
     automationUnlockLevel: 20,
     ticksPerAction: 30,
   },
+  cooking: {
+    id: 'cooking',
+    name: 'Cooking',
+    description: 'Cook raw fish into food to restore HP in combat.',
+    icon: '🍳',
+    baseXpPerAction: 30,
+    baseResourcePerAction: 0,
+    resourceProduced: 'wood', // Unused — cooking produces bag items directly
+    automationUnlockLevel: 15,
+    ticksPerAction: 25,
+  },
 };
 
 export function createInitialSkillState(overrides: Partial<SkillState> = {}): SkillState {
@@ -76,6 +87,7 @@ export function createInitialSkillsState(): SkillsState {
     crafting: createInitialSkillState({ automationUnlocked: true }),
     summoning: createInitialSkillState(),
     fishing: createInitialSkillState(),
+    cooking: createInitialSkillState(),
   };
 }
 

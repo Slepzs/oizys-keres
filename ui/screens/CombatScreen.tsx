@@ -7,7 +7,7 @@ import { CombatPetCard } from '../components/game/CombatPetCard';
 import { EnemyDisplay } from '../components/game/EnemyDisplay';
 import { EquipmentPanel } from '../components/game/EquipmentPanel';
 import { CombatZoneCard } from '../components/game/CombatZoneCard';
-import { useCombatSummary, useActiveCombat, useEquipment, useCombatActions } from '@/store';
+import { useCombatSummary, useActiveCombat, useEquipment, useCombatActions, useBagFood } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { ZONE_IDS } from '@/game/data';
 import type { TrainingMode, EquipmentSlot } from '@/game/types';
@@ -24,7 +24,9 @@ export function CombatScreen() {
     unequipSlot,
     selectZone,
     selectEnemyForZone,
+    eatFood,
   } = useCombatActions();
+  const bagFood = useBagFood();
 
   const handleTrainingModeChange = (mode: TrainingMode) => {
     setTrainingMode(mode);
@@ -75,6 +77,35 @@ export function CombatScreen() {
               <Text style={styles.fleeButtonText}>Flee</Text>
             </Pressable>
           </View>
+        )}
+
+        {/* Food Panel */}
+        {bagFood.length > 0 && (
+          <Card style={styles.section}>
+            <Text style={styles.foodTitle}>Food</Text>
+            <Text style={styles.foodSubtitle}>Eat food to restore HP during combat</Text>
+            <View style={styles.foodList}>
+              {bagFood.map((food) => (
+                <View key={food.itemId} style={styles.foodItem}>
+                  <Text style={styles.foodIcon}>{food.icon}</Text>
+                  <View style={styles.foodInfo}>
+                    <Text style={styles.foodName}>{food.name}</Text>
+                    <Text style={styles.foodHeal}>+{food.healAmount} HP</Text>
+                  </View>
+                  <Text style={styles.foodQty}>×{food.quantity}</Text>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.eatButton,
+                      pressed && styles.eatButtonPressed,
+                    ]}
+                    onPress={() => eatFood(food.itemId)}
+                  >
+                    <Text style={styles.eatButtonText}>Eat</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          </Card>
         )}
 
         {/* Combat Stats */}
@@ -231,5 +262,62 @@ const styles = StyleSheet.create({
   zonesContainer: {
     gap: spacing.md,
     marginBottom: spacing.xl,
+  },
+  foodTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  foodSubtitle: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  foodList: {
+    gap: spacing.sm,
+  },
+  foodItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+  },
+  foodIcon: {
+    fontSize: 24,
+    marginRight: spacing.sm,
+  },
+  foodInfo: {
+    flex: 1,
+  },
+  foodName: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    color: colors.text,
+  },
+  foodHeal: {
+    fontSize: fontSize.xs,
+    color: colors.success,
+    marginTop: 2,
+  },
+  foodQty: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginRight: spacing.sm,
+  },
+  eatButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: 6,
+  },
+  eatButtonPressed: {
+    opacity: 0.8,
+  },
+  eatButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
 });

@@ -8,9 +8,10 @@ import { SkillProgressBar } from '../components/game/SkillProgressBar';
 import { TreeSelector } from '../components/game/TreeSelector';
 import { RockSelector } from '../components/game/RockSelector';
 import { FishingSpotSelector } from '../components/game/FishingSpotSelector';
+import { CookingRecipeSelector } from '../components/game/CookingRecipeSelector';
 import { SummoningSkillPanel } from '../components/game/SummoningSkillPanel';
 import { useGame } from '@/hooks/useGame';
-import { useGameActions, useMiningRocks, useSummoningSummary, useWoodcuttingTrees, useFishingSpots } from '@/store';
+import { useGameActions, useMiningRocks, useSummoningSummary, useWoodcuttingTrees, useFishingSpots, useCookingRecipes } from '@/store';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { SKILL_DEFINITIONS, SKILL_IDS } from '@/game/data';
 import type { SkillId } from '@/game/types';
@@ -20,18 +21,21 @@ const SKILL_CRAFTING_PLACEHOLDER: Record<SkillId, string> = {
   mining: 'Gather ore and stone for advanced recipes.',
   crafting: 'Crafting XP comes from crafting completed recipes.',
   summoning: 'Perform rituals to strengthen your active companion.',
-  fishing: 'Fish are gathered as resources for future cooking recipes.',
+  fishing: 'Fish are gathered as resources for cooking.',
+  cooking: 'Cook raw fish into food to restore HP in combat.',
 };
 
 export function SkillsScreen() {
   const { state, setActiveSkill, toggleAutomation } = useGame();
-  const { setActiveTree, setActiveRock, setActivePet, setActiveFishingSpot } = useGameActions();
+  const { setActiveTree, setActiveRock, setActivePet, setActiveFishingSpot, setActiveCookingRecipe } = useGameActions();
   const [showTreeSelector, setShowTreeSelector] = useState(false);
   const [showRockSelector, setShowRockSelector] = useState(false);
   const [showFishingSpotSelector, setShowFishingSpotSelector] = useState(false);
+  const [showCookingRecipeSelector, setShowCookingRecipeSelector] = useState(false);
   const woodcuttingTrees = useWoodcuttingTrees();
   const miningRocks = useMiningRocks();
   const fishingSpots = useFishingSpots();
+  const cookingRecipes = useCookingRecipes();
   const summoning = useSummoningSummary();
 
   const handleSkillPress = (skillId: SkillId) => {
@@ -50,6 +54,7 @@ export function SkillsScreen() {
   const woodcuttingSkill = state.skills.woodcutting;
   const miningSkill = state.skills.mining;
   const fishingSkill = state.skills.fishing;
+  const cookingSkill = state.skills.cooking;
 
   return (
     <SafeContainer padTop={false}>
@@ -62,6 +67,7 @@ export function SkillsScreen() {
           const isTrainable = skillId !== 'crafting';
           const isActive = isTrainable && state.activeSkill === skillId;
           const hasCraftingSystem = skillId === 'crafting';
+          const hasCookingSystem = skillId === 'cooking';
 
           const cardStyle = isActive
             ? { ...styles.skillCard, ...styles.activeCard }
@@ -112,13 +118,15 @@ export function SkillsScreen() {
 
               <View style={styles.craftingRow}>
                 <View style={styles.craftingInfo}>
-                  <Text style={styles.craftingLabel}>Crafting</Text>
+                  <Text style={styles.craftingLabel}>
+                    {hasCookingSystem ? 'Food' : 'Crafting'}
+                  </Text>
                   <Text style={styles.craftingHint}>{SKILL_CRAFTING_PLACEHOLDER[skillId]}</Text>
                 </View>
                 <Button
-                  title={hasCraftingSystem ? 'Open' : 'Soon'}
-                  onPress={() => router.push('/crafting')}
-                  disabled={!hasCraftingSystem}
+                  title={hasCraftingSystem ? 'Open' : hasCookingSystem ? 'Combat' : 'Soon'}
+                  onPress={() => hasCraftingSystem || hasCookingSystem ? router.push('/combat') : undefined}
+                  disabled={!hasCraftingSystem && !hasCookingSystem}
                   size="sm"
                   style={styles.craftingButton}
                 />
@@ -166,6 +174,22 @@ export function SkillsScreen() {
                   <Text
                     style={styles.treeChangeButton}
                     onPress={() => setShowFishingSpotSelector(true)}
+                  >
+                    Change
+                  </Text>
+                </View>
+              )}
+
+              {/* Cooking Recipe Selector for Cooking */}
+              {skillId === 'cooking' && (
+                <View style={styles.treeRow}>
+                  <Text style={styles.treeLabel}>Recipe:</Text>
+                  <Text style={styles.treeValue}>
+                    {`${cookingRecipes.active.icon} ${cookingRecipes.active.name}`}
+                  </Text>
+                  <Text
+                    style={styles.treeChangeButton}
+                    onPress={() => setShowCookingRecipeSelector(true)}
                   >
                     Change
                   </Text>
@@ -222,6 +246,16 @@ export function SkillsScreen() {
           activeFishingSpotId={fishingSpots.activeFishingSpotId}
           onSelectSpot={setActiveFishingSpot}
           onClose={() => setShowFishingSpotSelector(false)}
+        />
+      )}
+
+      {/* Cooking Recipe Selector Modal */}
+      {showCookingRecipeSelector && (
+        <CookingRecipeSelector
+          currentLevel={cookingSkill.level}
+          activeCookingRecipeId={cookingRecipes.activeCookingRecipeId}
+          onSelectRecipe={setActiveCookingRecipe}
+          onClose={() => setShowCookingRecipeSelector(false)}
         />
       )}
     </SafeContainer>

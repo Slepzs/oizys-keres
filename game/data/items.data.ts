@@ -1,8 +1,8 @@
-import type { ItemDefinition, EquipmentDefinition, ItemId, BagState } from '../types/items';
+import type { ItemDefinition, EquipmentDefinition, FoodDefinition, ItemId, BagState } from '../types/items';
 
 export const DEFAULT_BAG_SIZE = 99;
 
-export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefinition> = {
+export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefinition | FoodDefinition> = {
   // Smithing products
   bronze_ingot: {
     id: 'bronze_ingot',
@@ -687,6 +687,85 @@ export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition | EquipmentDefiniti
     stats: { attackBonus: 5, strengthBonus: 8, defenseBonus: 12 },
     levelRequired: 66,
   },
+  // Cooked food (from Cooking skill)
+  shrimp: {
+    id: 'shrimp',
+    name: 'Shrimp',
+    description: 'Cooked shrimp. Restores 3 HP when eaten.',
+    icon: '🍤',
+    category: 'food',
+    rarity: 'common',
+    maxStack: 100,
+    sellPrice: 3,
+    healAmount: 3,
+  } satisfies FoodDefinition,
+  sardine: {
+    id: 'sardine',
+    name: 'Sardine',
+    description: 'Cooked sardine. Restores 4 HP when eaten.',
+    icon: '🐟',
+    category: 'food',
+    rarity: 'common',
+    maxStack: 100,
+    sellPrice: 5,
+    healAmount: 4,
+  } satisfies FoodDefinition,
+  trout: {
+    id: 'trout',
+    name: 'Trout',
+    description: 'Cooked trout. Restores 7 HP when eaten.',
+    icon: '🐠',
+    category: 'food',
+    rarity: 'uncommon',
+    maxStack: 100,
+    sellPrice: 10,
+    healAmount: 7,
+  } satisfies FoodDefinition,
+  salmon: {
+    id: 'salmon',
+    name: 'Salmon',
+    description: 'Cooked salmon. Restores 9 HP when eaten.',
+    icon: '🐡',
+    category: 'food',
+    rarity: 'uncommon',
+    maxStack: 100,
+    sellPrice: 15,
+    healAmount: 9,
+  } satisfies FoodDefinition,
+  lobster: {
+    id: 'lobster',
+    name: 'Lobster',
+    description: 'Cooked lobster. Restores 12 HP when eaten.',
+    icon: '🦞',
+    category: 'food',
+    rarity: 'rare',
+    maxStack: 100,
+    sellPrice: 25,
+    healAmount: 12,
+  } satisfies FoodDefinition,
+  swordfish: {
+    id: 'swordfish',
+    name: 'Swordfish',
+    description: 'Cooked swordfish. Restores 14 HP when eaten.',
+    icon: '🐟',
+    category: 'food',
+    rarity: 'rare',
+    maxStack: 100,
+    sellPrice: 35,
+    healAmount: 14,
+  } satisfies FoodDefinition,
+  shark: {
+    id: 'shark',
+    name: 'Shark',
+    description: 'Cooked shark. Restores 20 HP when eaten.',
+    icon: '🦈',
+    category: 'food',
+    rarity: 'epic',
+    maxStack: 100,
+    sellPrice: 60,
+    healAmount: 20,
+  } satisfies FoodDefinition,
+
   // Fishing drops
   pearl: {
     id: 'pearl',

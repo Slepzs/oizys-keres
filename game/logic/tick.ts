@@ -4,6 +4,7 @@ import { TICKS_PER_SECOND } from '../data/constants';
 import { advanceSeed } from './rng';
 import { processCombatTick } from './combat/tick';
 import { processCraftingAutomationTick } from './crafting';
+import { processCookingTick } from './cooking';
 import { regeneratePlayerVitals } from './player';
 import { processSkillsTick } from './skills/tick';
 
@@ -34,6 +35,10 @@ export function processTick(state: GameState, deltaMs: number, ctx: GameContext)
   const craftingResult = processCraftingAutomationTick(newState, ticksElapsed);
   newState = craftingResult.state;
   events.push(...craftingResult.events);
+
+  const cookingResult = processCookingTick(newState, ticksElapsed);
+  newState = cookingResult.state;
+  events.push(...cookingResult.events);
 
   // Process combat if active
   if (newState.combat.activeCombat) {

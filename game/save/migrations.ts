@@ -309,6 +309,32 @@ const migrations: Record<number, MigrationFn> = {
     },
   }),
 
+  // Migration from v16 to v17: Add cooking skill
+  16: (save) => ({
+    ...save,
+    version: 17,
+    state: {
+      ...save.state,
+      skills: {
+        ...save.state.skills,
+        cooking: {
+          level: 1,
+          xp: 0,
+          automationUnlocked: false,
+          automationEnabled: false,
+          tickProgress: 0,
+        },
+      },
+      skillStats: {
+        ...(save.state.skillStats as any),
+        cooking: {
+          level: 1,
+          xp: 0,
+        },
+      },
+    },
+  }),
+
   // Migration from v15 to v16: Add fishing skill and fish resources
   15: (save) => ({
     ...save,

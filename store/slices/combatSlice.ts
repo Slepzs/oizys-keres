@@ -1,4 +1,7 @@
 import type { EquipmentSlot, ItemId, TrainingMode } from '@/game/types';
+import { ITEM_DEFINITIONS } from '@/game/data';
+import { isFood } from '@/game/types/items';
+import { removeItemFromBag } from '@/game/logic/bag';
 import {
   getPlayerAttackSpeed,
   getSummoningCombatBonuses,
@@ -22,6 +25,7 @@ export interface CombatSlice {
   unequipSlot: (slot: EquipmentSlot) => { unequippedItemId: ItemId | null };
   selectZone: (zoneId: string | null) => void;
   selectEnemyForZone: (zoneId: string, enemyId: string) => void;
+  eatFood: (itemId: ItemId) => void;
 }
 
 export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreHelpers): CombatSlice {
@@ -77,6 +81,28 @@ export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
       const state = get();
       const newCombat = selectEnemyForZoneLogic(state.combat, zoneId, enemyId);
       set({ combat: newCombat });
+    },
+
+    eatFood: (itemId: ItemId) => {
+      const state = get();
+      const itemDef = ITEM_DEFINITIONS[itemId];
+      if (!itemDef || !isFood(itemDef)) {
+        return;
+      }
+      const bagResult = removeItemFromBag(state.bag, itemId, 1);
+      if (bagResult.removed < 1) {
+        return;
+      }
+      const currentHp = state.combat.playerCurrentHp;
+      const maxHp = state.combat.playerMaxHp;
+      const newHp = Math.min(maxHp, currentHp + itemDef.healAmount);
+      set({
+        bag: bagResult.bag,
+        combat: {
+          ...state.combat,
+          playerCurrentHp: newHp,
+        },
+      });
     },
   };
 }

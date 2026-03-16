@@ -69,9 +69,17 @@ export type ItemId =
   | 'runed_war_ring'
   // Fishing drops
   | 'pearl'
-  | 'oyster';
+  | 'oyster'
+  // Cooked food (from Cooking skill)
+  | 'shrimp'
+  | 'sardine'
+  | 'trout'
+  | 'salmon'
+  | 'lobster'
+  | 'swordfish'
+  | 'shark';
 
-export type ItemCategory = 'material' | 'tool' | 'equipment' | 'misc';
+export type ItemCategory = 'material' | 'tool' | 'equipment' | 'misc' | 'food';
 
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic';
 
@@ -110,6 +118,15 @@ export interface BagState {
   maxSlots: number;
 }
 
+export interface FoodDefinition extends ItemDefinition {
+  category: 'food';
+  healAmount: number;
+}
+
 export function isEquipment(item: ItemDefinition): item is EquipmentDefinition {
   return item.category === 'equipment';
+}
+
+export function isFood(item: ItemDefinition): item is FoodDefinition {
+  return item.category === 'food';
 }

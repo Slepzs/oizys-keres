@@ -497,6 +497,53 @@ export const ACHIEVEMENT_DEFINITIONS: Record<string, AchievementDefinition> = {
     condition: { type: 'skill_level', skillId: 'fishing', level: 99 },
     rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.05 }],
   },
+
+  // Cooking achievements
+  cook_10: {
+    id: 'cook_10',
+    name: 'Campfire Cook',
+    description: 'Reach Cooking level 10',
+    icon: '🍳',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'cooking', level: 10 },
+    rewards: [{ type: 'multiplier', target: 'cooking', bonus: 0.05 }],
+  },
+  cook_25: {
+    id: 'cook_25',
+    name: 'Skilled Cook',
+    description: 'Reach Cooking level 25',
+    icon: '🧑‍🍳',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'cooking', level: 25 },
+    rewards: [{ type: 'multiplier', target: 'cooking', bonus: 0.08 }],
+  },
+  cook_50: {
+    id: 'cook_50',
+    name: 'Expert Chef',
+    description: 'Reach Cooking level 50',
+    icon: '🦞',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'cooking', level: 50 },
+    rewards: [{ type: 'multiplier', target: 'cooking', bonus: 0.10 }],
+  },
+  cook_75: {
+    id: 'cook_75',
+    name: 'Gourmet Artisan',
+    description: 'Reach Cooking level 75',
+    icon: '🍽️',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'cooking', level: 75 },
+    rewards: [{ type: 'multiplier', target: 'cooking', bonus: 0.12 }],
+  },
+  cook_99: {
+    id: 'cook_99',
+    name: 'Grandmaster Chef',
+    description: 'Reach Cooking level 99 — every dish is a masterpiece.',
+    icon: '🌟',
+    category: 'skill',
+    condition: { type: 'skill_level', skillId: 'cooking', level: 99 },
+    rewards: [{ type: 'multiplier', target: 'all_skills', bonus: 0.05 }],
+  },
 };
 
 /**

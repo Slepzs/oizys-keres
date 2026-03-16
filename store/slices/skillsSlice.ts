@@ -1,5 +1,5 @@
-import type { FishingSpotId, RockTierId, SkillId, TreeTierId } from '@/game/types';
-import { WOODCUTTING_TREES, MINING_ROCKS, FISHING_SPOTS } from '@/game/data';
+import type { CookingRecipeId, FishingSpotId, RockTierId, SkillId, TreeTierId } from '@/game/types';
+import { WOODCUTTING_TREES, MINING_ROCKS, FISHING_SPOTS, COOKING_RECIPES } from '@/game/data';
 import type { SliceGet, SliceSet, StoreHelpers } from './types';
 
 export interface SkillsSlice {
@@ -8,6 +8,7 @@ export interface SkillsSlice {
   setActiveTree: (treeId: TreeTierId) => void;
   setActiveRock: (rockId: RockTierId) => void;
   setActiveFishingSpot: (spotId: FishingSpotId) => void;
+  setActiveCookingRecipe: (recipeId: CookingRecipeId) => void;
 }
 
 export function createSkillsSlice(set: SliceSet, get: SliceGet, _helpers: StoreHelpers): SkillsSlice {
@@ -88,6 +89,26 @@ export function createSkillsSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
           fishing: {
             ...fishingSkill,
             activeFishingSpotId: spotId,
+          },
+        },
+      });
+    },
+
+    setActiveCookingRecipe: (recipeId: CookingRecipeId) => {
+      const state = get();
+      const cookingSkill = state.skills.cooking;
+      const recipe = COOKING_RECIPES[recipeId];
+
+      if (!recipe || cookingSkill.level < recipe.cookingLevelRequired) {
+        return;
+      }
+
+      set({
+        skills: {
+          ...state.skills,
+          cooking: {
+            ...cookingSkill,
+            activeCookingRecipeId: recipeId,
           },
         },
       });

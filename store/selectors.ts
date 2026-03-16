@@ -29,7 +29,11 @@ import {
   xpForPetLevel,
   getFishingSpotsForLevel,
   getActiveFishingSpot,
+  getActiveCookingRecipe,
+  getCookingRecipesForLevel,
 } from '@/game/logic';
+import { ITEM_DEFINITIONS, ITEM_IDS } from '@/game/data';
+import { isFood } from '@/game/types/items';
 import { COMBAT_SKILL_IDS } from '@/game/types';
 
 export function usePlayerSummary() {
@@ -276,6 +280,7 @@ export function useCombatActions() {
       selectZone: state.selectZone,
       selectEnemyForZone: state.selectEnemyForZone,
       setActivePet: state.setActivePet,
+      eatFood: state.eatFood,
     }))
   );
 }
@@ -424,4 +429,44 @@ export function useActiveMultipliers() {
       return 0;
     });
   }, [multipliers]);
+}
+
+export function useCookingRecipes() {
+  const { level, activeCookingRecipeId } = useGameStore(
+    useShallow((state) => ({
+      level: state.skills.cooking.level,
+      activeCookingRecipeId: state.skills.cooking.activeCookingRecipeId,
+    }))
+  );
+
+  return useMemo(() => {
+    const active = getActiveCookingRecipe({ level, activeCookingRecipeId });
+    return {
+      available: getCookingRecipesForLevel(level),
+      active,
+      level,
+      activeCookingRecipeId: active.id,
+    };
+  }, [level, activeCookingRecipeId]);
+}
+
+export function useBagFood() {
+  const bag = useGameStore(useShallow((state) => state.bag));
+
+  return useMemo(() => {
+    return ITEM_IDS
+      .filter((itemId) => {
+        const def = ITEM_DEFINITIONS[itemId];
+        return isFood(def);
+      })
+      .map((itemId) => {
+        const def = ITEM_DEFINITIONS[itemId];
+        if (!isFood(def)) return null;
+        const quantity = bag.slots
+          .filter((slot): slot is NonNullable<typeof slot> => slot !== null && slot.itemId === itemId)
+          .reduce((sum, slot) => sum + slot.quantity, 0);
+        return { itemId, name: def.name, icon: def.icon, healAmount: def.healAmount, quantity };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null && entry.quantity > 0);
+  }, [bag]);
 }

@@ -31,4 +31,6 @@ export {
   useMiningRocks,
   useFishingSpots,
   useActiveMultipliers,
+  useCookingRecipes,
+  useBagFood,
 } from './selectors';

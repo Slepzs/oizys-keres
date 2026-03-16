@@ -18,3 +18,4 @@ export * from "./zones.data";
 export * from './rock-tiers.data';
 export * from './summoning.data';
 export * from './fishing-spots.data';
+export * from './cooking-recipes.data';

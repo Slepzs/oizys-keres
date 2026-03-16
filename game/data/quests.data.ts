@@ -845,6 +845,92 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
       { type: 'xp', skill: 'fishing', amount: 2000 },
     ],
   },
+
+  // Cooking Chain
+  fire_it_up: {
+    id: 'fire_it_up',
+    name: 'Fire It Up',
+    description: 'Light the cooking fire and turn your first catch into a meal.',
+    icon: '🔥',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'first_cast' }],
+    objectives: [
+      { id: 'xp', type: 'gain_xp', target: 'cooking', amount: 300 },
+      { id: 'shrimp', type: 'collect_item', target: 'shrimp', amount: 5 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 100 },
+      { type: 'xp', skill: 'cooking', amount: 200 },
+    ],
+  },
+
+  camp_cook: {
+    id: 'camp_cook',
+    name: 'Camp Cook',
+    description: 'Refine your technique and build a stockpile of cooked food.',
+    icon: '🍳',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'fire_it_up' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'cooking', level: 15 },
+      { id: 'trout', type: 'collect_item', target: 'trout', amount: 10 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 200 },
+      { type: 'xp', skill: 'cooking', amount: 500 },
+    ],
+  },
+
+  seasoned_chef: {
+    id: 'seasoned_chef',
+    name: 'Seasoned Chef',
+    description: 'Master intermediate recipes and keep yourself fed through hard battles.',
+    icon: '🧑‍🍳',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'camp_cook' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'cooking', level: 30 },
+      { id: 'salmon', type: 'collect_item', target: 'salmon', amount: 15 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 350 },
+      { type: 'xp', skill: 'cooking', amount: 900 },
+    ],
+  },
+
+  deep_sea_kitchen: {
+    id: 'deep_sea_kitchen',
+    name: 'Deep Sea Kitchen',
+    description: 'Cook the finest catches from the deep ocean.',
+    icon: '🦞',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'seasoned_chef' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'cooking', level: 50 },
+      { id: 'lobster', type: 'collect_item', target: 'lobster', amount: 20 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 500 },
+      { type: 'xp', skill: 'cooking', amount: 1500 },
+    ],
+  },
+
+  shark_fin_feast: {
+    id: 'shark_fin_feast',
+    name: 'Shark Fin Feast',
+    description: 'Only the best gear and rarest catches make it to your legendary table.',
+    icon: '🦈',
+    category: 'skill',
+    unlock: [{ type: 'quest_completed', questId: 'deep_sea_kitchen' }],
+    objectives: [
+      { id: 'level', type: 'reach_level', target: 'cooking', level: 80 },
+      { id: 'shark', type: 'collect_item', target: 'shark', amount: 10 },
+    ],
+    rewards: [
+      { type: 'player_xp', amount: 800 },
+      { type: 'xp', skill: 'cooking', amount: 2500 },
+    ],
+  },
 };
 
 export const QUEST_IDS = Object.keys(QUEST_DEFINITIONS);
