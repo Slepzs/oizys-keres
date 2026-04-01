@@ -23,6 +23,7 @@ import {
   CRIT_DAMAGE_MULTIPLIER,
   REGEN_INTERVAL_MS,
 } from './queries';
+import { scaleAttackIntervalSeconds, scaleEnemyMaxHp } from './balance';
 
 export interface CombatTickResult {
   state: GameState;
@@ -138,9 +139,9 @@ function handleEnemyKilled(
             activeCombat: {
               zoneId: selectedZoneId,
               enemyId: nextEnemyId,
-              enemyCurrentHp: nextEnemy.maxHp,
+              enemyCurrentHp: scaleEnemyMaxHp(nextEnemy.maxHp),
               playerNextAttackAt: currentCombat?.playerNextAttackAt ?? state.combat.activeCombat?.playerNextAttackAt ?? occurredAt,
-              enemyNextAttackAt: occurredAt + nextEnemy.attackSpeed * 1000,
+              enemyNextAttackAt: occurredAt + scaleAttackIntervalSeconds(nextEnemy.attackSpeed) * 1000,
               petNextAttackAt: currentCombat?.petNextAttackAt ?? state.combat.activeCombat?.petNextAttackAt,
               playerRegenAt: currentCombat?.playerRegenAt ?? state.combat.activeCombat?.playerRegenAt ?? (occurredAt + REGEN_INTERVAL_MS),
             },
@@ -450,7 +451,8 @@ export function processCombatTick(
         newState = handleEnemyKilled(newState, enemy.id, enemy.xpReward, nextEventAt, events);
       }
     } else if (isPetTurn && petProfile) {
-      const missingHpRatio = enemy.maxHp > 0 ? (enemy.maxHp - combat.enemyCurrentHp) / enemy.maxHp : 0;
+      const enemyMaxHp = scaleEnemyMaxHp(enemy.maxHp);
+      const missingHpRatio = enemyMaxHp > 0 ? (enemyMaxHp - combat.enemyCurrentHp) / enemyMaxHp : 0;
       const damage = Math.max(
         1,
         Math.floor(petProfile.damage * (1 + missingHpRatio * (petProfile.missingHpDamageMultiplier - 1)))
@@ -505,7 +507,7 @@ export function processCombatTick(
           playerCurrentHp: playerHpRemaining,
           activeCombat: {
             ...combat,
-            enemyNextAttackAt: combat.enemyNextAttackAt + enemy.attackSpeed * 1000,
+            enemyNextAttackAt: combat.enemyNextAttackAt + scaleAttackIntervalSeconds(enemy.attackSpeed) * 1000,
           },
         },
       };

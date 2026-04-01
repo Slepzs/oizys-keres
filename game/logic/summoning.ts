@@ -1,4 +1,5 @@
 import { PET_DEFINITIONS, PET_EVOLUTION_STAGES, PET_IDS } from '../data/summoning.data';
+import { scaleAttackIntervalSeconds, scaleCombatOffenseBonus, scalePetBaseDamage } from './combat/balance';
 import type {
   ActivePetCombatProfile,
   PetDefinition,
@@ -274,11 +275,11 @@ export function getSummoningCombatBonuses(
 
   switch (PET_DEFINITIONS[activePetId].passiveId) {
     case 'cinder_drive':
-      bonuses.attackBonus += Math.floor(pet.level / 10);
+      bonuses.attackBonus += scaleCombatOffenseBonus(Math.floor(pet.level / 10));
       bonuses.attackSpeedMultiplier += stageRank * 0.05 + pet.level * 0.003;
       break;
     case 'soul_siphon':
-      bonuses.strengthBonus += stageRank + Math.floor(pet.level / 14);
+      bonuses.strengthBonus += scaleCombatOffenseBonus(stageRank + Math.floor(pet.level / 14));
       break;
     case 'bastion_shell':
       bonuses.defenseBonus += stageRank * 2 + Math.floor(pet.level / 5);
@@ -286,12 +287,12 @@ export function getSummoningCombatBonuses(
       bonuses.damageReduction += Math.max(0, stageRank - 1) + Math.floor(pet.level / 18);
       break;
     case 'tempest_feathers':
-      bonuses.attackBonus += stageRank * 2 + Math.floor(pet.level / 6);
-      bonuses.strengthBonus += stageRank * 2 + Math.floor(pet.level / 6);
+      bonuses.attackBonus += scaleCombatOffenseBonus(stageRank * 2 + Math.floor(pet.level / 6));
+      bonuses.strengthBonus += scaleCombatOffenseBonus(stageRank * 2 + Math.floor(pet.level / 6));
       bonuses.attackSpeedMultiplier += stageRank * 0.03;
       break;
     case 'void_hunt':
-      bonuses.strengthBonus += stageRank + Math.floor(pet.level / 8);
+      bonuses.strengthBonus += scaleCombatOffenseBonus(stageRank + Math.floor(pet.level / 8));
       break;
   }
 
@@ -330,10 +331,12 @@ export function getActivePetCombatProfile(
     stageName: stage.name,
     stageIcon: stage.icon,
     attackIntervalSeconds: Math.max(
-      1.05,
-      definition.attackIntervalSeconds / (1 + pet.level * 0.005 + (stageRank - 1) * 0.06)
+      2.1,
+      scaleAttackIntervalSeconds(
+        definition.attackIntervalSeconds / (1 + pet.level * 0.005 + (stageRank - 1) * 0.06)
+      )
     ),
-    damage: Math.max(1, Math.floor(baseDamage * stage.powerMultiplier)),
+    damage: scalePetBaseDamage(baseDamage * stage.powerMultiplier),
     healOnAttack: 0,
     missingHpDamageMultiplier: 1,
     passiveSummary: definition.passiveSummary,

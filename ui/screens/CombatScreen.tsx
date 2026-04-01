@@ -22,6 +22,7 @@ import {
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
 import { ENEMY_DEFINITIONS, ZONE_IDS } from '@/game/data';
 import type { TrainingMode, EquipmentSlot } from '@/game/types';
+import { scaleAttackIntervalSeconds } from '@/game/logic/combat/balance';
 
 const AUTO_EAT_THRESHOLDS = [0.25, 0.5, 0.75] as const;
 
@@ -127,7 +128,7 @@ export function CombatScreen() {
               enemyNextAttackAt={activeCombat.enemyNextAttackAt}
               petNextAttackAt={activeCombat.petNextAttackAt}
               playerAttackIntervalSeconds={combatSummary.attackSpeed}
-              enemyAttackIntervalSeconds={activeEnemy.attackSpeed}
+              enemyAttackIntervalSeconds={scaleAttackIntervalSeconds(activeEnemy.attackSpeed)}
               petAttackIntervalSeconds={combatSummary.activePet?.attackIntervalSeconds ?? null}
             />
           </View>

@@ -12,6 +12,7 @@ import { COMBAT_SKILL_IDS, EQUIPMENT_SLOTS } from '../../types/combat';
 import { isEquipment } from '../../types/items';
 import { combatSkillLevelFromXp, totalXpForCombatSkillLevel, xpForCombatSkillLevel } from '../../data/curves';
 import { ITEM_DEFINITIONS } from '../../data/items.data';
+import { calculateScaledCombatDamage, scaleAttackIntervalSeconds, scaleCombatOffenseBonus } from './balance';
 
 // Base player HP
 const BASE_PLAYER_HP = 100;
@@ -90,8 +91,8 @@ export function getTotalEquipmentStats(equipment: EquipmentState): EquipmentStat
     const item = ITEM_DEFINITIONS[itemId as ItemId];
     if (!item || !isEquipment(item)) continue;
 
-    stats.attackBonus += item.stats.attackBonus;
-    stats.strengthBonus += item.stats.strengthBonus;
+    stats.attackBonus += scaleCombatOffenseBonus(item.stats.attackBonus);
+    stats.strengthBonus += scaleCombatOffenseBonus(item.stats.strengthBonus);
     stats.defenseBonus += item.stats.defenseBonus;
 
     // Use weapon attack speed if available
@@ -161,7 +162,7 @@ export function getPlayerAttackSpeed(
   const equipStats = getTotalEquipmentStats(combatState.equipment);
   const baseAttackSpeed = equipStats.attackSpeed ?? DEFAULT_ATTACK_SPEED;
   const multiplier = bonuses?.attackSpeedMultiplier ?? 1;
-  return Math.max(1, baseAttackSpeed / Math.max(0.25, multiplier));
+  return Math.max(1.5, scaleAttackIntervalSeconds(baseAttackSpeed / Math.max(0.25, multiplier)));
 }
 
 /**
@@ -178,7 +179,7 @@ export function getPlayerRegenAmount(combatState: CombatState): number {
  * Damage = max(1, strength - defense)
  */
 export function calculateDamage(attackerStrength: number, defenderDefense: number): number {
-  return Math.max(1, attackerStrength - defenderDefense);
+  return calculateScaledCombatDamage(attackerStrength, defenderDefense);
 }
 
 /**

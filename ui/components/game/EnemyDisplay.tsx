@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
 import { ProgressBar } from '../common/ProgressBar';
 import { ENEMY_DEFINITIONS } from '@/game/data';
+import { scaleEnemyMaxHp } from '@/game/logic/combat/balance';
 
 interface EnemyDisplayProps {
   enemyId: string;
@@ -20,7 +21,8 @@ export function EnemyDisplay({
   const enemy = ENEMY_DEFINITIONS[enemyId];
   if (!enemy) return null;
 
-  const enemyHpProgress = enemy.maxHp > 0 ? enemyCurrentHp / enemy.maxHp : 0;
+  const enemyMaxHp = scaleEnemyMaxHp(enemy.maxHp);
+  const enemyHpProgress = enemyMaxHp > 0 ? enemyCurrentHp / enemyMaxHp : 0;
   const playerHpProgress = playerMaxHp > 0 ? playerCurrentHp / playerMaxHp : 0;
 
   return (
@@ -64,7 +66,7 @@ export function EnemyDisplay({
           <View style={styles.barMeta}>
             <Text style={styles.barLabel}>{enemy.name}</Text>
             <Text style={styles.barValue}>
-              {enemyCurrentHp} / {enemy.maxHp} HP
+              {enemyCurrentHp} / {enemyMaxHp} HP
             </Text>
           </View>
           <ProgressBar

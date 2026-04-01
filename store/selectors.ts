@@ -34,6 +34,7 @@ import {
   getActiveHerbloreRecipe,
   getHerbloreRecipesForLevel,
 } from '@/game/logic';
+import { scaleEnemyMaxHp } from '@/game/logic/combat/balance';
 import { ITEM_DEFINITIONS, ITEM_IDS } from '@/game/data';
 import { isFood, isPotion } from '@/game/types/items';
 import { COMBAT_SKILL_IDS } from '@/game/types';
@@ -260,13 +261,14 @@ export function useCombatTracker() {
     }
 
     const playerProgress = playerMaxHp > 0 ? playerCurrentHp / playerMaxHp : 0;
-    const enemyProgress = enemy.maxHp > 0 ? enemyCurrentHp / enemy.maxHp : 0;
+    const enemyMaxHp = scaleEnemyMaxHp(enemy.maxHp);
+    const enemyProgress = enemyMaxHp > 0 ? enemyCurrentHp / enemyMaxHp : 0;
 
     return {
       enemyId,
       enemyName: enemy.name,
       enemyIcon: enemy.icon,
-      enemyMaxHp: enemy.maxHp,
+      enemyMaxHp,
       enemyCurrentHp,
       enemyProgress,
       playerCurrentHp,
