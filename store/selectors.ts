@@ -216,10 +216,27 @@ export function useActiveCombat() {
       enemyCurrentHp: activeCombat.enemyCurrentHp,
       playerNextAttackAt: activeCombat.playerNextAttackAt,
       enemyNextAttackAt: activeCombat.enemyNextAttackAt,
+      petNextAttackAt: activeCombat.petNextAttackAt ?? null,
       playerCurrentHp,
       playerMaxHp,
     };
   }, [activeCombat, playerCurrentHp, playerMaxHp]);
+}
+
+export function useCombatFeedback() {
+  const { entries, killsThisSession, sessionStartedAt } = useGameStore(
+    useShallow((state) => ({
+      entries: state.combatFeedback.entries,
+      killsThisSession: state.combatFeedback.killsThisSession,
+      sessionStartedAt: state.combatFeedback.sessionStartedAt,
+    }))
+  );
+
+  return useMemo(() => ({
+    entries,
+    killsThisSession,
+    sessionStartedAt,
+  }), [entries, killsThisSession, sessionStartedAt]);
 }
 
 export function useCombatTracker() {

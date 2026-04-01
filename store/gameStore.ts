@@ -26,6 +26,7 @@ import { createAdminSlice, type AdminSlice } from './slices/adminSlice';
 import { createShopSlice, type ShopSlice } from './slices/shopSlice';
 import { createCraftingSlice, type CraftingSlice } from './slices/craftingSlice';
 import { createSummoningSlice, type SummoningSlice } from './slices/summoningSlice';
+import { createInitialCombatFeedback, type CombatFeedbackState } from './combatFeedback';
 
 const AUTO_SAVE_KEY = 'game-save';
 const LEGACY_ZUSTAND_PERSIST_KEY = 'game-storage';
@@ -43,6 +44,7 @@ registerGameModules();
 interface HydrationState {
   isHydrated: boolean;
   offlineSummary: OfflineProgressSummary | null;
+  combatFeedback: CombatFeedbackState;
   dismissOfflineSummary: () => void;
 }
 
@@ -154,6 +156,7 @@ export const useGameStore = create<GameStore>()((set, get) => {
   const bootOfflineSummary = offlineResult.elapsedMs >= MIN_OFFLINE_SHOW_MS
     ? summarizeOfflineProgress(offlineResult)
     : null;
+  const bootCombatFeedback = createInitialCombatFeedback(bootNow);
 
   // Wire notifications to this store instance after it exists to avoid circular deps.
   setTimeout(() => {
@@ -178,6 +181,7 @@ export const useGameStore = create<GameStore>()((set, get) => {
     ...afterOffline,
     isHydrated: true,
     offlineSummary: bootOfflineSummary,
+    combatFeedback: bootCombatFeedback,
     dismissOfflineSummary: () => set({ offlineSummary: null }),
     ...createTickSlice(set, get, helpers),
     ...createPersistenceSlice(set, get, helpers),

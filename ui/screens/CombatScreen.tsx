@@ -5,19 +5,22 @@ import { SafeContainer } from '../components/layout/SafeContainer';
 import { Card } from '../components/common/Card';
 import { CombatStats } from '../components/game/CombatStats';
 import { CombatPetCard } from '../components/game/CombatPetCard';
+import { CombatRhythmCard } from '../components/game/CombatRhythmCard';
+import { CombatLogCard } from '../components/game/CombatLogCard';
 import { EnemyDisplay } from '../components/game/EnemyDisplay';
 import { EquipmentPanel } from '../components/game/EquipmentPanel';
 import { CombatZoneCard } from '../components/game/CombatZoneCard';
 import {
   useCombatSummary,
   useActiveCombat,
+  useCombatFeedback,
   useEquipment,
   useCombatActions,
   useBagFood,
   useBagPotions,
 } from '@/store';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
-import { ZONE_IDS } from '@/game/data';
+import { ENEMY_DEFINITIONS, ZONE_IDS } from '@/game/data';
 import type { TrainingMode, EquipmentSlot } from '@/game/types';
 
 const AUTO_EAT_THRESHOLDS = [0.25, 0.5, 0.75] as const;
@@ -25,6 +28,7 @@ const AUTO_EAT_THRESHOLDS = [0.25, 0.5, 0.75] as const;
 export function CombatScreen() {
   const combatSummary = useCombatSummary();
   const activeCombat = useActiveCombat();
+  const combatFeedback = useCombatFeedback();
   const equipment = useEquipment();
   const {
     startCombat,
@@ -61,6 +65,7 @@ export function CombatScreen() {
 
     return (combatSummary.totalKills / Math.max(1, combatSummary.totalDeaths)).toFixed(1);
   }, [combatSummary.totalDeaths, combatSummary.totalKills]);
+  const activeEnemy = activeCombat ? ENEMY_DEFINITIONS[activeCombat.enemyId] : null;
 
   const handleTrainingModeChange = (mode: TrainingMode) => {
     setTrainingMode(mode);
@@ -111,6 +116,29 @@ export function CombatScreen() {
             >
               <Text style={styles.fleeButtonText}>Flee</Text>
             </Pressable>
+          </View>
+        )}
+
+        {activeCombat && activeEnemy && (
+          <View style={styles.section}>
+            <CombatRhythmCard
+              enemyName={activeEnemy.name}
+              playerNextAttackAt={activeCombat.playerNextAttackAt}
+              enemyNextAttackAt={activeCombat.enemyNextAttackAt}
+              petNextAttackAt={activeCombat.petNextAttackAt}
+              playerAttackIntervalSeconds={combatSummary.attackSpeed}
+              enemyAttackIntervalSeconds={activeEnemy.attackSpeed}
+              petAttackIntervalSeconds={combatSummary.activePet?.attackIntervalSeconds ?? null}
+            />
+          </View>
+        )}
+
+        {(activeCombat || combatFeedback.entries.length > 0) && (
+          <View style={styles.section}>
+            <CombatLogCard
+              entries={combatFeedback.entries}
+              killsThisSession={combatFeedback.killsThisSession}
+            />
           </View>
         )}
 

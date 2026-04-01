@@ -1,7 +1,9 @@
 import type { GameState } from '@/game/types';
 import { processOfflineProgress, processTick } from '@/game/logic';
 import { eventBus } from '@/game/systems';
+import { ENEMY_DEFINITIONS, ITEM_DEFINITIONS } from '@/game/data';
 import type { SliceGet, SliceSet, StoreHelpers } from './types';
+import { applyCombatFeedbackEvents } from '@/store/combatFeedback';
 
 export interface TickSlice {
   tick: (deltaMs: number, now: number) => void;
@@ -31,7 +33,21 @@ export function createTickSlice(set: SliceSet, get: SliceGet, helpers: StoreHelp
 
       nextState = helpers.maybeAutoSave(nextState, now);
 
-      set(nextState);
+      const combatFeedback = applyCombatFeedbackEvents(
+        get().combatFeedback,
+        result.events,
+        now,
+        gameState.combat.activeCombat?.enemyId,
+        {
+          getEnemyName: (enemyId) => ENEMY_DEFINITIONS[enemyId]?.name ?? enemyId,
+          getItemName: (itemId) => ITEM_DEFINITIONS[itemId]?.name ?? itemId,
+        }
+      );
+
+      set({
+        ...nextState,
+        combatFeedback,
+      });
     },
 
     applyOfflineProgress: (now: number) => {
@@ -59,4 +75,3 @@ export function createTickSlice(set: SliceSet, get: SliceGet, helpers: StoreHelp
     },
   };
 }
-

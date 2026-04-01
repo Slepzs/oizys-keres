@@ -22,6 +22,7 @@ export {
   useTotalSkillLevels,
   useCombatSummary,
   useActiveCombat,
+  useCombatFeedback,
   useCombatTracker,
   useEquipment,
   useCombatActions,

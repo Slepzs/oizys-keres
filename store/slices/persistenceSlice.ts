@@ -1,6 +1,7 @@
 import type { GameState } from '@/game/types';
 import { createInitialGameState, repairGameState } from '@/game/save';
 import type { SliceGet, SliceSet, StoreHelpers } from './types';
+import { createInitialCombatFeedback } from '@/store/combatFeedback';
 
 export interface PersistenceSlice {
   flushSave: (now: number) => void;
@@ -29,6 +30,7 @@ export function createPersistenceSlice(set: SliceSet, get: SliceGet, helpers: St
       set({
         ...repaired,
         isHydrated: true,
+        combatFeedback: createInitialCombatFeedback(now),
       });
     },
 
@@ -36,8 +38,10 @@ export function createPersistenceSlice(set: SliceSet, get: SliceGet, helpers: St
       const now = Date.now();
       const fresh = createInitialGameState({ now, rngSeed: helpers.createRngSeed() });
       helpers.persistGameState(fresh, now);
-      set(fresh);
+      set({
+        ...fresh,
+        combatFeedback: createInitialCombatFeedback(now),
+      });
     },
   };
 }
-

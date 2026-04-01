@@ -11,6 +11,8 @@ export { NotificationToast } from './NotificationToast';
 export { NotificationContainer } from './NotificationContainer';
 export { CombatStats } from './CombatStats';
 export { CombatPetCard } from './CombatPetCard';
+export { CombatRhythmCard } from './CombatRhythmCard';
+export { CombatLogCard } from './CombatLogCard';
 export { EnemyDisplay } from './EnemyDisplay';
 export { EquipmentSlot } from './EquipmentSlot';
 export { EquipmentPanel } from './EquipmentPanel';
