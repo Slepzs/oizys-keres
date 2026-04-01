@@ -49,3 +49,7 @@ app-example
 # caches / build output
 .cache/
 coverage/
+
+.agents/**/*
+.codex/**/
+docs/**/

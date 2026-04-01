@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.oakdigital.oizyskeres",
+      "bundleIdentifier": "com.tobiasheidejensen.oizyskeres",
       "deploymentTarget": "16.0"
     },
     "android": {
@@ -22,7 +22,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.oakdigital.oizyskeres"
+      "package": "com.tobiasheidejensen.oizyskeres"
     },
     "web": {
       "output": "static",
