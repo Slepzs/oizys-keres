@@ -22,10 +22,12 @@ export interface SkillsTickResult {
 export function processSkillsTick(state: GameState, ticksElapsed: number): SkillsTickResult {
   const events: GameEvent[] = [];
   let newState = state;
+  const hasActiveCombat = !!state.combat.activeCombat;
 
   // Process active skill (crafting and cooking are handled by their own tick functions)
   if (
-    state.activeSkill
+    !hasActiveCombat
+    && state.activeSkill
     && state.activeSkill !== 'crafting'
     && state.activeSkill !== 'cooking'
     && state.activeSkill !== 'herblore'

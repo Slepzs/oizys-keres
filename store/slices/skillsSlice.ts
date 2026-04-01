@@ -15,6 +15,9 @@ export interface SkillsSlice {
 export function createSkillsSlice(set: SliceSet, get: SliceGet, _helpers: StoreHelpers): SkillsSlice {
   return {
     setActiveSkill: (skillId: SkillId | null) => {
+      if (skillId && get().combat.activeCombat) {
+        return;
+      }
       set({ activeSkill: skillId });
     },
 

@@ -49,7 +49,7 @@ export function processHerbloreTick(state: GameState, ticksElapsed: number): Her
     return { state, events: [] };
   }
 
-  const isActive = state.activeSkill === 'herblore';
+  const isActive = state.activeSkill === 'herblore' && !state.combat.activeCombat;
   const isAutomated = herbloreSkill.automationEnabled && !isActive;
 
   if (!isActive && !isAutomated) {

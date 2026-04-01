@@ -134,18 +134,6 @@ export function registerNotificationHandlers(): void {
       return state;
     }, 200);
 
-    // Critical hit notification (only for big crits to avoid spam)
-    eventBus.on('COMBAT_PLAYER_ATTACK', (event, state, _ctx) => {
-      if (notificationCallback && event.isCritical && event.damage >= 10) {
-        notificationCallback(
-          'combat',
-          'Critical Hit!',
-          `You dealt ${event.damage} damage in one blow!`
-        );
-      }
-      return state;
-    }, 200);
-
     // Combat notifications
     eventBus.on('COMBAT_PLAYER_DIED', (_event, state, _ctx) => {
       if (notificationCallback) {

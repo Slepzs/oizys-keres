@@ -50,7 +50,7 @@ export function processCookingTick(state: GameState, ticksElapsed: number): Cook
     return { state, events: [] };
   }
 
-  const isActive = state.activeSkill === 'cooking';
+  const isActive = state.activeSkill === 'cooking' && !state.combat.activeCombat;
   const isAutomated = cookingSkill.automationEnabled && !isActive;
 
   if (!isActive && !isAutomated) {

@@ -44,7 +44,7 @@ export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
       const petBonuses = getSummoningCombatBonuses(state.summoning, state.skills.summoning.level);
       const attackSpeed = getPlayerAttackSpeed(state.combat, petBonuses);
       const newCombat = startCombatLogic(state.combat, zoneId, now, attackSpeed);
-      set({ combat: newCombat });
+      set({ combat: newCombat, activeSkill: newCombat.activeCombat ? null : state.activeSkill });
     },
 
     fleeCombat: () => {
