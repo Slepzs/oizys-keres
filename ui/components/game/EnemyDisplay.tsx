@@ -25,49 +25,69 @@ export function EnemyDisplay({
 
   return (
     <View style={styles.container}>
-      <View style={styles.combatants}>
-        {/* Player side */}
-        <View style={styles.combatant}>
-          <Text style={styles.combatantIcon}>🧑</Text>
-          <Text style={styles.combatantName}>You</Text>
+      <View style={styles.header}>
+        <View style={styles.enemyIdentity}>
+          <View style={styles.enemyIconWrap}>
+            <Text style={styles.enemyIcon}>{enemy.icon}</Text>
+          </View>
+          <View style={styles.enemyCopy}>
+            <Text style={styles.kicker}>Encounter</Text>
+            <Text style={styles.enemyName}>{enemy.name}</Text>
+            <Text style={styles.enemySubline}>Battle is active</Text>
+          </View>
+        </View>
+        <View style={styles.statusPill}>
+          <Text style={styles.statusLabel}>YOU</Text>
+          <Text style={styles.statusValue}>
+            {playerCurrentHp}/{playerMaxHp}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.bars}>
+        <View style={styles.barBlock}>
+          <View style={styles.barMeta}>
+            <Text style={styles.barLabel}>You</Text>
+            <Text style={styles.barValue}>
+              {playerCurrentHp} / {playerMaxHp} HP
+            </Text>
+          </View>
           <ProgressBar
             progress={playerHpProgress}
             height={8}
             color={colors.healthBar}
             backgroundColor={colors.healthBarBg}
           />
-          <Text style={styles.hpText}>
-            {playerCurrentHp} / {playerMaxHp} HP
-          </Text>
         </View>
 
-        {/* VS indicator */}
-        <View style={styles.vsContainer}>
-          <Text style={styles.vsText}>VS</Text>
-        </View>
-
-        {/* Enemy side */}
-        <View style={styles.combatant}>
-          <Text style={styles.combatantIcon}>{enemy.icon}</Text>
-          <Text style={styles.combatantName}>{enemy.name}</Text>
+        <View style={styles.barBlock}>
+          <View style={styles.barMeta}>
+            <Text style={styles.barLabel}>{enemy.name}</Text>
+            <Text style={styles.barValue}>
+              {enemyCurrentHp} / {enemy.maxHp} HP
+            </Text>
+          </View>
           <ProgressBar
             progress={enemyHpProgress}
             height={8}
             color={colors.error}
             backgroundColor={colors.surfaceLight}
           />
-          <Text style={styles.hpText}>
-            {enemyCurrentHp} / {enemy.maxHp} HP
-          </Text>
         </View>
       </View>
 
-      <View style={styles.enemyStats}>
-        <Text style={styles.statsLabel}>Enemy Stats:</Text>
-        <View style={styles.statsRow}>
-          <Text style={styles.statItem}>ATK: {enemy.attack}</Text>
-          <Text style={styles.statItem}>STR: {enemy.strength}</Text>
-          <Text style={styles.statItem}>DEF: {enemy.defense}</Text>
+      <View style={styles.statsRow}>
+        <View style={styles.statChip}>
+          <Text style={styles.statChipLabel}>ATK</Text>
+          <Text style={styles.statChipValue}>{enemy.attack}</Text>
+        </View>
+        <View style={styles.statChip}>
+          <Text style={styles.statChipLabel}>STR</Text>
+          <Text style={styles.statChipValue}>{enemy.strength}</Text>
+        </View>
+        <View style={styles.statChip}>
+          <Text style={styles.statChipLabel}>DEF</Text>
+          <Text style={styles.statChipValue}>{enemy.defense}</Text>
         </View>
       </View>
     </View>
@@ -80,56 +100,106 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
   },
-  combatants: {
+  header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.md,
     marginBottom: spacing.md,
   },
-  combatant: {
+  enemyIdentity: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
-  combatantIcon: {
-    fontSize: 48,
-    marginBottom: spacing.xs,
+  enemyIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceLight,
   },
-  combatantName: {
+  enemyIcon: {
+    fontSize: 28,
+  },
+  enemyCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  kicker: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  enemyName: {
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
     color: colors.text,
   },
-  hpText: {
+  enemySubline: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+  },
+  statusPill: {
+    minWidth: 76,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surfaceLight,
+  },
+  statusLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  statusValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  bars: {
+    gap: spacing.sm,
+  },
+  barBlock: {
+    gap: spacing.xs,
+  },
+  barMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  barLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    color: colors.text,
+  },
+  barValue: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  vsContainer: {
-    paddingHorizontal: spacing.sm,
-  },
-  vsText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-    color: colors.textMuted,
-  },
-  enemyStats: {
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceLight,
-    paddingTop: spacing.sm,
-  },
-  statsLabel: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginBottom: spacing.xs,
   },
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.lg,
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
-  statItem: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+  statChip: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surfaceLight,
+    alignItems: 'center',
+  },
+  statChipLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  statChipValue: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+    marginTop: 2,
   },
 });

@@ -40,7 +40,8 @@ export function CombatPetCard({ pet, bonuses }: CombatPetCardProps) {
       <View style={styles.header}>
         <View style={styles.identity}>
           <Text style={styles.icon}>{pet.icon}</Text>
-          <View>
+          <View style={styles.copy}>
+            <Text style={styles.kicker}>Active Companion</Text>
             <Text style={styles.name}>
               {pet.name} {pet.stageIcon}
             </Text>
@@ -55,11 +56,22 @@ export function CombatPetCard({ pet, bonuses }: CombatPetCardProps) {
         </View>
       </View>
 
-      <Text style={styles.passive}>{pet.passiveSummary}</Text>
+      <Text style={styles.passive} numberOfLines={2}>
+        {pet.passiveSummary}
+      </Text>
 
-      <View style={styles.timingRow}>
-        <Text style={styles.timingText}>Strikes every {pet.attackIntervalSeconds.toFixed(1)}s</Text>
-        <Text style={styles.timingText}>{bonusLines.join(' • ') || 'No passive stat bonuses'}</Text>
+      <View style={styles.footer}>
+        <View style={styles.tempoPill}>
+          <Text style={styles.tempoLabel}>Tempo</Text>
+          <Text style={styles.tempoValue}>{pet.attackIntervalSeconds.toFixed(1)}s</Text>
+        </View>
+        <View style={styles.bonusChips}>
+          {(bonusLines.length > 0 ? bonusLines : ['No passive stat bonuses']).map((line) => (
+            <View key={line} style={styles.bonusChip}>
+              <Text style={styles.bonusChipText}>{line}</Text>
+            </View>
+          ))}
+        </View>
       </View>
     </Card>
   );
@@ -77,10 +89,20 @@ const styles = StyleSheet.create({
   identity: {
     flex: 1,
     flexDirection: 'row',
+    alignItems: 'center',
+  },
+  copy: {
+    flex: 1,
   },
   icon: {
     fontSize: 28,
     marginRight: spacing.sm,
+  },
+  kicker: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    marginBottom: 2,
   },
   name: {
     fontSize: fontSize.lg,
@@ -111,16 +133,44 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   passive: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     fontSize: fontSize.sm,
     color: colors.textSecondary,
   },
-  timingRow: {
+  footer: {
     marginTop: spacing.sm,
     gap: spacing.xs,
   },
-  timingText: {
+  tempoPill: {
+    alignSelf: 'flex-start',
+    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  tempoLabel: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+  },
+  tempoValue: {
+    marginTop: 2,
+    fontSize: fontSize.sm,
+    color: colors.text,
+    fontWeight: fontWeight.semibold,
+  },
+  bonusChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  bonusChip: {
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  bonusChipText: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
 });
