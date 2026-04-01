@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { SafeContainer } from '../components/layout/SafeContainer';
 import { Card } from '../components/common/Card';
@@ -12,24 +12,30 @@ import { CookingRecipeSelector } from '../components/game/CookingRecipeSelector'
 import { HerbloreRecipeSelector } from '../components/game/HerbloreRecipeSelector';
 import { SummoningSkillPanel } from '../components/game/SummoningSkillPanel';
 import { useGame } from '@/hooks/useGame';
-import { useGameActions, useMiningRocks, useSummoningSummary, useWoodcuttingTrees, useFishingSpots, useCookingRecipes, useHerbloreRecipes } from '@/store';
-import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
+import {
+  useGameActions,
+  useMiningRocks,
+  useSummoningSummary,
+  useWoodcuttingTrees,
+  useFishingSpots,
+  useCookingRecipes,
+  useHerbloreRecipes,
+} from '@/store';
+import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { SKILL_DEFINITIONS, SKILL_IDS } from '@/game/data';
 import type { SkillId } from '@/game/types';
 
-const SKILL_CRAFTING_PLACEHOLDER: Record<SkillId, string> = {
-  woodcutting: 'Gather wood to feed crafting recipes.',
-  mining: 'Gather ore and stone for advanced recipes.',
-  crafting: 'Crafting XP comes from crafting completed recipes.',
-  summoning: 'Perform rituals to strengthen your active companion.',
-  fishing: 'Fish are gathered as resources for cooking.',
-  cooking: 'Cook raw fish into food to restore HP in combat.',
-  herblore: 'Brew herbs into potions to buff combat stats.',
-};
-
 export function SkillsScreen() {
   const { state, setActiveSkill, toggleAutomation } = useGame();
-  const { setActiveTree, setActiveRock, setActivePet, setActiveFishingSpot, setActiveCookingRecipe, setActiveHerbloreRecipe } = useGameActions();
+  const {
+    setActiveTree,
+    setActiveRock,
+    setActivePet,
+    setActiveFishingSpot,
+    setActiveCookingRecipe,
+    setActiveHerbloreRecipe,
+  } = useGameActions();
+  const [expandedSkillId, setExpandedSkillId] = useState<SkillId | null>(null);
   const [showTreeSelector, setShowTreeSelector] = useState(false);
   const [showRockSelector, setShowRockSelector] = useState(false);
   const [showFishingSpotSelector, setShowFishingSpotSelector] = useState(false);
@@ -42,7 +48,11 @@ export function SkillsScreen() {
   const herbloreRecipes = useHerbloreRecipes();
   const summoning = useSummoningSummary();
 
-  const handleSkillPress = (skillId: SkillId) => {
+  const toggleExpandedSkill = (skillId: SkillId) => {
+    setExpandedSkillId((current) => (current === skillId ? null : skillId));
+  };
+
+  const handlePrimaryAction = (skillId: SkillId) => {
     if (skillId === 'crafting') {
       router.push('/crafting');
       return;
@@ -53,6 +63,47 @@ export function SkillsScreen() {
     } else {
       setActiveSkill(skillId);
     }
+  };
+
+  const getTargetLabel = (skillId: SkillId) => {
+    switch (skillId) {
+      case 'woodcutting':
+        return `${woodcuttingTrees.active.icon} ${woodcuttingTrees.active.name}`;
+      case 'mining':
+        return `${miningRocks.active.icon} ${miningRocks.active.name}`;
+      case 'fishing':
+        return `${fishingSpots.active.icon} ${fishingSpots.active.name}`;
+      case 'cooking':
+        return `${cookingRecipes.active.icon} ${cookingRecipes.active.name}`;
+      case 'herblore':
+        return `${herbloreRecipes.active.icon} ${herbloreRecipes.active.name}`;
+      case 'summoning':
+        return summoning.activePet ? `${summoning.activePet.icon} ${summoning.activePet.name}` : null;
+      default:
+        return null;
+    }
+  };
+
+  const getShortcutConfig = (skillId: SkillId) => {
+    if (skillId === 'crafting') {
+      return {
+        label: 'Crafting',
+        description: 'Recipe queue and automation',
+        title: 'Open',
+        onPress: () => router.push('/crafting'),
+      };
+    }
+
+    if (skillId === 'cooking' || skillId === 'herblore') {
+      return {
+        label: 'Combat',
+        description: 'Food and potion loadout',
+        title: 'Open',
+        onPress: () => router.push('/combat'),
+      };
+    }
+
+    return null;
   };
 
   const woodcuttingSkill = state.skills.woodcutting;
@@ -69,13 +120,11 @@ export function SkillsScreen() {
         {SKILL_IDS.map((skillId) => {
           const skill = state.skills[skillId];
           const definition = SKILL_DEFINITIONS[skillId];
-          const isTrainable = skillId !== 'crafting';
-          const isActive = isTrainable && state.activeSkill === skillId;
-          const hasCraftingSystem = skillId === 'crafting';
-          const hasCookingSystem = skillId === 'cooking' || skillId === 'herblore';
-          const hasHerbloreSystem = skillId === 'herblore';
-
-          const cardStyle = isActive
+          const isTraining = skillId !== 'crafting' && state.activeSkill === skillId;
+          const isExpanded = expandedSkillId === skillId;
+          const targetLabel = getTargetLabel(skillId);
+          const shortcut = getShortcutConfig(skillId);
+          const cardStyle = isTraining
             ? { ...styles.skillCard, ...styles.activeCard }
             : styles.skillCard;
 
@@ -85,11 +134,13 @@ export function SkillsScreen() {
                 key={skillId}
                 skill={skill}
                 skillXpRequired={summoning.skillXpRequired}
-                isActive={isActive}
+                isActive={isTraining}
+                expanded={isExpanded}
                 ritualsCompleted={summoning.ritualsCompleted}
                 essenceAmount={summoning.essenceAmount}
                 pets={summoning.pets}
-                onToggleTraining={() => handleSkillPress(skillId)}
+                onToggleExpanded={() => toggleExpandedSkill(skillId)}
+                onToggleTraining={() => handlePrimaryAction(skillId)}
                 onToggleAutomation={() => toggleAutomation(skillId)}
                 onSelectPet={setActivePet}
               />
@@ -97,143 +148,159 @@ export function SkillsScreen() {
           }
 
           return (
-            <Card
-              key={skillId}
-              onPress={() => handleSkillPress(skillId)}
-              style={cardStyle}
-            >
-              <View style={styles.header}>
-                <Text style={styles.icon}>{definition.icon}</Text>
-                <View style={styles.info}>
-                  <Text style={styles.name}>{definition.name}</Text>
-                  <Text style={styles.description}>{definition.description}</Text>
-                </View>
-              </View>
+            <Card key={skillId} style={cardStyle}>
+              <View style={styles.summarySection}>
+                <View style={styles.header}>
+                  <Pressable onPress={() => toggleExpandedSkill(skillId)} style={styles.summaryMain}>
+                    <View style={styles.titleGroup}>
+                      <Text style={styles.icon}>{definition.icon}</Text>
+                      <View style={styles.info}>
+                        <View style={styles.nameRow}>
+                          <Text style={styles.name}>{definition.name}</Text>
+                          <Text style={styles.levelPill}>Lv {skill.level}</Text>
+                        </View>
 
-              <View style={styles.levelRow}>
-                <Text style={styles.level}>Level {skill.level}</Text>
-                {isActive && (
-                  <Text style={styles.activeText}>Training...</Text>
-                )}
-                {!isActive && skillId === 'crafting' && (
-                  <Text style={styles.activeText}>Recipe-based</Text>
-                )}
-              </View>
+                        <View style={styles.badgeRow}>
+                          {isTraining && (
+                            <View style={[styles.badge, styles.badgeActive]}>
+                              <Text style={[styles.badgeText, styles.badgeActiveText]}>Training</Text>
+                            </View>
+                          )}
 
-              <SkillProgressBar skill={skill} skillId={skillId} isActive={isActive} />
+                          {skill.automationUnlocked && skill.automationEnabled && (
+                            <View style={[styles.badge, styles.badgeAuto]}>
+                              <Text style={styles.badgeText}>Auto On</Text>
+                            </View>
+                          )}
 
-              <View style={styles.craftingRow}>
-                <View style={styles.craftingInfo}>
-                  <Text style={styles.craftingLabel}>
-                    {hasCookingSystem ? 'Food' : 'Crafting'}
-                  </Text>
-                  <Text style={styles.craftingHint}>{SKILL_CRAFTING_PLACEHOLDER[skillId]}</Text>
-                </View>
-                <Button
-                  title={hasCraftingSystem ? 'Open' : hasCookingSystem ? 'Combat' : 'Soon'}
-                  onPress={() => hasCraftingSystem || hasCookingSystem ? router.push('/combat') : undefined}
-                  disabled={!hasCraftingSystem && !hasCookingSystem}
-                  size="sm"
-                  style={styles.craftingButton}
-                />
-              </View>
+                          {targetLabel && (
+                            <View style={styles.badge}>
+                              <Text style={styles.badgeText}>{targetLabel}</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  </Pressable>
 
-              {/* Tree Selector for Woodcutting */}
-              {skillId === 'woodcutting' && (
-                <View style={styles.treeRow}>
-                  <Text style={styles.treeLabel}>Tree:</Text>
-                  <Text style={styles.treeValue}>
-                    {`${woodcuttingTrees.active.icon} ${woodcuttingTrees.active.name}`}
-                  </Text>
-                  <Text
-                    style={styles.treeChangeButton}
-                    onPress={() => setShowTreeSelector(true)}
-                  >
-                    Change
-                  </Text>
-                </View>
-              )}
-
-              {/* Rock Selector for Mining */}
-              {skillId === 'mining' && (
-                <View style={styles.treeRow}>
-                  <Text style={styles.treeLabel}>Rock:</Text>
-                  <Text style={styles.treeValue}>
-                    {`${miningRocks.active.icon} ${miningRocks.active.name}`}
-                  </Text>
-                  <Text
-                    style={styles.treeChangeButton}
-                    onPress={() => setShowRockSelector(true)}
-                  >
-                    Change
-                  </Text>
-                </View>
-              )}
-
-              {/* Fishing Spot Selector for Fishing */}
-              {skillId === 'fishing' && (
-                <View style={styles.treeRow}>
-                  <Text style={styles.treeLabel}>Spot:</Text>
-                  <Text style={styles.treeValue}>
-                    {`${fishingSpots.active.icon} ${fishingSpots.active.name}`}
-                  </Text>
-                  <Text
-                    style={styles.treeChangeButton}
-                    onPress={() => setShowFishingSpotSelector(true)}
-                  >
-                    Change
-                  </Text>
-                </View>
-              )}
-
-              {/* Cooking Recipe Selector for Cooking */}
-              {skillId === 'cooking' && (
-                <View style={styles.treeRow}>
-                  <Text style={styles.treeLabel}>Recipe:</Text>
-                  <Text style={styles.treeValue}>
-                    {`${cookingRecipes.active.icon} ${cookingRecipes.active.name}`}
-                  </Text>
-                  <Text
-                    style={styles.treeChangeButton}
-                    onPress={() => setShowCookingRecipeSelector(true)}
-                  >
-                    Change
-                  </Text>
-                </View>
-              )}
-
-              {/* Herblore Recipe Selector for Herblore */}
-              {hasHerbloreSystem && (
-                <View style={styles.treeRow}>
-                  <Text style={styles.treeLabel}>Recipe:</Text>
-                  <Text style={styles.treeValue}>
-                    {`${herbloreRecipes.active.icon} ${herbloreRecipes.active.name}`}
-                  </Text>
-                  <Text
-                    style={styles.treeChangeButton}
-                    onPress={() => setShowHerbloreRecipeSelector(true)}
-                  >
-                    Change
-                  </Text>
-                </View>
-              )}
-
-              {/* Automation Toggle */}
-              {skill.automationUnlocked ? (
-                <View style={styles.automationRow}>
-                  <Text style={styles.automationLabel}>Automation</Text>
-                  <Switch
-                    value={skill.automationEnabled}
-                    onValueChange={() => toggleAutomation(skillId)}
-                    trackColor={{ false: colors.surfaceLight, true: colors.primaryDark }}
-                    thumbColor={skill.automationEnabled ? colors.primary : colors.textMuted}
+                  <Button
+                    title={skillId === 'crafting' ? 'Open' : isTraining ? 'Stop' : 'Train'}
+                    onPress={() => handlePrimaryAction(skillId)}
+                    variant={skillId === 'crafting' || isTraining ? 'secondary' : 'primary'}
+                    size="sm"
+                    style={styles.headerButton}
                   />
                 </View>
-              ) : (
-                <View style={styles.automationRow}>
-                  <Text style={styles.lockText}>
-                    Unlocks automation at level {definition.automationUnlockLevel}
-                  </Text>
+
+                <Pressable onPress={() => toggleExpandedSkill(skillId)}>
+                  <SkillProgressBar
+                    skill={skill}
+                    skillId={skillId}
+                    isActive={isTraining}
+                    showNumbers={isExpanded}
+                  />
+                </Pressable>
+              </View>
+
+              {isExpanded && (
+                <View style={styles.expandedSection}>
+                  {shortcut && (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>{shortcut.label}</Text>
+                        <Text style={styles.detailValue}>{shortcut.description}</Text>
+                      </View>
+                      <Button
+                        title={shortcut.title}
+                        onPress={shortcut.onPress}
+                        variant="secondary"
+                        size="sm"
+                      />
+                    </View>
+                  )}
+
+                  {skillId === 'woodcutting' && (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Tree</Text>
+                        <Text style={styles.detailValue}>
+                          {`${woodcuttingTrees.active.icon} ${woodcuttingTrees.active.name}`}
+                        </Text>
+                      </View>
+                      <Button title="Change" onPress={() => setShowTreeSelector(true)} variant="secondary" size="sm" />
+                    </View>
+                  )}
+
+                  {skillId === 'mining' && (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Rock</Text>
+                        <Text style={styles.detailValue}>
+                          {`${miningRocks.active.icon} ${miningRocks.active.name}`}
+                        </Text>
+                      </View>
+                      <Button title="Change" onPress={() => setShowRockSelector(true)} variant="secondary" size="sm" />
+                    </View>
+                  )}
+
+                  {skillId === 'fishing' && (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Spot</Text>
+                        <Text style={styles.detailValue}>
+                          {`${fishingSpots.active.icon} ${fishingSpots.active.name}`}
+                        </Text>
+                      </View>
+                      <Button title="Change" onPress={() => setShowFishingSpotSelector(true)} variant="secondary" size="sm" />
+                    </View>
+                  )}
+
+                  {skillId === 'cooking' && (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Recipe</Text>
+                        <Text style={styles.detailValue}>
+                          {`${cookingRecipes.active.icon} ${cookingRecipes.active.name}`}
+                        </Text>
+                      </View>
+                      <Button title="Change" onPress={() => setShowCookingRecipeSelector(true)} variant="secondary" size="sm" />
+                    </View>
+                  )}
+
+                  {skillId === 'herblore' && (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Recipe</Text>
+                        <Text style={styles.detailValue}>
+                          {`${herbloreRecipes.active.icon} ${herbloreRecipes.active.name}`}
+                        </Text>
+                      </View>
+                      <Button title="Change" onPress={() => setShowHerbloreRecipeSelector(true)} variant="secondary" size="sm" />
+                    </View>
+                  )}
+
+                  {skill.automationUnlocked ? (
+                    <View style={styles.automationRow}>
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Automation</Text>
+                        <Text style={styles.detailValue}>
+                          {skill.automationEnabled ? 'Running in the background.' : 'Ready when you want idle progress.'}
+                        </Text>
+                      </View>
+                      <Switch
+                        value={skill.automationEnabled}
+                        onValueChange={() => toggleAutomation(skillId)}
+                        trackColor={{ false: colors.surfaceLight, true: colors.primaryDark }}
+                        thumbColor={skill.automationEnabled ? colors.primary : colors.textMuted}
+                      />
+                    </View>
+                  ) : (
+                    <View style={styles.lockRow}>
+                      <Text style={styles.lockText}>
+                        Automation unlocks at level {definition.automationUnlockLevel}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               )}
             </Card>
@@ -241,7 +308,6 @@ export function SkillsScreen() {
         })}
       </ScrollView>
 
-      {/* Tree Selector Modal */}
       {showTreeSelector && (
         <TreeSelector
           currentLevel={woodcuttingSkill.level}
@@ -251,7 +317,6 @@ export function SkillsScreen() {
         />
       )}
 
-      {/* Rock Selector Modal */}
       {showRockSelector && (
         <RockSelector
           currentLevel={miningSkill.level}
@@ -261,7 +326,6 @@ export function SkillsScreen() {
         />
       )}
 
-      {/* Fishing Spot Selector Modal */}
       {showFishingSpotSelector && (
         <FishingSpotSelector
           currentLevel={fishingSkill.level}
@@ -271,7 +335,6 @@ export function SkillsScreen() {
         />
       )}
 
-      {/* Cooking Recipe Selector Modal */}
       {showCookingRecipeSelector && (
         <CookingRecipeSelector
           currentLevel={cookingSkill.level}
@@ -281,7 +344,6 @@ export function SkillsScreen() {
         />
       )}
 
-      {/* Herblore Recipe Selector Modal */}
       {showHerbloreRecipeSelector && (
         <HerbloreRecipeSelector
           currentLevel={herbloreSkill.level}
@@ -302,115 +364,121 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   skillCard: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   activeCard: {
     borderWidth: 2,
     borderColor: colors.primary,
   },
+  summarySection: {
+    gap: spacing.sm,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: spacing.md,
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  summaryMain: {
+    flex: 1,
+  },
+  titleGroup: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  headerButton: {
+    minWidth: 64,
   },
   icon: {
-    fontSize: 32,
-    marginRight: spacing.md,
+    fontSize: 24,
   },
   info: {
     flex: 1,
+    gap: spacing.xs,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
   },
   name: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
     color: colors.text,
-    marginBottom: spacing.xs,
   },
-  description: {
+  levelPill: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: fontWeight.medium,
+    backgroundColor: colors.surfaceLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  badge: {
+    backgroundColor: colors.surfaceLight,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  badgeActive: {
+    backgroundColor: colors.primaryDark,
+  },
+  badgeAuto: {
+    backgroundColor: colors.xpBarBg,
+  },
+  badgeText: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
   },
-  levelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  level: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
+  badgeActiveText: {
     color: colors.text,
   },
-  activeText: {
+  expandedSection: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+    gap: spacing.sm,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  detailText: {
+    flex: 1,
+  },
+  detailLabel: {
     fontSize: fontSize.sm,
-    color: colors.success,
+    color: colors.textMuted,
     fontWeight: fontWeight.medium,
+  },
+  detailValue: {
+    marginTop: spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.text,
+    fontWeight: fontWeight.semibold,
   },
   automationRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceLight,
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
-  automationLabel: {
-    fontSize: fontSize.md,
-    color: colors.text,
+  lockRow: {
+    paddingTop: spacing.xs,
   },
   lockText: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
-    fontStyle: 'italic',
-  },
-  treeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceLight,
-  },
-  treeLabel: {
-    fontSize: fontSize.md,
-    color: colors.text,
-    marginRight: spacing.xs,
-  },
-  treeValue: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.medium,
-    color: colors.text,
-    flex: 1,
-  },
-  treeChangeButton: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    fontWeight: fontWeight.medium,
-  },
-  craftingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceLight,
-  },
-  craftingInfo: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  craftingLabel: {
-    fontSize: fontSize.md,
-    color: colors.text,
-    fontWeight: fontWeight.semibold,
-  },
-  craftingHint: {
-    marginTop: spacing.xs,
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-  },
-  craftingButton: {
-    minWidth: 66,
   },
 });

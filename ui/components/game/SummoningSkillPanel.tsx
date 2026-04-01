@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, Text, StyleSheet, Switch, Pressable } from 'react-native';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { ProgressBar } from '../common/ProgressBar';
-import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
-import type { PetId, PetRole, PetEvolutionStageId, SkillState } from '@/game/types';
+import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/constants/theme';
+import type { PetEvolutionStageId, PetId, PetRole, SkillState } from '@/game/types';
 import { formatNumber } from '@/utils/format';
 
 interface SummoningPetSummary {
@@ -39,9 +39,11 @@ interface SummoningSkillPanelProps {
   skill: SkillState;
   skillXpRequired: number;
   isActive: boolean;
+  expanded: boolean;
   ritualsCompleted: number;
   essenceAmount: number;
   pets: SummoningPetSummary[];
+  onToggleExpanded: () => void;
   onToggleTraining: () => void;
   onToggleAutomation: () => void;
   onSelectPet: (petId: PetId) => void;
@@ -51,214 +53,266 @@ export function SummoningSkillPanel({
   skill,
   skillXpRequired,
   isActive,
+  expanded,
   ritualsCompleted,
   essenceAmount,
   pets,
+  onToggleExpanded,
   onToggleTraining,
   onToggleAutomation,
   onSelectPet,
 }: SummoningSkillPanelProps) {
   const activePet = pets.find((pet) => pet.isActive) ?? null;
+  const unlockedPetCount = pets.filter((pet) => pet.unlocked).length;
   const skillProgress = skill.level >= 99 ? 1 : skill.xp / Math.max(1, skillXpRequired);
-  const cardStyle = isActive
-    ? { ...styles.card, ...styles.activeCard }
-    : styles.card;
+  const cardStyle = isActive ? { ...styles.card, ...styles.activeCard } : styles.card;
 
   return (
     <Card style={cardStyle}>
-      <View style={styles.header}>
-        <View style={styles.headerInfo}>
-          <Text style={styles.icon}>🔮</Text>
-          <View style={styles.headerText}>
-            <Text style={styles.name}>Summoning</Text>
-            <Text style={styles.description}>
-              Bind rare companions, deepen their bond, and turn rituals into combat power.
-            </Text>
-          </View>
-        </View>
-        <Button
-          title={isActive ? 'Channeling' : 'Train'}
-          onPress={onToggleTraining}
-          variant={isActive ? 'secondary' : 'primary'}
-          size="sm"
-        />
-      </View>
+      <View style={styles.summarySection}>
+        <View style={styles.header}>
+          <Pressable onPress={onToggleExpanded} style={styles.summaryMain}>
+            <View style={styles.titleGroup}>
+              <Text style={styles.icon}>🔮</Text>
+              <View style={styles.info}>
+                <View style={styles.nameRow}>
+                  <Text style={styles.name}>Summoning</Text>
+                  <Text style={styles.levelPill}>Lv {skill.level}</Text>
+                </View>
 
-      <View style={styles.topline}>
-        <Text style={styles.level}>Level {skill.level}</Text>
-        <Text style={styles.subtle}>
-          {activePet ? `${activePet.icon} ${activePet.name}` : 'No active companion'}
-        </Text>
-      </View>
+                <View style={styles.badgeRow}>
+                  {isActive && (
+                    <View style={[styles.badge, styles.badgeActive]}>
+                      <Text style={[styles.badgeText, styles.badgeActiveText]}>Training</Text>
+                    </View>
+                  )}
 
-      <ProgressBar progress={skillProgress} height={8} color={colors.primary} />
-      <Text style={styles.progressText}>
-        {formatNumber(skill.xp)} / {formatNumber(skillXpRequired)} XP
-      </Text>
+                  {skill.automationUnlocked && skill.automationEnabled && (
+                    <View style={[styles.badge, styles.badgeAuto]}>
+                      <Text style={styles.badgeText}>Auto On</Text>
+                    </View>
+                  )}
 
-      <View style={styles.metricsRow}>
-        <View style={styles.metric}>
-          <Text style={styles.metricValue}>{formatNumber(essenceAmount)}</Text>
-          <Text style={styles.metricLabel}>Spirit Essence</Text>
-        </View>
-        <View style={styles.metric}>
-          <Text style={styles.metricValue}>{formatNumber(ritualsCompleted)}</Text>
-          <Text style={styles.metricLabel}>Rituals</Text>
-        </View>
-        <View style={styles.metric}>
-          <Text style={styles.metricValue}>{pets.filter((pet) => pet.unlocked).length}</Text>
-          <Text style={styles.metricLabel}>Companions</Text>
-        </View>
-      </View>
-
-      {activePet && (
-        <View style={styles.activePetPanel}>
-          <Text style={styles.activePetTitle}>Active Companion</Text>
-          <Text style={styles.activePetHeadline}>
-            {activePet.icon} {activePet.name} {activePet.stage.icon}
-          </Text>
-          <Text style={styles.activePetText}>
-            {activePet.stage.name} {activePet.role} with {activePet.combatProfile?.damage ?? 0} damage per strike at{' '}
-            {(activePet.combatProfile?.attackIntervalSeconds ?? 0).toFixed(1)}s cadence.
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.automationRow}>
-        <View style={styles.automationTextWrap}>
-          <Text style={styles.automationLabel}>Automation</Text>
-          <Text style={styles.automationHint}>
-            {skill.automationUnlocked
-              ? 'Run rituals in the background at reduced efficiency.'
-              : `Unlocks at level 12`}
-          </Text>
-        </View>
-        <Switch
-          value={skill.automationEnabled}
-          onValueChange={onToggleAutomation}
-          disabled={!skill.automationUnlocked}
-          trackColor={{ false: colors.surfaceLight, true: colors.primaryDark }}
-          thumbColor={skill.automationEnabled ? colors.primary : colors.textMuted}
-        />
-      </View>
-
-      <Text style={styles.collectionTitle}>Companion Roster</Text>
-      <View style={styles.petList}>
-        {pets.map((pet) => {
-          const progress = pet.level >= 50 ? 1 : pet.xp / Math.max(1, pet.xpRequired);
-          const petCardStyle = pet.unlocked
-            ? (pet.isActive ? { ...styles.petCard, ...styles.petCardActive } : styles.petCard)
-            : { ...styles.petCard, ...styles.petCardLocked };
-
-          return (
-            <Card
-              key={pet.id}
-              style={petCardStyle}
-              onPress={pet.unlocked ? () => onSelectPet(pet.id) : undefined}
-            >
-              <View style={styles.petHeader}>
-                <View style={styles.petIdentity}>
-                  <Text style={styles.petIcon}>{pet.icon}</Text>
-                  <View style={styles.petIdentityText}>
-                    <Text style={styles.petName}>{pet.name}</Text>
-                    <Text style={styles.petMeta}>
-                      {pet.unlocked
-                        ? `${pet.stage.icon} ${pet.stage.name} ${pet.role}`
-                        : `Unlock at level ${pet.unlockLevel} and ${pet.unlockRituals} rituals`}
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
+                      {activePet ? `${activePet.icon} ${activePet.name}` : 'No companion'}
                     </Text>
                   </View>
                 </View>
-                {pet.isActive && <Text style={styles.activeBadge}>ACTIVE</Text>}
               </View>
+            </View>
+          </Pressable>
 
-              <Text style={styles.petDescription}>{pet.description}</Text>
+          <Button
+            title={isActive ? 'Stop' : 'Train'}
+            onPress={onToggleTraining}
+            variant={isActive ? 'secondary' : 'primary'}
+            size="sm"
+            style={styles.headerButton}
+          />
+        </View>
 
-              {pet.unlocked ? (
-                <>
-                  <Text style={styles.petPassive}>{pet.passiveSummary}</Text>
-                  <ProgressBar progress={progress} height={6} color={colors.success} />
-                  <View style={styles.petStatsRow}>
-                    <Text style={styles.petStat}>Bond {pet.level}</Text>
-                    <Text style={styles.petStat}>Kills {formatNumber(pet.combatKills)}</Text>
-                    <Text style={styles.petStat}>Rituals {formatNumber(pet.ritualsChanneled)}</Text>
-                  </View>
-                  <Text style={styles.petCombatLine}>
-                    {pet.affinity} affinity, {pet.combatProfile?.damage ?? 0} damage, {(pet.combatProfile?.attackIntervalSeconds ?? 0).toFixed(1)}s attack speed
-                  </Text>
-                </>
-              ) : (
-                <Text style={styles.petLockedText}>
-                  Locked companions stay visible so you can plan your next bond breakpoints.
-                </Text>
-              )}
-            </Card>
-          );
-        })}
+        <Pressable onPress={onToggleExpanded}>
+          <ProgressBar progress={skillProgress} height={8} color={colors.primary} />
+          {expanded && (
+            <Text style={styles.progressText}>
+              {formatNumber(skill.xp)} / {formatNumber(skillXpRequired)} XP
+            </Text>
+          )}
+        </Pressable>
       </View>
+
+      {expanded && (
+        <View style={styles.expandedSection}>
+          <View style={styles.metricsRow}>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{formatNumber(essenceAmount)}</Text>
+              <Text style={styles.metricLabel}>Essence</Text>
+            </View>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{formatNumber(ritualsCompleted)}</Text>
+              <Text style={styles.metricLabel}>Rituals</Text>
+            </View>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{unlockedPetCount}</Text>
+              <Text style={styles.metricLabel}>Companions</Text>
+            </View>
+          </View>
+
+          {activePet && (
+            <View style={styles.activePetPanel}>
+              <Text style={styles.activePetTitle}>Active Companion</Text>
+              <Text style={styles.activePetHeadline}>
+                {activePet.icon} {activePet.name} {activePet.stage.icon}
+              </Text>
+              <Text style={styles.activePetText}>{activePet.passiveSummary}</Text>
+            </View>
+          )}
+
+          <View style={styles.automationRow}>
+            <View style={styles.automationTextWrap}>
+              <Text style={styles.automationLabel}>Automation</Text>
+              <Text style={styles.automationHint}>
+                {skill.automationUnlocked
+                  ? 'Run rituals in the background at reduced efficiency.'
+                  : 'Unlocks at level 12'}
+              </Text>
+            </View>
+            <Switch
+              value={skill.automationEnabled}
+              onValueChange={onToggleAutomation}
+              disabled={!skill.automationUnlocked}
+              trackColor={{ false: colors.surfaceLight, true: colors.primaryDark }}
+              thumbColor={skill.automationEnabled ? colors.primary : colors.textMuted}
+            />
+          </View>
+
+          <Text style={styles.collectionTitle}>Companion Roster</Text>
+          <View style={styles.petList}>
+            {pets.map((pet) => {
+              const progress = pet.level >= 50 ? 1 : pet.xp / Math.max(1, pet.xpRequired);
+              const petCardStyle = pet.unlocked
+                ? (pet.isActive ? { ...styles.petCard, ...styles.petCardActive } : styles.petCard)
+                : { ...styles.petCard, ...styles.petCardLocked };
+
+              return (
+                <Card
+                  key={pet.id}
+                  style={petCardStyle}
+                  onPress={pet.unlocked ? () => onSelectPet(pet.id) : undefined}
+                >
+                  <View style={styles.petHeader}>
+                    <View style={styles.petIdentity}>
+                      <Text style={styles.petIcon}>{pet.icon}</Text>
+                      <View style={styles.petIdentityText}>
+                        <Text style={styles.petName}>{pet.name}</Text>
+                        <Text style={styles.petMeta}>
+                          {pet.unlocked
+                            ? `${pet.stage.icon} ${pet.stage.name} ${pet.role}`
+                            : `Unlock at level ${pet.unlockLevel} and ${pet.unlockRituals} rituals`}
+                        </Text>
+                      </View>
+                    </View>
+                    {pet.isActive && <Text style={styles.activeBadge}>ACTIVE</Text>}
+                  </View>
+
+                  {pet.unlocked ? (
+                    <>
+                      <Text style={styles.petPassive}>{pet.passiveSummary}</Text>
+                      <ProgressBar progress={progress} height={6} color={colors.success} />
+                      <View style={styles.petStatsRow}>
+                        <Text style={styles.petStat}>Bond {pet.level}</Text>
+                        <Text style={styles.petStat}>Damage {pet.combatProfile?.damage ?? 0}</Text>
+                        <Text style={styles.petStat}>Kills {formatNumber(pet.combatKills)}</Text>
+                      </View>
+                    </>
+                  ) : (
+                    <Text style={styles.petLockedText}>{pet.description}</Text>
+                  )}
+                </Card>
+              );
+            })}
+          </View>
+        </View>
+      )}
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   activeCard: {
     borderWidth: 2,
     borderColor: colors.primary,
   },
+  summarySection: {
+    gap: spacing.sm,
+  },
   header: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  headerInfo: {
+  summaryMain: {
+    flex: 1,
+  },
+  titleGroup: {
     flex: 1,
     flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  headerButton: {
+    minWidth: 64,
   },
   icon: {
-    fontSize: 32,
-    marginRight: spacing.md,
+    fontSize: 24,
   },
-  headerText: {
+  info: {
     flex: 1,
+    gap: spacing.xs,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
   },
   name: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
     color: colors.text,
   },
-  description: {
-    marginTop: spacing.xs,
+  levelPill: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: fontWeight.medium,
+    backgroundColor: colors.surfaceLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  badge: {
+    backgroundColor: colors.surfaceLight,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  badgeActive: {
+    backgroundColor: colors.primaryDark,
+  },
+  badgeAuto: {
+    backgroundColor: colors.xpBarBg,
+  },
+  badgeText: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
   },
-  topline: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  level: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
+  badgeActiveText: {
     color: colors.text,
   },
-  subtle: {
-    fontSize: fontSize.sm,
-    color: colors.success,
-  },
   progressText: {
-    marginTop: spacing.xs,
     fontSize: fontSize.xs,
     color: colors.textMuted,
     textAlign: 'right',
   },
+  expandedSection: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+    gap: spacing.sm,
+  },
   metricsRow: {
     flexDirection: 'row',
     gap: spacing.sm,
-    marginTop: spacing.md,
   },
   metric: {
     flex: 1,
@@ -267,7 +321,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   metricValue: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
     color: colors.text,
   },
@@ -277,10 +331,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   activePetPanel: {
-    marginTop: spacing.md,
-    padding: spacing.md,
     backgroundColor: '#132538',
     borderRadius: borderRadius.md,
+    padding: spacing.md,
   },
   activePetTitle: {
     fontSize: fontSize.xs,
@@ -290,7 +343,7 @@ const styles = StyleSheet.create({
   },
   activePetHeadline: {
     marginTop: spacing.xs,
-    fontSize: fontSize.lg,
+    fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
     color: colors.text,
   },
@@ -301,30 +354,25 @@ const styles = StyleSheet.create({
   },
   automationRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceLight,
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
   automationTextWrap: {
     flex: 1,
-    marginRight: spacing.md,
   },
   automationLabel: {
-    fontSize: fontSize.md,
-    color: colors.text,
-    fontWeight: fontWeight.semibold,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    fontWeight: fontWeight.medium,
   },
   automationHint: {
     marginTop: spacing.xs,
     fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    color: colors.text,
+    fontWeight: fontWeight.semibold,
   },
   collectionTitle: {
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
     color: colors.text,
@@ -352,7 +400,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   petIcon: {
-    fontSize: 28,
+    fontSize: 24,
     marginRight: spacing.sm,
   },
   petIdentityText: {
@@ -374,13 +422,9 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.primary,
   },
-  petDescription: {
-    marginTop: spacing.sm,
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-  },
   petPassive: {
     marginTop: spacing.sm,
+    marginBottom: spacing.sm,
     fontSize: fontSize.sm,
     color: colors.success,
   },
@@ -388,15 +432,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
     marginTop: spacing.sm,
+    flexWrap: 'wrap',
   },
   petStat: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
-  },
-  petCombatLine: {
-    marginTop: spacing.xs,
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
   },
   petLockedText: {
     marginTop: spacing.sm,
