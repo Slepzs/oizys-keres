@@ -4,7 +4,7 @@ export const TICKS_PER_SECOND = 1000 / TICK_RATE_MS;
 
 // Save timing
 export const AUTO_SAVE_INTERVAL_MS = 30_000; // 30 seconds
-export const MAX_OFFLINE_MS = 24 * 60 * 60 * 1000; // 24 hours
+export const MAX_OFFLINE_MS = 12 * 60 * 60 * 1000; // 12 hours
 
 // Player progression
 export const MAX_PLAYER_LEVEL = 100;
