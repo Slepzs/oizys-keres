@@ -118,6 +118,7 @@ function handleEnemyKilled(
     const zone = ZONE_DEFINITIONS[selectedZoneId];
     if (zone && zone.enemies.length > 0) {
       const combatLevel = calculateCombatLevel(nextState.combat.combatSkills);
+      const currentCombat = nextState.combat.activeCombat;
       const preferredEnemyId = nextState.combat.selectedEnemyByZone[selectedZoneId];
       const candidateEnemyIds = preferredEnemyId
         ? [preferredEnemyId, ...zone.enemies.filter((id) => id !== preferredEnemyId)]
@@ -130,8 +131,6 @@ function handleEnemyKilled(
       const nextEnemy = nextEnemyId ? ENEMY_DEFINITIONS[nextEnemyId] : null;
 
       if (nextEnemyId && nextEnemy) {
-        const bonuses = getCurrentBonuses(nextState);
-        const nextPlayerAttackSpeed = getPlayerAttackSpeed(nextState.combat, bonuses);
         nextState = {
           ...nextState,
           combat: {
@@ -140,10 +139,10 @@ function handleEnemyKilled(
               zoneId: selectedZoneId,
               enemyId: nextEnemyId,
               enemyCurrentHp: nextEnemy.maxHp,
-              playerNextAttackAt: occurredAt + nextPlayerAttackSpeed * 1000,
+              playerNextAttackAt: currentCombat?.playerNextAttackAt ?? state.combat.activeCombat?.playerNextAttackAt ?? occurredAt,
               enemyNextAttackAt: occurredAt + nextEnemy.attackSpeed * 1000,
-              petNextAttackAt: occurredAt,
-              playerRegenAt: occurredAt + REGEN_INTERVAL_MS,
+              petNextAttackAt: currentCombat?.petNextAttackAt ?? state.combat.activeCombat?.petNextAttackAt,
+              playerRegenAt: currentCombat?.playerRegenAt ?? state.combat.activeCombat?.playerRegenAt ?? (occurredAt + REGEN_INTERVAL_MS),
             },
           },
         };
