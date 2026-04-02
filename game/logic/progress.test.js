@@ -331,6 +331,30 @@ test('completion progress prefers ready support branches over earlier blocked qu
   });
 });
 
+test('completion progress explains ready support guidance with branch leverage and a fallback option', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+
+  state.quests.completed = ['first_steps', 'wood_for_days'];
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.nonCombatAdvisor, {
+    rationale: {
+      label: 'Highest leverage ready branch',
+      detail:
+        'First Cast opens 9 downstream support quests, ahead of First Brew with 4.',
+    },
+    alternative: {
+      questId: 'first_brew',
+      title: 'First Brew',
+      label: 'Ready now',
+      detail: 'First Brew can be started immediately.',
+      kind: 'ready',
+      category: 'skill',
+    },
+  });
+});
+
 test('completion progress chooses the closest locked support unlock instead of the first quest in file order', () => {
   const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
 
@@ -386,6 +410,20 @@ test('completion progress chooses the closest locked support unlock instead of t
       target: 5,
       progress: 0.8,
       label: 'Level 4 / 5',
+    },
+  });
+  assert.deepEqual(summary.nonCombatAdvisor, {
+    rationale: {
+      label: 'Closest unlock',
+      detail: 'Gem Finder is 80% unlocked, ahead of Seed Collector at 33%.',
+    },
+    alternative: {
+      questId: 'seed_collector',
+      title: 'Seed Collector',
+      label: 'woodcutting level 3',
+      detail: 'Seed Collector is gated by a woodcutting requirement.',
+      kind: 'skill',
+      category: 'exploration',
     },
   });
 });

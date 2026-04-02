@@ -124,6 +124,21 @@ interface NonCombatProgressSummary {
   blocker: NonCombatBlockerSummary;
 }
 
+interface NonCombatAdvisorSummary {
+  rationale: {
+    label: string;
+    detail: string;
+  };
+  alternative: {
+    questId: string;
+    title: string;
+    label: string;
+    detail: string;
+    kind: NonCombatBlockerKind;
+    category: NonCombatCategory | null;
+  } | null;
+}
+
 interface NextNonCombatQuest {
   questId: string;
   status: CompletionQuestStatus;
@@ -155,6 +170,7 @@ export interface CompletionProgress {
   };
   finalHunts: CompletionHuntEntry[];
   nonCombat: NonCombatProgressSummary;
+  nonCombatAdvisor: NonCombatAdvisorSummary;
   recommendation: CompletionRecommendation;
   nonCombatRecommendation: CompletionRecommendation;
 }
@@ -536,6 +552,10 @@ function getCandidateProgressScore(status: CompletionQuestStatus, blocker: NonCo
   return blocker.progress?.progress ?? 0;
 }
 
+function formatCandidatePercent(progressValue: number) {
+  return `${Math.round(Math.max(0, Math.min(1, progressValue)) * 100)}%`;
+}
+
 function compareRankedNonCombatQuest(left: RankedNonCombatQuest, right: RankedNonCombatQuest) {
   const statusDelta = getStatusPriority(left.status) - getStatusPriority(right.status);
   if (statusDelta !== 0) {
@@ -674,12 +694,12 @@ function buildNonCombatBlockerSummaryForQuest(
   }
 }
 
-function getPriorityNonCombatQuest(
+function getRankedNonCombatQuests(
   state: CompletionState,
   completedQuestIds: Set<string>,
   activeQuestById: Map<string, PlayerQuestState>
-): RankedNonCombatQuest | null {
-  const candidates = getNonCombatQuestIds()
+): RankedNonCombatQuest[] {
+  return getNonCombatQuestIds()
     .filter((questId) => !completedQuestIds.has(questId))
     .map((questId) => {
       const candidate: NextNonCombatQuest = {
@@ -703,19 +723,16 @@ function getPriorityNonCombatQuest(
       };
     })
     .sort(compareRankedNonCombatQuest);
-
-  return candidates[0] ?? null;
 }
 
 function buildNonCombatSummary(
-  state: CompletionState,
   completedQuestIds: Set<string>,
-  activeQuestById: Map<string, PlayerQuestState>
+  rankedCandidates: RankedNonCombatQuest[]
 ): NonCombatProgressSummary {
   const nonCombatQuestIds = getNonCombatQuestIds();
   const completedCount = nonCombatQuestIds.filter((questId) => completedQuestIds.has(questId)).length;
   const total = nonCombatQuestIds.length;
-  const nextQuest = getPriorityNonCombatQuest(state, completedQuestIds, activeQuestById);
+  const nextQuest = rankedCandidates[0] ?? null;
 
   return {
     completedCount,
@@ -727,6 +744,101 @@ function buildNonCombatSummary(
       label: 'Support systems complete',
       detail: 'Every tracked non-combat quest chain is complete.',
     },
+  };
+}
+
+function buildNonCombatAdvisor(
+  rankedCandidates: RankedNonCombatQuest[]
+): NonCombatAdvisorSummary {
+  const primary = rankedCandidates[0] ?? null;
+  const secondary = rankedCandidates[1] ?? null;
+
+  if (!primary) {
+    return {
+      rationale: {
+        label: 'Support systems complete',
+        detail: 'Every tracked non-combat quest chain is complete.',
+      },
+      alternative: null,
+    };
+  }
+
+  const primaryName = primary.definition?.name ?? primary.questId;
+  const secondaryName = secondary?.definition?.name ?? secondary.questId;
+  const alternative = secondary
+    ? {
+        questId: secondary.questId,
+        title: secondaryName,
+        label: secondary.blocker.label,
+        detail: secondary.blocker.detail,
+        kind: secondary.blocker.kind,
+        category: secondary.category,
+      }
+    : null;
+
+  if (primary.status === 'active') {
+    return {
+      rationale: {
+        label: 'Active quest first',
+        detail: secondaryName
+          ? `${primaryName} is already underway, so it stays ahead of ${secondaryName}.`
+          : `${primaryName} is already underway, so it keeps the support planner focused.`,
+      },
+      alternative,
+    };
+  }
+
+  if (primary.status === 'available') {
+    if (secondary && secondary.status === 'available' && primary.leverage !== secondary.leverage) {
+      return {
+        rationale: {
+          label: 'Highest leverage ready branch',
+          detail: `${primaryName} opens ${Math.max(0, primary.leverage - 1)} downstream support quests, ahead of ${secondaryName} with ${Math.max(0, secondary.leverage - 1)}.`,
+        },
+        alternative,
+      };
+    }
+
+    return {
+      rationale: {
+        label: 'Ready branch',
+        detail: secondaryName
+          ? `${primaryName} can start immediately and outranks ${secondaryName}.`
+          : `${primaryName} can be started immediately.`,
+      },
+      alternative,
+    };
+  }
+
+  if (
+    secondary &&
+    Math.abs(primary.progressScore - secondary.progressScore) > Number.EPSILON
+  ) {
+    return {
+      rationale: {
+        label: 'Closest unlock',
+        detail: `${primaryName} is ${formatCandidatePercent(primary.progressScore)} unlocked, ahead of ${secondaryName} at ${formatCandidatePercent(secondary.progressScore)}.`,
+      },
+      alternative,
+    };
+  }
+
+  if (secondary && primary.leverage !== secondary.leverage) {
+    return {
+      rationale: {
+        label: 'Highest leverage lock',
+        detail: `${primaryName} opens ${Math.max(0, primary.leverage - 1)} downstream support quests, ahead of ${secondaryName} with ${Math.max(0, secondary.leverage - 1)}.`,
+      },
+      alternative,
+    };
+  }
+
+  return {
+    rationale: {
+      label: 'Best blocked branch',
+      detail: `${primaryName} is the strongest remaining support unlock.`,
+    },
+    alternative,
   };
 }
 
@@ -822,9 +934,10 @@ function buildNonCombatLockedRecommendation(
 function buildNonCombatRecommendation(
   state: CompletionState,
   completedQuestIds: Set<string>,
-  activeQuestById: Map<string, PlayerQuestState>
+  activeQuestById: Map<string, PlayerQuestState>,
+  rankedCandidates: RankedNonCombatQuest[]
 ): CompletionRecommendation {
-  const nextQuest = getPriorityNonCombatQuest(state, completedQuestIds, activeQuestById);
+  const nextQuest = rankedCandidates[0] ?? null;
 
   if (!nextQuest) {
     return {
@@ -1113,6 +1226,13 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
         detail: 'Every tracked non-combat quest chain is complete.',
       },
     },
+    nonCombatAdvisor: {
+      rationale: {
+        label: 'Support systems complete',
+        detail: 'Every tracked non-combat quest chain is complete.',
+      },
+      alternative: null,
+    },
     recommendation: {
       kind: 'finish-ascension',
       focusArea: 'player',
@@ -1128,6 +1248,11 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
       actionLabel: 'Support systems complete',
     },
   };
+  const rankedNonCombatQuests = getRankedNonCombatQuests(
+    state,
+    completedQuestIds,
+    activeQuestById
+  );
 
   progress.recommendation = buildCompletionRecommendation(
     state,
@@ -1138,9 +1263,11 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
   progress.nonCombatRecommendation = buildNonCombatRecommendation(
     state,
     completedQuestIds,
-    activeQuestById
+    activeQuestById,
+    rankedNonCombatQuests
   );
-  progress.nonCombat = buildNonCombatSummary(state, completedQuestIds, activeQuestById);
+  progress.nonCombat = buildNonCombatSummary(completedQuestIds, rankedNonCombatQuests);
+  progress.nonCombatAdvisor = buildNonCombatAdvisor(rankedNonCombatQuests);
 
   return progress;
 }

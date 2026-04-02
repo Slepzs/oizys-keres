@@ -347,6 +347,43 @@ function CompletionTabContent() {
             />
           </View>
         ) : null}
+        <View style={styles.supportAdvisorSection}>
+          <Text style={styles.supportAdvisorEyebrow}>Why this branch</Text>
+          <Text style={styles.supportAdvisorTitle}>
+            {completion.nonCombatAdvisor.rationale.label}
+          </Text>
+          <Text style={styles.supportAdvisorDetail}>
+            {completion.nonCombatAdvisor.rationale.detail}
+          </Text>
+          {completion.nonCombatAdvisor.alternative ? (
+            <View style={styles.supportAlternativeCard}>
+              <View style={styles.supportAlternativeHeader}>
+                <Text style={styles.supportAlternativeEyebrow}>After this</Text>
+                <Text
+                  style={[
+                    styles.recommendationBadge,
+                    {
+                      borderColor: getNonCombatBlockerAccent(
+                        completion.nonCombatAdvisor.alternative.kind
+                      ),
+                      color: getNonCombatBlockerAccent(
+                        completion.nonCombatAdvisor.alternative.kind
+                      ),
+                    },
+                  ]}
+                >
+                  {completion.nonCombatAdvisor.alternative.label}
+                </Text>
+              </View>
+              <Text style={styles.supportAlternativeTitle}>
+                {completion.nonCombatAdvisor.alternative.title}
+              </Text>
+              <Text style={styles.supportAlternativeDetail}>
+                {completion.nonCombatAdvisor.alternative.detail}
+              </Text>
+            </View>
+          ) : null}
+        </View>
       </Card>
 
       <View style={styles.metricsGrid}>
@@ -621,6 +658,57 @@ const styles = StyleSheet.create({
   supportBlockerProgressValue: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+  },
+  supportAdvisorSection: {
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+  },
+  supportAdvisorEyebrow: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  supportAdvisorTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  supportAdvisorDetail: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: 19,
+  },
+  supportAlternativeCard: {
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+  },
+  supportAlternativeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  supportAlternativeEyebrow: {
+    flex: 1,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  supportAlternativeTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  supportAlternativeDetail: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: 19,
   },
   metricsGrid: {
     flexDirection: 'row',

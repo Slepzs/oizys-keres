@@ -207,6 +207,39 @@ export function CompletionSummaryCard() {
             </View>
           ) : null}
         </View>
+        <View style={styles.advisorSection}>
+          <Text style={styles.advisorEyebrow}>Why this branch</Text>
+          <Text style={styles.advisorTitle}>{completion.nonCombatAdvisor.rationale.label}</Text>
+          <Text style={styles.advisorDetail}>{completion.nonCombatAdvisor.rationale.detail}</Text>
+          {completion.nonCombatAdvisor.alternative ? (
+            <View style={styles.advisorAlternativeCard}>
+              <View style={styles.advisorAlternativeHeader}>
+                <Text style={styles.advisorAlternativeEyebrow}>After this</Text>
+                <Text
+                  style={[
+                    styles.actionPill,
+                    {
+                      borderColor: getNonCombatBlockerAccent(
+                        completion.nonCombatAdvisor.alternative.kind
+                      ),
+                      color: getNonCombatBlockerAccent(
+                        completion.nonCombatAdvisor.alternative.kind
+                      ),
+                    },
+                  ]}
+                >
+                  {completion.nonCombatAdvisor.alternative.label}
+                </Text>
+              </View>
+              <Text style={styles.advisorAlternativeTitle}>
+                {completion.nonCombatAdvisor.alternative.title}
+              </Text>
+              <Text style={styles.advisorAlternativeDetail}>
+                {completion.nonCombatAdvisor.alternative.detail}
+              </Text>
+            </View>
+          ) : null}
+        </View>
         <Button
           title={nonCombatAction.ctaLabel}
           onPress={handleNonCombatPress}
@@ -354,6 +387,56 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   supportBlockerDetail: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: 17,
+  },
+  advisorSection: {
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+  },
+  advisorEyebrow: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  advisorTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  advisorDetail: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: 17,
+  },
+  advisorAlternativeCard: {
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+  },
+  advisorAlternativeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  advisorAlternativeEyebrow: {
+    flex: 1,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  advisorAlternativeTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  advisorAlternativeDetail: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
     lineHeight: 17,
