@@ -103,6 +103,7 @@ test('completion progress marks the next final contract as available after the p
   });
   assert.deepEqual(summary.recommendation, {
     kind: 'start-contract',
+    focusArea: 'quests',
     title: 'Start Ruins Warden',
     detail: 'Return to the Haunted Ruins and reopen the banshee hunt.',
     actionLabel: 'Next final contract',
@@ -135,6 +136,7 @@ test('completion progress recommends the active final-contract hunt with concret
 
   assert.deepEqual(summary.recommendation, {
     kind: 'hunt-contract',
+    focusArea: 'combat',
     title: 'Hunt Banshee',
     detail: 'The Silencer is active in Haunted Ruins.',
     actionLabel: '5 kills and 2 banshee wisps remaining',
@@ -161,11 +163,72 @@ test('completion progress recommends combat training when the active final hunt 
 
   assert.deepEqual(summary.recommendation, {
     kind: 'train-combat',
+    focusArea: 'combat',
     title: 'Reach combat level 65',
     detail: "Dragonkin is active, but Dragon Whelp in Dragon's Lair is still locked.",
     actionLabel: 'Unlock the next final hunt',
     questId: 'dragonkin',
     enemyId: 'dragon_whelp',
     zoneId: 'dragon_lair',
+  });
+});
+
+test('completion progress exposes combat ascension focus after the final contracts are cleared', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+  const combatXp = totalXpForCombatSkillLevel(90);
+
+  state.player.level = 100;
+  state.quests.totalCompleted = 100;
+  state.quests.completed = [
+    'demon_contract',
+    'abyss_walker',
+    'silencer',
+    'ruins_warden',
+    'dragonkin',
+    'elder_nemesis',
+  ];
+  state.combat.totalKills = 10_000;
+  state.combat.combatSkills.attack.xp = combatXp;
+  state.combat.combatSkills.strength.xp = combatXp;
+  state.combat.combatSkills.defense.xp = combatXp;
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.recommendation, {
+    kind: 'finish-ascension',
+    focusArea: 'combat',
+    title: 'Push combat level',
+    detail: '90/99 recorded toward the final ledger.',
+    actionLabel: '9 remaining',
+  });
+});
+
+test('completion progress marks the ledger complete once every tracked target is finished', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+  const combatXp = totalXpForCombatSkillLevel(99);
+
+  state.player.level = 100;
+  state.quests.totalCompleted = 100;
+  state.quests.completed = [
+    'demon_contract',
+    'abyss_walker',
+    'silencer',
+    'ruins_warden',
+    'dragonkin',
+    'elder_nemesis',
+  ];
+  state.combat.totalKills = 10_000;
+  state.combat.combatSkills.attack.xp = combatXp;
+  state.combat.combatSkills.strength.xp = combatXp;
+  state.combat.combatSkills.defense.xp = combatXp;
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.recommendation, {
+    kind: 'complete-ledger',
+    focusArea: 'completion',
+    title: 'Last Ledger Closed',
+    detail: 'Every tracked completion target is done.',
+    actionLabel: 'System complete',
   });
 });

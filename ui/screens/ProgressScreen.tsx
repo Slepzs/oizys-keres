@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { useCompletionRecommendationAction } from '@/hooks';
+import { Button } from '@/ui/components/common/Button';
 import { ProgressBar } from '@/ui/components/common/ProgressBar';
 import { Card } from '@/ui/components/common/Cards/Card';
 import { SafeContainer } from '@/ui/components/layout/SafeContainer';
@@ -126,6 +128,9 @@ export function ProgressScreen({ initialTab = 'quests' }: ProgressScreenProps) {
 
 function CompletionTabContent() {
   const completion = useCompletionProgress();
+  const { action, handlePress } = useCompletionRecommendationAction(
+    completion.recommendation
+  );
   const recommendationMeta = useMemo(() => {
     return getRecommendationMeta(completion.recommendation.kind);
   }, [completion.recommendation.kind]);
@@ -192,6 +197,13 @@ function CompletionTabContent() {
           </Text>
         </View>
         <Text style={styles.recommendationDetail}>{completion.recommendation.detail}</Text>
+        <Button
+          title={action.ctaLabel}
+          onPress={handlePress}
+          variant="secondary"
+          size="sm"
+          style={styles.recommendationButton}
+        />
       </Card>
 
       <View style={styles.metricsGrid}>
@@ -400,6 +412,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     lineHeight: 19,
+  },
+  recommendationButton: {
+    alignSelf: 'flex-start',
   },
   metricsGrid: {
     flexDirection: 'row',

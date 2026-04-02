@@ -2,10 +2,12 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { useCompletionRecommendationAction } from '@/hooks';
 import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { useCompletionProgress } from '@/store';
 
 import { Card } from '../common/Cards/Card';
+import { Button } from '../common/Button';
 
 function getRecommendationMeta(kind: string) {
   switch (kind) {
@@ -45,16 +47,15 @@ function getRecommendationMeta(kind: string) {
 export function CompletionSummaryCard() {
   const router = useRouter();
   const completion = useCompletionProgress();
+  const { action, handlePress } = useCompletionRecommendationAction(
+    completion.recommendation
+  );
   const meta = useMemo(() => {
     return getRecommendationMeta(completion.recommendation.kind);
   }, [completion.recommendation.kind]);
 
   return (
-    <Card
-      style={styles.card}
-      variant="elevated"
-      onPress={() => router.push('/progress')}
-    >
+    <Card style={styles.card} variant="elevated">
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Text style={styles.icon}>{meta.icon}</Text>
@@ -63,19 +64,35 @@ export function CompletionSummaryCard() {
             <Text style={styles.title}>Late-Game Focus</Text>
           </View>
         </View>
-        <Text style={styles.chevron}>{'\u2192'}</Text>
       </View>
 
       <Text style={styles.primaryText}>{completion.recommendation.title}</Text>
       <Text style={styles.detailText}>{completion.recommendation.detail}</Text>
 
       <View style={styles.footer}>
-        <Text style={[styles.actionPill, { borderColor: meta.accent, color: meta.accent }]}>
-          {completion.recommendation.actionLabel}
-        </Text>
-        <Text style={styles.progressMeta}>
-          {completion.finalContracts.completedCount}/{completion.finalContracts.total} final contracts
-        </Text>
+        <View style={styles.footerRow}>
+          <Text style={[styles.actionPill, { borderColor: meta.accent, color: meta.accent }]}>
+            {completion.recommendation.actionLabel}
+          </Text>
+          <Text style={styles.progressMeta}>
+            {completion.finalContracts.completedCount}/{completion.finalContracts.total} final contracts
+          </Text>
+        </View>
+        <View style={styles.buttonRow}>
+          <Button
+            title={action.ctaLabel}
+            onPress={handlePress}
+            size="sm"
+            style={styles.primaryButton}
+          />
+          <Button
+            title="View ledger"
+            onPress={() => router.push('/progress' as never)}
+            variant="secondary"
+            size="sm"
+            style={styles.secondaryButton}
+          />
+        </View>
       </View>
     </Card>
   );
@@ -113,10 +130,6 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.text,
   },
-  chevron: {
-    fontSize: fontSize.lg,
-    color: colors.textMuted,
-  },
   primaryText: {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
@@ -130,6 +143,12 @@ const styles = StyleSheet.create({
   footer: {
     gap: spacing.sm,
   },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   actionPill: {
     alignSelf: 'flex-start',
     borderWidth: 1,
@@ -141,7 +160,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   progressMeta: {
+    flexShrink: 1,
     fontSize: fontSize.xs,
     color: colors.textMuted,
+    textAlign: 'right',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  primaryButton: {
+    flex: 1,
+  },
+  secondaryButton: {
+    flex: 1,
   },
 });

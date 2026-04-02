@@ -6,7 +6,7 @@ export interface CompletionHuntDefinition {
 
 export const COMPLETION_TARGETS = {
   playerLevel: 100,
-  combatLevel: 120,
+  combatLevel: 99,
   questsCompleted: 100,
   totalKills: 10_000,
 } as const;

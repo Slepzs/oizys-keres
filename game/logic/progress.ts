@@ -52,13 +52,22 @@ interface CompletionHuntEntry {
   };
 }
 
-interface CompletionRecommendation {
+export type CompletionRecommendationFocusArea =
+  | 'player'
+  | 'combat'
+  | 'quests'
+  | 'kills'
+  | 'zones'
+  | 'completion';
+
+export interface CompletionRecommendation {
   kind:
     | 'start-contract'
     | 'hunt-contract'
     | 'train-combat'
     | 'finish-ascension'
     | 'complete-ledger';
+  focusArea: CompletionRecommendationFocusArea;
   title: string;
   detail: string;
   actionLabel: string;
@@ -287,29 +296,33 @@ function formatRemainingObjectives(labels: string[]) {
 }
 
 function getAscensionRecommendation(progress: CompletionProgress): CompletionRecommendation {
-  const candidates = [
+  const candidates: Array<{
+    key: Exclude<CompletionRecommendationFocusArea, 'completion'>;
+    label: string;
+    metric: ProgressMetric;
+  }> = [
     {
-      key: 'player',
+      key: 'player' as const,
       label: 'player level',
       metric: progress.ascension.player,
     },
     {
-      key: 'combat',
+      key: 'combat' as const,
       label: 'combat level',
       metric: progress.ascension.combat,
     },
     {
-      key: 'quests',
+      key: 'quests' as const,
       label: 'quest completions',
       metric: progress.realm.quests,
     },
     {
-      key: 'kills',
+      key: 'kills' as const,
       label: 'total kills',
       metric: progress.realm.kills,
     },
     {
-      key: 'zones',
+      key: 'zones' as const,
       label: 'zones unlocked',
       metric: progress.realm.zones,
     },
@@ -318,6 +331,7 @@ function getAscensionRecommendation(progress: CompletionProgress): CompletionRec
   if (candidates.length === 0) {
     return {
       kind: 'complete-ledger',
+      focusArea: 'completion',
       title: 'Last Ledger Closed',
       detail: 'Every tracked completion target is done.',
       actionLabel: 'System complete',
@@ -329,6 +343,7 @@ function getAscensionRecommendation(progress: CompletionProgress): CompletionRec
 
   return {
     kind: 'finish-ascension',
+    focusArea: nextMetric.key,
     title: `Push ${nextMetric.label}`,
     detail: `${nextMetric.metric.current}/${nextMetric.metric.target} recorded toward the final ledger.`,
     actionLabel: `${remaining.toLocaleString()} remaining`,
@@ -361,6 +376,7 @@ function buildCompletionRecommendation(
   if (nextContract.status === 'available') {
     return {
       kind: 'start-contract',
+      focusArea: 'quests',
       title: `Start ${nextContract.name}`,
       detail: questHuntRoute
         ? `Return to the ${questHuntRoute.zoneName} and reopen the ${questHuntRoute.enemyName.toLowerCase()} hunt.`
@@ -376,6 +392,7 @@ function buildCompletionRecommendation(
     if (calculateCombatLevel(state.combat.combatSkills) < questHuntRoute.combatLevelRequired) {
       return {
         kind: 'train-combat',
+        focusArea: 'combat',
         title: `Reach combat level ${questHuntRoute.combatLevelRequired}`,
         detail: `${nextContract.name} is active, but ${questHuntRoute.enemyName} in ${questHuntRoute.zoneName} is still locked.`,
         actionLabel: 'Unlock the next final hunt',
@@ -393,6 +410,7 @@ function buildCompletionRecommendation(
 
     return {
       kind: 'hunt-contract',
+      focusArea: 'combat',
       title: `Hunt ${questHuntRoute.enemyName}`,
       detail: `${nextContract.name} is active in ${questHuntRoute.zoneName}.`,
       actionLabel: formatRemainingObjectives(remainingObjectives),
@@ -404,6 +422,7 @@ function buildCompletionRecommendation(
 
   return {
     kind: 'start-contract',
+    focusArea: 'quests',
     title: `Start ${nextContract.name}`,
     detail: nextContract.description,
     actionLabel: 'Next final contract',
@@ -500,6 +519,7 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
     finalHunts,
     recommendation: {
       kind: 'finish-ascension',
+      focusArea: 'player',
       title: 'Push player level',
       detail: '0/0 recorded toward the final ledger.',
       actionLabel: '0 remaining',
