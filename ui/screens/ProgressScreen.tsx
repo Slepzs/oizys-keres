@@ -20,6 +20,21 @@ interface ProgressScreenProps {
   initialQuestId?: string;
 }
 
+interface AdvisorTradeoffViewModel {
+  label: string;
+  detail: string;
+  primary: {
+    label: string;
+    value: string;
+    progress?: number;
+  };
+  alternative: {
+    label: string;
+    value: string;
+    progress?: number;
+  };
+}
+
 const PROGRESS_TABS: Array<{ id: ProgressTabId; label: string }> = [
   { id: 'quests', label: 'Quests' },
   { id: 'achievements', label: 'Achievements' },
@@ -146,6 +161,32 @@ function getFinalHuntGateAccent(kind: string) {
     default:
       return colors.warning;
   }
+}
+
+function AdvisorTradeoffPanel({ tradeoff }: { tradeoff: AdvisorTradeoffViewModel }) {
+  return (
+    <View style={styles.tradeoffCard}>
+      <Text style={styles.tradeoffEyebrow}>{tradeoff.label}</Text>
+      <Text style={styles.tradeoffDetail}>{tradeoff.detail}</Text>
+      <View style={styles.tradeoffMetricsRow}>
+        {[tradeoff.primary, tradeoff.alternative].map((metric) => (
+          <View key={metric.label} style={styles.tradeoffMetricCard}>
+            <Text style={styles.tradeoffMetricLabel}>{metric.label}</Text>
+            <Text style={styles.tradeoffMetricValue}>{metric.value}</Text>
+            {typeof metric.progress === 'number' ? (
+              <ProgressBar
+                progress={metric.progress}
+                color={colors.rarityRare}
+                backgroundColor={colors.surfaceLight}
+                height={4}
+                style={styles.tradeoffMetricBar}
+              />
+            ) : null}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
 }
 
 export function ProgressScreen({ initialTab = 'quests', initialQuestId }: ProgressScreenProps) {
@@ -290,6 +331,9 @@ function CompletionTabContent() {
           <Text style={styles.supportAdvisorDetail}>
             {completion.completionAdvisor.rationale.detail}
           </Text>
+          {completion.completionAdvisor.tradeoff ? (
+            <AdvisorTradeoffPanel tradeoff={completion.completionAdvisor.tradeoff} />
+          ) : null}
           {completion.completionAdvisor.alternative && completionAdvisorAlternativeMeta ? (
             <View style={styles.supportAlternativeCard}>
               <View style={styles.supportAlternativeHeader}>
@@ -428,6 +472,9 @@ function CompletionTabContent() {
           <Text style={styles.supportAdvisorDetail}>
             {completion.nonCombatAdvisor.rationale.detail}
           </Text>
+          {completion.nonCombatAdvisor.tradeoff ? (
+            <AdvisorTradeoffPanel tradeoff={completion.nonCombatAdvisor.tradeoff} />
+          ) : null}
           {completion.nonCombatAdvisor.alternative && nonCombatAdvisorAlternativeMeta ? (
             <View style={styles.supportAlternativeCard}>
               <View style={styles.supportAlternativeHeader}>
@@ -791,6 +838,46 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     lineHeight: 19,
+  },
+  tradeoffCard: {
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+  },
+  tradeoffEyebrow: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  tradeoffDetail: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: 17,
+  },
+  tradeoffMetricsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  tradeoffMetricCard: {
+    flex: 1,
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.surfaceLight,
+  },
+  tradeoffMetricLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  tradeoffMetricValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  tradeoffMetricBar: {
+    marginTop: spacing.xs,
   },
   supportAlternativeCard: {
     gap: spacing.xs,

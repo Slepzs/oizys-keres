@@ -10,6 +10,21 @@ import { Card } from '../common/Cards/Card';
 import { Button } from '../common/Button';
 import { ProgressBar } from '../common/ProgressBar';
 
+interface AdvisorTradeoffViewModel {
+  label: string;
+  detail: string;
+  primary: {
+    label: string;
+    value: string;
+    progress?: number;
+  };
+  alternative: {
+    label: string;
+    value: string;
+    progress?: number;
+  };
+}
+
 function getNonCombatCategoryLabel(category: string | null) {
   switch (category) {
     case 'skill':
@@ -92,6 +107,32 @@ function getRecommendationMeta(kind: string) {
   }
 }
 
+function AdvisorTradeoffPanel({ tradeoff }: { tradeoff: AdvisorTradeoffViewModel }) {
+  return (
+    <View style={styles.tradeoffCard}>
+      <Text style={styles.tradeoffEyebrow}>{tradeoff.label}</Text>
+      <Text style={styles.tradeoffDetail}>{tradeoff.detail}</Text>
+      <View style={styles.tradeoffMetricsRow}>
+        {[tradeoff.primary, tradeoff.alternative].map((metric) => (
+          <View key={metric.label} style={styles.tradeoffMetricCard}>
+            <Text style={styles.tradeoffMetricLabel}>{metric.label}</Text>
+            <Text style={styles.tradeoffMetricValue}>{metric.value}</Text>
+            {typeof metric.progress === 'number' ? (
+              <ProgressBar
+                progress={metric.progress}
+                color={colors.rarityRare}
+                backgroundColor={colors.surface}
+                height={4}
+                style={styles.tradeoffMetricBar}
+              />
+            ) : null}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export function CompletionSummaryCard() {
   const router = useRouter();
   const completion = useCompletionProgress();
@@ -139,6 +180,9 @@ export function CompletionSummaryCard() {
         <Text style={styles.advisorEyebrow}>Why this objective</Text>
         <Text style={styles.advisorTitle}>{completion.completionAdvisor.rationale.label}</Text>
         <Text style={styles.advisorDetail}>{completion.completionAdvisor.rationale.detail}</Text>
+        {completion.completionAdvisor.tradeoff ? (
+          <AdvisorTradeoffPanel tradeoff={completion.completionAdvisor.tradeoff} />
+        ) : null}
         {completion.completionAdvisor.alternative && completionAdvisorAlternativeMeta ? (
           <View style={styles.advisorAlternativeCard}>
             <View style={styles.advisorAlternativeHeader}>
@@ -262,6 +306,9 @@ export function CompletionSummaryCard() {
           <Text style={styles.advisorEyebrow}>Why this branch</Text>
           <Text style={styles.advisorTitle}>{completion.nonCombatAdvisor.rationale.label}</Text>
           <Text style={styles.advisorDetail}>{completion.nonCombatAdvisor.rationale.detail}</Text>
+          {completion.nonCombatAdvisor.tradeoff ? (
+            <AdvisorTradeoffPanel tradeoff={completion.nonCombatAdvisor.tradeoff} />
+          ) : null}
           {completion.nonCombatAdvisor.alternative && nonCombatAdvisorAlternativeMeta ? (
             <View style={styles.advisorAlternativeCard}>
               <View style={styles.advisorAlternativeHeader}>
@@ -466,6 +513,46 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.textSecondary,
     lineHeight: 17,
+  },
+  tradeoffCard: {
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+  },
+  tradeoffEyebrow: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  tradeoffDetail: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: 17,
+  },
+  tradeoffMetricsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  tradeoffMetricCard: {
+    flex: 1,
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.surfaceLight,
+  },
+  tradeoffMetricLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  tradeoffMetricValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  tradeoffMetricBar: {
+    marginTop: spacing.xs,
   },
   advisorAlternativeCard: {
     gap: spacing.xs,

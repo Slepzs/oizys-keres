@@ -142,6 +142,7 @@ interface NonCombatAdvisorSummary {
     label: string;
     detail: string;
   };
+  tradeoff: AdvisorTradeoffSummary | null;
   alternative: CompletionRecommendation | null;
 }
 
@@ -150,7 +151,21 @@ interface CompletionAdvisorSummary {
     label: string;
     detail: string;
   };
+  tradeoff: AdvisorTradeoffSummary | null;
   alternative: CompletionRecommendation | null;
+}
+
+interface AdvisorTradeoffMetric {
+  label: string;
+  value: string;
+  progress?: number;
+}
+
+interface AdvisorTradeoffSummary {
+  label: string;
+  detail: string;
+  primary: AdvisorTradeoffMetric;
+  alternative: AdvisorTradeoffMetric;
 }
 
 interface NextNonCombatQuest {
@@ -581,6 +596,92 @@ function formatCandidatePercent(progressValue: number) {
   return `${Math.round(Math.max(0, Math.min(1, progressValue)) * 100)}%`;
 }
 
+function buildAdvisorTradeoffSummary(
+  label: string,
+  detail: string,
+  primary: AdvisorTradeoffMetric,
+  alternative: AdvisorTradeoffMetric
+): AdvisorTradeoffSummary {
+  return {
+    label,
+    detail,
+    primary,
+    alternative,
+  };
+}
+
+function buildSequenceTradeoff(
+  detail: string,
+  primaryLabel: string,
+  primaryStep: number,
+  alternativeLabel: string,
+  alternativeStep: number,
+  totalSteps: number
+) {
+  return buildAdvisorTradeoffSummary(
+    'Ledger order',
+    detail,
+    {
+      label: primaryLabel,
+      value: `Step ${primaryStep} / ${totalSteps}`,
+    },
+    {
+      label: alternativeLabel,
+      value: `Step ${alternativeStep} / ${totalSteps}`,
+    }
+  );
+}
+
+function buildLeverageTradeoff(
+  detail: string,
+  primaryLabel: string,
+  primaryLeverage: number,
+  alternativeLabel: string,
+  alternativeLeverage: number
+) {
+  return buildAdvisorTradeoffSummary(
+    'Branch leverage',
+    detail,
+    {
+      label: primaryLabel,
+      value: `${Math.max(0, primaryLeverage - 1)} unlocks`,
+    },
+    {
+      label: alternativeLabel,
+      value: `${Math.max(0, alternativeLeverage - 1)} unlocks`,
+    }
+  );
+}
+
+function buildProgressTradeoff(
+  label: string,
+  detail: string,
+  primaryLabel: string,
+  primaryProgress: number,
+  primarySuffix: string,
+  alternativeLabel: string,
+  alternativeProgress: number,
+  alternativeSuffix: string
+) {
+  const clampedPrimary = Math.max(0, Math.min(1, primaryProgress));
+  const clampedAlternative = Math.max(0, Math.min(1, alternativeProgress));
+
+  return buildAdvisorTradeoffSummary(
+    label,
+    detail,
+    {
+      label: primaryLabel,
+      value: `${formatCandidatePercent(clampedPrimary)} ${primarySuffix}`,
+      progress: clampedPrimary,
+    },
+    {
+      label: alternativeLabel,
+      value: `${formatCandidatePercent(clampedAlternative)} ${alternativeSuffix}`,
+      progress: clampedAlternative,
+    }
+  );
+}
+
 function capitalizeLabel(value: string) {
   return value.length > 0 ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
 }
@@ -791,6 +892,7 @@ function buildNonCombatAdvisor(
         label: 'Support systems complete',
         detail: 'Every tracked non-combat quest chain is complete.',
       },
+      tradeoff: null,
       alternative: null,
     };
   }
@@ -809,6 +911,18 @@ function buildNonCombatAdvisor(
           ? `${primaryName} is already underway, so it stays ahead of ${secondaryName}.`
           : `${primaryName} is already underway, so it keeps the support planner focused.`,
       },
+      tradeoff: secondary
+        ? buildProgressTradeoff(
+            'Momentum',
+            `${primaryName} already has tracked progress while ${secondaryName} would restart focus.`,
+            primaryName,
+            primary.progressScore,
+            'complete',
+            secondaryName ?? secondary.questId,
+            secondary.progressScore,
+            secondary.status === 'active' ? 'complete' : 'unlocked'
+          )
+        : null,
       alternative,
     };
   }
@@ -820,6 +934,13 @@ function buildNonCombatAdvisor(
           label: 'Highest leverage ready branch',
           detail: `${primaryName} opens ${Math.max(0, primary.leverage - 1)} downstream support quests, ahead of ${secondaryName} with ${Math.max(0, secondary.leverage - 1)}.`,
         },
+        tradeoff: buildLeverageTradeoff(
+          `${primaryName} opens the deeper support chain if you want more downstream momentum.`,
+          primaryName,
+          primary.leverage,
+          secondaryName ?? secondary.questId,
+          secondary.leverage
+        ),
         alternative,
       };
     }
@@ -831,6 +952,7 @@ function buildNonCombatAdvisor(
           ? `${primaryName} can start immediately and outranks ${secondaryName}.`
           : `${primaryName} can be started immediately.`,
       },
+      tradeoff: null,
       alternative,
     };
   }
@@ -844,6 +966,16 @@ function buildNonCombatAdvisor(
         label: 'Closest unlock',
         detail: `${primaryName} is ${formatCandidatePercent(primary.progressScore)} unlocked, ahead of ${secondaryName} at ${formatCandidatePercent(secondary.progressScore)}.`,
       },
+      tradeoff: buildProgressTradeoff(
+        'Unlock distance',
+        `${primaryName} is much closer to ready than ${secondaryName}.`,
+        primaryName,
+        primary.progressScore,
+        'unlocked',
+        secondaryName ?? secondary.questId,
+        secondary.progressScore,
+        'unlocked'
+      ),
       alternative,
     };
   }
@@ -854,6 +986,13 @@ function buildNonCombatAdvisor(
         label: 'Highest leverage lock',
         detail: `${primaryName} opens ${Math.max(0, primary.leverage - 1)} downstream support quests, ahead of ${secondaryName} with ${Math.max(0, secondary.leverage - 1)}.`,
       },
+      tradeoff: buildLeverageTradeoff(
+        `${primaryName} opens the deeper support chain once it is unlocked.`,
+        primaryName,
+        primary.leverage,
+        secondaryName ?? secondary.questId,
+        secondary.leverage
+      ),
       alternative,
     };
   }
@@ -863,6 +1002,7 @@ function buildNonCombatAdvisor(
       label: 'Best blocked branch',
       detail: `${primaryName} is the strongest remaining support unlock.`,
     },
+    tradeoff: null,
     alternative,
   };
 }
@@ -1224,6 +1364,18 @@ function buildCompletionAdvisor(
             ? `${nextContract.name} is active, but ${linkedHunt.enemyName} stays locked until combat level ${linkedHunt.combatLevelRequired} before ${followUpContract.name}.`
             : `${nextContract.name} is active, but ${linkedHunt.enemyName} stays locked until combat level ${linkedHunt.combatLevelRequired}.`,
         },
+        tradeoff: followUpContract
+          ? buildProgressTradeoff(
+              'Combat gate',
+              `${linkedHunt.enemyName} needs more combat before the sequence can advance.`,
+              nextContract.name,
+              combatLevel / linkedHunt.combatLevelRequired,
+              `of combat gate`,
+              followUpContract.name,
+              (nextContractIndex + 1) / finalContracts.length,
+              'through ledger'
+            )
+          : null,
         alternative: followUpContract
           ? buildFinalContractPreview(followUpContract, finalHunts)
           : null,
@@ -1238,6 +1390,16 @@ function buildCompletionAdvisor(
             ? `${nextContract.name} is already underway, so it stays ahead of ${followUpContract.name}.`
             : `${nextContract.name} is already underway, so it keeps the ledger focused.`,
         },
+        tradeoff: followUpContract
+          ? buildSequenceTradeoff(
+              `${nextContract.name} is the earlier final contract in the fixed endgame sequence.`,
+              nextContract.name,
+              nextContractIndex + 1,
+              followUpContract.name,
+              nextContractIndex + 2,
+              finalContracts.length
+            )
+          : null,
         alternative: followUpContract
           ? buildFinalContractPreview(followUpContract, finalHunts)
           : null,
@@ -1251,6 +1413,16 @@ function buildCompletionAdvisor(
           ? `${nextContract.name} is the next unfinished final contract before ${followUpContract.name}.`
           : `${nextContract.name} is the last unfinished final contract.`,
       },
+      tradeoff: followUpContract
+        ? buildSequenceTradeoff(
+            `${nextContract.name} comes earlier in the fixed final contract sequence.`,
+            nextContract.name,
+            nextContractIndex + 1,
+            followUpContract.name,
+            nextContractIndex + 2,
+            finalContracts.length
+          )
+        : null,
       alternative: followUpContract
         ? buildFinalContractPreview(followUpContract, finalHunts)
         : null,
@@ -1267,6 +1439,7 @@ function buildCompletionAdvisor(
         label: 'Final ledger closed',
         detail: 'Every tracked completion target is done.',
       },
+      tradeoff: null,
       alternative: null,
     };
   }
@@ -1288,6 +1461,18 @@ function buildCompletionAdvisor(
         ? `${capitalizeLabel(primary.label)} is ${formatCandidatePercent(primary.metric.progress)} of the final ledger, behind ${secondary.label} at ${formatCandidatePercent(secondary.metric.progress)}.`
         : `${capitalizeLabel(primary.label)} is the last remaining ledger target.`,
     },
+    tradeoff: secondary
+      ? buildProgressTradeoff(
+          'Ledger progress',
+          `${capitalizeLabel(primary.label)} has less completion progress than ${secondary.label}.`,
+          capitalizeLabel(primary.label),
+          primary.metric.progress,
+          'complete',
+          capitalizeLabel(secondary.label),
+          secondary.metric.progress,
+          'complete'
+        )
+      : null,
     alternative,
   };
 }
@@ -1495,6 +1680,7 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
         label: 'Final ledger in motion',
         detail: 'The completion planner is deriving the strongest remaining target.',
       },
+      tradeoff: null,
       alternative: null,
     },
     nonCombat: {
@@ -1513,6 +1699,7 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
         label: 'Support systems complete',
         detail: 'Every tracked non-combat quest chain is complete.',
       },
+      tradeoff: null,
       alternative: null,
     },
     recommendation: {

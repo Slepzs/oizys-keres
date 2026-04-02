@@ -164,6 +164,18 @@ test('completion progress recommends the active final-contract hunt with concret
       label: 'Active contract first',
       detail: 'The Silencer is already underway, so it stays ahead of Ruins Warden.',
     },
+    tradeoff: {
+      label: 'Ledger order',
+      detail: 'The Silencer is the earlier final contract in the fixed endgame sequence.',
+      primary: {
+        label: 'The Silencer',
+        value: 'Step 3 / 6',
+      },
+      alternative: {
+        label: 'Ruins Warden',
+        value: 'Step 4 / 6',
+      },
+    },
     alternative: {
       kind: 'start-contract',
       focusArea: 'quests',
@@ -428,6 +440,18 @@ test('completion progress explains ready support guidance with branch leverage a
       detail:
         'First Cast opens 9 downstream support quests, ahead of First Brew with 4.',
     },
+    tradeoff: {
+      label: 'Branch leverage',
+      detail: 'First Cast opens the deeper support chain if you want more downstream momentum.',
+      primary: {
+        label: 'First Cast',
+        value: '9 unlocks',
+      },
+      alternative: {
+        label: 'First Brew',
+        value: '4 unlocks',
+      },
+    },
     alternative: {
       kind: 'start-quest',
       focusArea: 'quests',
@@ -500,6 +524,20 @@ test('completion progress chooses the closest locked support unlock instead of t
     rationale: {
       label: 'Closest unlock',
       detail: 'Gem Finder is 80% unlocked, ahead of Seed Collector at 33%.',
+    },
+    tradeoff: {
+      label: 'Unlock distance',
+      detail: 'Gem Finder is much closer to ready than Seed Collector.',
+      primary: {
+        label: 'Gem Finder',
+        value: '80% unlocked',
+        progress: 0.8,
+      },
+      alternative: {
+        label: 'Seed Collector',
+        value: '33% unlocked',
+        progress: 1 / 3,
+      },
     },
     alternative: {
       kind: 'train-skill',
@@ -642,6 +680,20 @@ test('completion progress exposes combat ascension focus after the final contrac
     rationale: {
       label: 'Lowest completion metric',
       detail: 'Combat level is 91% of the final ledger, behind total kills at 95%.',
+    },
+    tradeoff: {
+      label: 'Ledger progress',
+      detail: 'Combat level has less completion progress than total kills.',
+      primary: {
+        label: 'Combat level',
+        value: '91% complete',
+        progress: 90 / 99,
+      },
+      alternative: {
+        label: 'Total kills',
+        value: '95% complete',
+        progress: 0.95,
+      },
     },
     alternative: {
       kind: 'finish-ascension',
