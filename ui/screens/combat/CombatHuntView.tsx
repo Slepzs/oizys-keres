@@ -7,6 +7,7 @@ import { ZONE_IDS } from '@/game/data';
 import { CombatZoneCard } from '@/ui/components/game/CombatZoneCard';
 import { Card } from '@/ui/components/common';
 import { formatNumber, formatPercent, formatTime } from '@/utils/format';
+import { useAllZoneProjections } from '@/store';
 
 interface SelectionSummary {
   id: string;
@@ -67,6 +68,7 @@ export function CombatHuntView({
   onStartCombat,
 }: CombatHuntViewProps) {
   const isInCombat = activeCombatZoneId !== null;
+  const { zoneProjections, enemyProjections } = useAllZoneProjections();
 
   return (
     <View style={styles.content}>
@@ -279,6 +281,8 @@ export function CombatHuntView({
             isSelected={selectedZoneId === zoneId}
             isInCombat={activeCombatZoneId === zoneId}
             selectedEnemyId={selectedEnemyByZone?.[zoneId] ?? null}
+            zoneProjection={zoneProjections[zoneId] ?? null}
+            enemyProjections={enemyProjections}
             onSelect={() => onSelectZone(zoneId)}
             onSelectEnemy={(enemyId) => onSelectEnemyForZone(zoneId, enemyId)}
             onStartCombat={onStartCombat}

@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
 import { ZONE_DEFINITIONS, ENEMY_DEFINITIONS } from '@/game/data';
+import type { CombatRouteProjection } from '@/game/logic';
+import { formatNumber } from '@/utils/format';
 
 interface CombatZoneCardProps {
   zoneId: string;
@@ -9,10 +11,26 @@ interface CombatZoneCardProps {
   isSelected: boolean;
   isInCombat: boolean;
   selectedEnemyId: string | null;
+  zoneProjection?: CombatRouteProjection | null;
+  enemyProjections?: Record<string, CombatRouteProjection>;
   onSelect: () => void;
   onSelectEnemy: (enemyId: string) => void;
   onStartCombat: () => void;
 }
+
+const RISK_COLORS: Record<string, string> = {
+  safe: 'rgba(74, 222, 128, 0.18)',
+  steady: 'rgba(74, 158, 255, 0.18)',
+  risky: 'rgba(251, 191, 36, 0.18)',
+  lethal: 'rgba(248, 113, 113, 0.18)',
+};
+
+const RISK_TEXT_COLORS: Record<string, string> = {
+  safe: colors.success,
+  steady: colors.primary,
+  risky: colors.warning,
+  lethal: colors.error,
+};
 
 export function CombatZoneCard({
   zoneId,
@@ -20,6 +38,8 @@ export function CombatZoneCard({
   isSelected,
   isInCombat,
   selectedEnemyId,
+  zoneProjection,
+  enemyProjections,
   onSelect,
   onSelectEnemy,
   onStartCombat,
@@ -77,6 +97,40 @@ export function CombatZoneCard({
         </View>
       </View>
 
+      {!isLocked && zoneProjection ? (
+        <View style={styles.projectionStrip}>
+          <View style={styles.projectionStat}>
+            <Text style={styles.projectionStatLabel}>XP/min</Text>
+            <Text style={styles.projectionStatValue}>
+              {formatNumber(zoneProjection.xpPerMinute)}
+            </Text>
+          </View>
+          <View style={styles.projectionStat}>
+            <Text style={styles.projectionStatLabel}>🪙/min</Text>
+            <Text style={styles.projectionStatValue}>
+              {zoneProjection.valuePerMinute < 100
+                ? zoneProjection.valuePerMinute.toFixed(1)
+                : formatNumber(zoneProjection.valuePerMinute)}
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.riskBadge,
+              { backgroundColor: RISK_COLORS[zoneProjection.risk] ?? RISK_COLORS.lethal },
+            ]}
+          >
+            <Text
+              style={[
+                styles.riskBadgeText,
+                { color: RISK_TEXT_COLORS[zoneProjection.risk] ?? colors.error },
+              ]}
+            >
+              {zoneProjection.risk.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
       {isSelected && (
         <View style={styles.enemyPicker}>
           {enemies.map((enemy) => {
@@ -99,6 +153,20 @@ export function CombatZoneCard({
                 <Text style={styles.enemyOptionReq}>
                   Lv {enemy.combatLevelRequired}
                 </Text>
+                {!enemyLocked && enemyProjections?.[enemy.id] ? (
+                  <View style={styles.enemyStats}>
+                    <Text style={styles.enemyStat}>
+                      {formatNumber(enemyProjections[enemy.id].xpPerMinute)} xp/m
+                    </Text>
+                    <Text style={styles.enemyStat}>
+                      🪙{' '}
+                      {enemyProjections[enemy.id].valuePerMinute < 100
+                        ? enemyProjections[enemy.id].valuePerMinute.toFixed(1)
+                        : formatNumber(enemyProjections[enemy.id].valuePerMinute)}
+                      /m
+                    </Text>
+                  </View>
+                ) : null}
               </Pressable>
             );
           })}
@@ -192,6 +260,50 @@ const styles = StyleSheet.create({
   },
   enemyIcon: {
     fontSize: 20,
+  },
+  projectionStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: borderRadius.md,
+  },
+  projectionStat: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 3,
+  },
+  projectionStatLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  projectionStatValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  riskBadge: {
+    marginLeft: 'auto',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  riskBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+  },
+  enemyStats: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    flexWrap: 'wrap',
+    marginTop: 2,
+  },
+  enemyStat: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
   enemyPicker: {
     flexDirection: 'row',

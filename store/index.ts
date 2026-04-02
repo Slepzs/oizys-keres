@@ -38,4 +38,5 @@ export {
   useBagPotions,
   useHerbloreRecipes,
   useNotificationActions,
+  useAllZoneProjections,
 } from './selectors';

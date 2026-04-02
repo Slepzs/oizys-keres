@@ -9,6 +9,7 @@ import {
   ENEMY_DEFINITIONS,
   PET_DEFINITIONS,
   WOODCUTTING_TREES,
+  ZONE_DEFINITIONS,
 } from '@/game/data';
 import {
   getCombatSkillLevel,
@@ -577,4 +578,50 @@ export function useHerbloreRecipes() {
       activeHerbloreRecipeId: active.id,
     };
   }, [level, activeHerbloreRecipeId]);
+}
+
+export function useAllZoneProjections() {
+  const { combat, summoning, summoningLevel, bag } = useGameStore(
+    useShallow((state) => ({
+      combat: state.combat,
+      summoning: state.summoning,
+      summoningLevel: state.skills.summoning.level,
+      bag: state.bag,
+    }))
+  );
+
+  const combatLevel = useMemo(() => calculateCombatLevel(combat.combatSkills), [combat]);
+
+  return useMemo(() => {
+    const planningState = { bag, combat, summoning, summoningLevel };
+    const zoneProjections: Record<string, ReturnType<typeof estimateCombatRoute>> = {};
+    const enemyProjections: Record<string, ReturnType<typeof estimateCombatRoute>> = {};
+
+    for (const [zoneId, zone] of Object.entries(ZONE_DEFINITIONS)) {
+      if (combatLevel < zone.combatLevelRequired) continue;
+
+      // Compute projection for every unlocked enemy in this zone
+      for (const enemyId of zone.enemies) {
+        const enemy = ENEMY_DEFINITIONS[enemyId];
+        if (!enemy || combatLevel < enemy.combatLevelRequired) continue;
+        if (!enemyProjections[enemyId]) {
+          enemyProjections[enemyId] = estimateCombatRoute(planningState, enemyId);
+        }
+      }
+
+      // Zone-level summary: best unlocked enemy (highest level req the player meets)
+      const bestEnemyId = zone.enemies
+        .filter((id) => {
+          const enemy = ENEMY_DEFINITIONS[id];
+          return enemy && combatLevel >= enemy.combatLevelRequired;
+        })
+        .at(-1);
+
+      if (bestEnemyId && enemyProjections[bestEnemyId]) {
+        zoneProjections[zoneId] = enemyProjections[bestEnemyId];
+      }
+    }
+
+    return { zoneProjections, enemyProjections };
+  }, [bag, combat, combatLevel, summoning, summoningLevel]);
 }
