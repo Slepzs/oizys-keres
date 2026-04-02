@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { SafeContainer } from '../components/layout/SafeContainer';
-import { Card } from '../components/common/Card';
+import { Card } from '../components/common/Cards/Card';
 import { ProgressBar } from '../components/common/ProgressBar';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { getAllStatDefinitions } from '@/game/systems';
@@ -102,9 +102,9 @@ export function StatsScreen() {
             <View style={styles.achievementsRow}>
               <Text style={styles.achievementsIcon}>🏆</Text>
               <View style={styles.achievementsInfo}>
-                <Text style={styles.achievementsTitle}>Achievements</Text>
+                <Text style={styles.achievementsTitle}>Progress</Text>
                 <Text style={styles.achievementsSubtitle}>
-                  {unlockedAchievements} / {totalAchievements} unlocked
+                  {unlockedAchievements} / {totalAchievements} achievements unlocked
                 </Text>
               </View>
               <Text style={styles.achievementsChevron}>›</Text>

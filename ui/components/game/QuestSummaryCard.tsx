@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
-import { Card } from '../common/Card';
+import { Card } from '../common/Cards/Card';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
 import { useGameStore } from '@/store';
 import { getQuestDefinition } from '@/game/data';
@@ -77,8 +77,8 @@ export function QuestSummaryCard() {
       <Card style={styles.card}>
         <View style={styles.header}>
           <View style={styles.titleRow}>
-            <Text style={styles.icon}>📜</Text>
-            <Text style={styles.title}>Quests</Text>
+            <Text style={styles.icon}>🎯</Text>
+            <Text style={styles.title}>Progress</Text>
           </View>
           {summary.hasClaimable && <View style={styles.badge} />}
         </View>

@@ -271,6 +271,7 @@ export function createInitialCombatState(): CombatState {
     autoDrink: false,
     potionBuffs: [],
     totalKills: 0,
+    enemyKillCounts: {},
     totalDeaths: 0,
   };
 }

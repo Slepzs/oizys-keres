@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, type ViewStyle } from 'react-native';
 import { SafeContainer } from '../components/layout/SafeContainer';
-import { Card } from '../components/common/Card';
+import { Card } from '../components/common/Cards/Card';
 import { ProgressBar } from '../components/common/ProgressBar';
 import { useGameStore } from '@/store';
 import { ACHIEVEMENT_DEFINITIONS } from '@/game/data';
@@ -82,6 +82,14 @@ function getProgressRatio(definition: AchievementDefinition, progress: number | 
 }
 
 export function AchievementsScreen() {
+  return (
+    <SafeContainer padTop={false}>
+      <AchievementsTabContent />
+    </SafeContainer>
+  );
+}
+
+export function AchievementsTabContent() {
   const achievements = useGameStore((state) => state.achievements);
   const [expandedCategories, setExpandedCategories] = useState<Set<AchievementCategory>>(
     new Set(['progression', 'skill', 'collection'])
@@ -137,56 +145,54 @@ export function AchievementsScreen() {
   };
 
   return (
-    <SafeContainer padTop={false}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Achievements</Text>
-          <Text style={styles.countLabel}>
-            {totalUnlocked} / {totalDefined}
-          </Text>
-        </View>
+    <ScrollView showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Achievements</Text>
+        <Text style={styles.countLabel}>
+          {totalUnlocked} / {totalDefined}
+        </Text>
+      </View>
 
-        <Card style={styles.progressCard}>
-          <ProgressBar
-            progress={totalDefined > 0 ? totalUnlocked / totalDefined : 0}
-            color={colors.warning}
-            height={8}
-          />
-          <Text style={styles.progressLabel}>
-            {totalDefined - totalUnlocked} remaining
-          </Text>
-        </Card>
+      <Card style={styles.progressCard}>
+        <ProgressBar
+          progress={totalDefined > 0 ? totalUnlocked / totalDefined : 0}
+          color={colors.warning}
+          height={8}
+        />
+        <Text style={styles.progressLabel}>
+          {totalDefined - totalUnlocked} remaining
+        </Text>
+      </Card>
 
-        {CATEGORY_ORDER.map((cat) => {
-          const entries = entriesByCategory[cat];
-          if (!entries || entries.length === 0) return null;
+      {CATEGORY_ORDER.map((cat) => {
+        const entries = entriesByCategory[cat];
+        if (!entries || entries.length === 0) return null;
 
-          const unlockedInCat = entries.filter((e) => e.unlocked).length;
-          const isExpanded = expandedCategories.has(cat);
+        const unlockedInCat = entries.filter((e) => e.unlocked).length;
+        const isExpanded = expandedCategories.has(cat);
 
-          return (
-            <View key={cat} style={styles.section}>
-              <Pressable
-                style={styles.categoryHeader}
-                onPress={() => toggleCategory(cat)}
-              >
-                <Text style={styles.categoryTitle}>{CATEGORY_LABELS[cat]}</Text>
-                <View style={styles.categoryMeta}>
-                  <Text style={styles.categoryCount}>
-                    {unlockedInCat}/{entries.length}
-                  </Text>
-                  <Text style={styles.chevron}>{isExpanded ? '▼' : '▶'}</Text>
-                </View>
-              </Pressable>
+        return (
+          <View key={cat} style={styles.section}>
+            <Pressable
+              style={styles.categoryHeader}
+              onPress={() => toggleCategory(cat)}
+            >
+              <Text style={styles.categoryTitle}>{CATEGORY_LABELS[cat]}</Text>
+              <View style={styles.categoryMeta}>
+                <Text style={styles.categoryCount}>
+                  {unlockedInCat}/{entries.length}
+                </Text>
+                <Text style={styles.chevron}>{isExpanded ? '▼' : '▶'}</Text>
+              </View>
+            </Pressable>
 
-              {isExpanded && entries.map((entry) => (
-                <AchievementCard key={entry.definition.id} entry={entry} />
-              ))}
-            </View>
-          );
-        })}
-      </ScrollView>
-    </SafeContainer>
+            {isExpanded && entries.map((entry) => (
+              <AchievementCard key={entry.definition.id} entry={entry} />
+            ))}
+          </View>
+        );
+      })}
+    </ScrollView>
   );
 }
 

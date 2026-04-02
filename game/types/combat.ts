@@ -72,6 +72,7 @@ export interface CombatState {
   autoDrink: boolean;
   potionBuffs: PotionBuff[];
   totalKills: number;
+  enemyKillCounts: Record<string, number>;
   totalDeaths: number;
 }
 

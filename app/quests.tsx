@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { QuestsScreen } from '@/ui/screens';
+import { ProgressScreen } from '@/ui/screens';
 import { colors } from '@/constants/theme';
 
 export default function QuestsRoute() {
@@ -7,13 +7,13 @@ export default function QuestsRoute() {
     <>
       <Stack.Screen
         options={{
-          title: 'Quests',
+          title: 'Progress',
           headerShown: true,
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
         }}
       />
-      <QuestsScreen />
+      <ProgressScreen initialTab="quests" />
     </>
   );
 }

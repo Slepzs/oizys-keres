@@ -108,6 +108,10 @@ function handleEnemyKilled(
       ...state.combat,
       combatSkills: xpResult.skills,
       totalKills: state.combat.totalKills + 1,
+      enemyKillCounts: {
+        ...state.combat.enemyKillCounts,
+        [enemyId]: (state.combat.enemyKillCounts[enemyId] ?? 0) + 1,
+      },
       playerMaxHp: newMaxHp,
       playerCurrentHp: Math.min(state.combat.playerCurrentHp, newMaxHp),
     },

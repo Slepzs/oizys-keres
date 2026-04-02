@@ -7,6 +7,7 @@ export * from "./multipliers";
 export * from "./notifications";
 export * from "./offline";
 export * from "./player";
+export * from "./progress";
 export * from "./quests";
 export * from "./resources";
 export * from "./rng";

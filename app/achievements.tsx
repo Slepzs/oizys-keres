@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { AchievementsScreen } from '@/ui/screens';
+import { ProgressScreen } from '@/ui/screens';
 import { colors } from '@/constants/theme';
 
 export default function AchievementsRoute() {
@@ -7,13 +7,13 @@ export default function AchievementsRoute() {
     <>
       <Stack.Screen
         options={{
-          title: 'Achievements',
+          title: 'Progress',
           headerShown: true,
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
         }}
       />
-      <AchievementsScreen />
+      <ProgressScreen initialTab="achievements" />
     </>
   );
 }

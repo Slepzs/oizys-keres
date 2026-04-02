@@ -37,6 +37,7 @@ import {
   getActiveHerbloreRecipe,
   getHerbloreRecipesForLevel,
   buildCombatFarmPlan,
+  getCompletionProgress,
   type CombatPlanningFocus,
 } from '@/game/logic';
 import { scaleEnemyMaxHp } from '@/game/logic/combat/balance';
@@ -199,6 +200,24 @@ export function useCombatSummary() {
       petBonuses,
     };
   }, [combat, summoning, summoningLevel]);
+}
+
+export function useCompletionProgress() {
+  const { player, combat, quests } = useGameStore(
+    useShallow((state) => ({
+      player: state.player,
+      combat: state.combat,
+      quests: state.quests,
+    }))
+  );
+
+  return useMemo(() => {
+    return getCompletionProgress({
+      player,
+      combat,
+      quests,
+    });
+  }, [combat, player, quests]);
 }
 
 export function useCombatRouteProjection(enemyId: string | null) {

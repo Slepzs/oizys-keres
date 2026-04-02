@@ -5,6 +5,7 @@ export { SkillDetailScreen } from './SkillDetailScreen';
 export { CraftingScreen } from './CraftingScreen';
 export { BagScreen } from './BagScreen';
 export { QuestsScreen } from './QuestsScreen';
+export { ProgressScreen } from './ProgressScreen';
 export { StatsScreen } from './StatsScreen';
 export { AchievementsScreen } from './AchievementsScreen';
 export { SettingsScreen } from './SettingsScreen';

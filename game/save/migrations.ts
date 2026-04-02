@@ -371,6 +371,20 @@ const migrations: Record<number, MigrationFn> = {
     },
   }),
 
+  // Migration from v21 to v22: Add per-enemy combat kill tracking
+  21: (save) => ({
+    ...save,
+    version: 22,
+    state: {
+      ...save.state,
+      combat: {
+        ...createInitialCombatState(),
+        ...save.state.combat,
+        enemyKillCounts: (save.state.combat as any)?.enemyKillCounts ?? {},
+      },
+    },
+  }),
+
   // Migration from v16 to v17: Add cooking skill
   16: (save) => ({
     ...save,

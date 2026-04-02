@@ -6,6 +6,14 @@ import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { useQuestsHook } from '@/hooks/useQuests';
 
 export function QuestsScreen() {
+  return (
+    <SafeContainer padTop={false}>
+      <QuestsTabContent />
+    </SafeContainer>
+  );
+}
+
+export function QuestsTabContent() {
   const [showCompleted, setShowCompleted] = useState(false);
   const {
     activeQuests,
@@ -19,106 +27,104 @@ export function QuestsScreen() {
   } = useQuestsHook();
 
   return (
-    <SafeContainer padTop={false}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Quests</Text>
-          <Text style={styles.completedCount}>{totalCompleted} completed</Text>
+    <ScrollView showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Quests</Text>
+        <Text style={styles.completedCount}>{totalCompleted} completed</Text>
+      </View>
+
+      {/* Ready to Claim Section */}
+      {readyToClaim.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Ready to Claim</Text>
+          {readyToClaim.map((quest) => (
+            <QuestCard
+              key={quest.state.questId}
+              definition={quest.definition}
+              state={quest.state}
+              progress={quest.progress}
+              isComplete={quest.isComplete}
+              variant="claim"
+              onClaim={() => claimRewards(quest.state.questId)}
+            />
+          ))}
         </View>
+      )}
 
-        {/* Ready to Claim Section */}
-        {readyToClaim.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Ready to Claim</Text>
-            {readyToClaim.map((quest) => (
-              <QuestCard
-                key={quest.state.questId}
-                definition={quest.definition}
-                state={quest.state}
-                progress={quest.progress}
-                isComplete={quest.isComplete}
-                variant="claim"
-                onClaim={() => claimRewards(quest.state.questId)}
-              />
-            ))}
-          </View>
-        )}
+      {/* Active Quests Section */}
+      {activeQuests.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Active Quests</Text>
+          {activeQuests.map((quest) => (
+            <QuestCard
+              key={quest.state.questId}
+              definition={quest.definition}
+              state={quest.state}
+              progress={quest.progress}
+              isComplete={quest.isComplete}
+              variant="active"
+              onAbandon={() => abandonQuest(quest.state.questId)}
+            />
+          ))}
+        </View>
+      )}
 
-        {/* Active Quests Section */}
-        {activeQuests.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Active Quests</Text>
-            {activeQuests.map((quest) => (
-              <QuestCard
-                key={quest.state.questId}
-                definition={quest.definition}
-                state={quest.state}
-                progress={quest.progress}
-                isComplete={quest.isComplete}
-                variant="active"
-                onAbandon={() => abandonQuest(quest.state.questId)}
-              />
-            ))}
-          </View>
-        )}
+      {/* Available Quests Section */}
+      {availableQuests.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Available Quests</Text>
+          {availableQuests.map((definition) => (
+            <QuestCard
+              key={definition.id}
+              definition={definition}
+              variant="available"
+              onStart={() => startQuest(definition.id)}
+            />
+          ))}
+        </View>
+      )}
 
-        {/* Available Quests Section */}
-        {availableQuests.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Available Quests</Text>
-            {availableQuests.map((definition) => (
-              <QuestCard
-                key={definition.id}
-                definition={definition}
-                variant="available"
-                onStart={() => startQuest(definition.id)}
-              />
-            ))}
-          </View>
-        )}
+      {/* Completed Quests Toggle */}
+      {totalCompleted > 0 && (
+        <Pressable
+          style={styles.completedToggle}
+          onPress={() => setShowCompleted(!showCompleted)}
+        >
+          <Text style={styles.completedToggleText}>
+            {showCompleted ? '▼' : '▶'} Completed Quests ({totalCompleted})
+          </Text>
+        </Pressable>
+      )}
 
-        {/* Completed Quests Toggle */}
-        {totalCompleted > 0 && (
-          <Pressable
-            style={styles.completedToggle}
-            onPress={() => setShowCompleted(!showCompleted)}
-          >
-            <Text style={styles.completedToggleText}>
-              {showCompleted ? '▼' : '▶'} Completed Quests ({totalCompleted})
+      {/* Completed Quests Section */}
+      {showCompleted && completedQuests.length > 0 && (
+        <View style={styles.section}>
+          {completedQuests.map((quest) => (
+            <QuestCard
+              key={quest.definition.id}
+              definition={quest.definition}
+              variant="completed"
+              completedAt={quest.completedAt}
+              completedCount={quest.completedCount}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Empty State */}
+      {activeQuests.length === 0 &&
+        readyToClaim.length === 0 &&
+        availableQuests.length === 0 &&
+        (!showCompleted || completedQuests.length === 0) && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>📜</Text>
+            <Text style={styles.emptyText}>No quests available</Text>
+            <Text style={styles.emptySubtext}>
+              Keep playing to unlock new quests
             </Text>
-          </Pressable>
-        )}
-
-        {/* Completed Quests Section */}
-        {showCompleted && completedQuests.length > 0 && (
-          <View style={styles.section}>
-            {completedQuests.map((quest) => (
-              <QuestCard
-                key={quest.definition.id}
-                definition={quest.definition}
-                variant="completed"
-                completedAt={quest.completedAt}
-                completedCount={quest.completedCount}
-              />
-            ))}
           </View>
         )}
-
-        {/* Empty State */}
-        {activeQuests.length === 0 &&
-          readyToClaim.length === 0 &&
-          availableQuests.length === 0 &&
-          (!showCompleted || completedQuests.length === 0) && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📜</Text>
-              <Text style={styles.emptyText}>No quests available</Text>
-              <Text style={styles.emptySubtext}>
-                Keep playing to unlock new quests
-              </Text>
-            </View>
-          )}
-      </ScrollView>
-    </SafeContainer>
+    </ScrollView>
   );
 }
 

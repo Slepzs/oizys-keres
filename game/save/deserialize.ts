@@ -330,6 +330,7 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
         ...(state.combat?.equipment ?? {}),
       },
       selectedEnemyByZone: (state.combat as any)?.selectedEnemyByZone ?? initial.combat.selectedEnemyByZone,
+      enemyKillCounts: (state.combat as any)?.enemyKillCounts ?? initial.combat.enemyKillCounts,
       playerMaxHp: repairedPlayerMaxHp,
       playerCurrentHp: Math.min(
         state.combat?.playerCurrentHp ?? initial.combat.playerCurrentHp,
