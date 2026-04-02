@@ -4,7 +4,12 @@ import assert from 'node:assert/strict';
 import { totalXpForCombatSkillLevel } from '../../data/curves.ts';
 import { createInitialGameState } from '../../save/initial-state.ts';
 import { calculateMaxHp } from '../combat.ts';
-import { estimateCombatRoute } from './planning.ts';
+import {
+  estimateCombatRoute,
+  rankCombatFarmCandidates,
+  summarizeCombatFarmsByZone,
+  type CombatFarmCandidate,
+} from './planning.ts';
 
 function withCombatLevel(level: number) {
   const xp = totalXpForCombatSkillLevel(level);
@@ -95,4 +100,113 @@ test('notable drops are sorted by expected value and capped to the top three', (
     projection.notableDrops[0]!.expectedValuePerKill
       > projection.notableDrops[1]!.expectedValuePerKill
   );
+});
+
+function makeCandidate(
+  zoneId: string,
+  enemyId: string,
+  overrides: Partial<CombatFarmCandidate['projection']> = {}
+): CombatFarmCandidate {
+  return {
+    zoneId,
+    zoneName: zoneId,
+    zoneIcon: '⚔️',
+    enemyId,
+    projection: {
+      enemyId,
+      enemyName: enemyId,
+      timeToKillSeconds: 5,
+      xpPerMinute: 60,
+      averageCoinsPerKill: 10,
+      averageLootValuePerKill: 2,
+      totalValuePerKill: 12,
+      valuePerMinute: 40,
+      playerDps: 10,
+      petDps: 0,
+      totalDps: 10,
+      enemyDps: 4,
+      netDamagePerKill: 4,
+      totalFoodCount: 10,
+      totalHealingStock: 120,
+      averageFoodHeal: 12,
+      foodPerKill: 1,
+      killsBeforeRestock: 12,
+      risk: 'steady',
+      notableDrops: [],
+      ...overrides,
+    },
+  };
+}
+
+test('xp and value focus rank the best viable farm by the requested metric', () => {
+  const candidates = [
+    makeCandidate('crypt', 'skeleton', { xpPerMinute: 110, valuePerMinute: 55, risk: 'steady' }),
+    makeCandidate('stronghold', 'orc', { xpPerMinute: 95, valuePerMinute: 130, risk: 'steady' }),
+    makeCandidate('sewers', 'rat', { xpPerMinute: 70, valuePerMinute: 18, risk: 'safe' }),
+  ];
+
+  const xpRanked = rankCombatFarmCandidates(candidates, 'xp');
+  const valueRanked = rankCombatFarmCandidates(candidates, 'value');
+
+  assert.equal(xpRanked[0]?.enemyId, 'skeleton');
+  assert.equal(valueRanked[0]?.enemyId, 'orc');
+});
+
+test('viable routes outrank lethal routes even when the lethal route has stronger raw output', () => {
+  const candidates = [
+    makeCandidate('abyssal_depths', 'elder_demon', {
+      xpPerMinute: 400,
+      valuePerMinute: 300,
+      risk: 'lethal',
+      killsBeforeRestock: 0,
+      netDamagePerKill: 500,
+    }),
+    makeCandidate('caves', 'troll', {
+      xpPerMinute: 180,
+      valuePerMinute: 90,
+      risk: 'risky',
+      killsBeforeRestock: 8,
+      netDamagePerKill: 22,
+    }),
+  ];
+
+  const xpRanked = rankCombatFarmCandidates(candidates, 'xp');
+  const valueRanked = rankCombatFarmCandidates(candidates, 'value');
+
+  assert.equal(xpRanked[0]?.enemyId, 'troll');
+  assert.equal(valueRanked[0]?.enemyId, 'troll');
+});
+
+test('safe focus and zone summaries choose the safest route instead of the highest-level route', () => {
+  const candidates = [
+    makeCandidate('sewers', 'rat', {
+      xpPerMinute: 65,
+      valuePerMinute: 18,
+      risk: 'safe',
+      killsBeforeRestock: null,
+      netDamagePerKill: 0,
+    }),
+    makeCandidate('sewers', 'nerd', {
+      xpPerMinute: 78,
+      valuePerMinute: 24,
+      risk: 'steady',
+      killsBeforeRestock: 40,
+      netDamagePerKill: 3,
+    }),
+    makeCandidate('crypt', 'skeleton', {
+      xpPerMinute: 92,
+      valuePerMinute: 37,
+      risk: 'risky',
+      killsBeforeRestock: 4,
+      netDamagePerKill: 18,
+    }),
+  ];
+
+  const safeRanked = rankCombatFarmCandidates(candidates, 'safe');
+  const safeZoneSummaries = summarizeCombatFarmsByZone(candidates, 'safe');
+  const xpZoneSummaries = summarizeCombatFarmsByZone(candidates, 'xp');
+
+  assert.equal(safeRanked[0]?.enemyId, 'rat');
+  assert.equal(safeZoneSummaries.sewers?.enemyId, 'rat');
+  assert.equal(xpZoneSummaries.sewers?.enemyId, 'nerd');
 });

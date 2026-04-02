@@ -9,7 +9,6 @@ import {
   ENEMY_DEFINITIONS,
   PET_DEFINITIONS,
   WOODCUTTING_TREES,
-  ZONE_DEFINITIONS,
 } from '@/game/data';
 import {
   getCombatSkillLevel,
@@ -35,6 +34,8 @@ import {
   getCookingRecipesForLevel,
   getActiveHerbloreRecipe,
   getHerbloreRecipesForLevel,
+  buildCombatFarmPlan,
+  type CombatPlanningFocus,
 } from '@/game/logic';
 import { scaleEnemyMaxHp } from '@/game/logic/combat/balance';
 import { ITEM_DEFINITIONS, ITEM_IDS } from '@/game/data';
@@ -580,7 +581,7 @@ export function useHerbloreRecipes() {
   }, [level, activeHerbloreRecipeId]);
 }
 
-export function useAllZoneProjections() {
+export function useAllZoneProjections(focus: CombatPlanningFocus = 'xp') {
   const { combat, summoning, summoningLevel, bag } = useGameStore(
     useShallow((state) => ({
       combat: state.combat,
@@ -593,35 +594,24 @@ export function useAllZoneProjections() {
   const combatLevel = useMemo(() => calculateCombatLevel(combat.combatSkills), [combat]);
 
   return useMemo(() => {
-    const planningState = { bag, combat, summoning, summoningLevel };
+    const plan = buildCombatFarmPlan(
+      { bag, combat, summoning, summoningLevel },
+      combatLevel,
+      focus
+    );
     const zoneProjections: Record<string, ReturnType<typeof estimateCombatRoute>> = {};
-    const enemyProjections: Record<string, ReturnType<typeof estimateCombatRoute>> = {};
+    const recommendedEnemyByZone: Record<string, string> = {};
 
-    for (const [zoneId, zone] of Object.entries(ZONE_DEFINITIONS)) {
-      if (combatLevel < zone.combatLevelRequired) continue;
-
-      // Compute projection for every unlocked enemy in this zone
-      for (const enemyId of zone.enemies) {
-        const enemy = ENEMY_DEFINITIONS[enemyId];
-        if (!enemy || combatLevel < enemy.combatLevelRequired) continue;
-        if (!enemyProjections[enemyId]) {
-          enemyProjections[enemyId] = estimateCombatRoute(planningState, enemyId);
-        }
-      }
-
-      // Zone-level summary: best unlocked enemy (highest level req the player meets)
-      const bestEnemyId = zone.enemies
-        .filter((id) => {
-          const enemy = ENEMY_DEFINITIONS[id];
-          return enemy && combatLevel >= enemy.combatLevelRequired;
-        })
-        .at(-1);
-
-      if (bestEnemyId && enemyProjections[bestEnemyId]) {
-        zoneProjections[zoneId] = enemyProjections[bestEnemyId];
-      }
+    for (const [zoneId, candidate] of Object.entries(plan.zoneSummaries)) {
+      zoneProjections[zoneId] = candidate.projection;
+      recommendedEnemyByZone[zoneId] = candidate.enemyId;
     }
 
-    return { zoneProjections, enemyProjections };
-  }, [bag, combat, combatLevel, summoning, summoningLevel]);
+    return {
+      zoneProjections,
+      enemyProjections: plan.enemyProjections,
+      recommendedRoute: plan.bestRoute,
+      recommendedEnemyByZone,
+    };
+  }, [bag, combat, combatLevel, focus, summoning, summoningLevel]);
 }

@@ -13,6 +13,9 @@ interface CombatZoneCardProps {
   selectedEnemyId: string | null;
   zoneProjection?: CombatRouteProjection | null;
   enemyProjections?: Record<string, CombatRouteProjection>;
+  isRecommended?: boolean;
+  recommendationLabel?: string;
+  recommendedEnemyId?: string | null;
   onSelect: () => void;
   onSelectEnemy: (enemyId: string) => void;
   onStartCombat: () => void;
@@ -40,6 +43,9 @@ export function CombatZoneCard({
   selectedEnemyId,
   zoneProjection,
   enemyProjections,
+  isRecommended = false,
+  recommendationLabel = 'Recommended',
+  recommendedEnemyId = null,
   onSelect,
   onSelectEnemy,
   onStartCombat,
@@ -66,6 +72,7 @@ export function CombatZoneCard({
       style={({ pressed }) => [
         styles.container,
         isSelected && styles.selected,
+        isRecommended && !isSelected && styles.recommended,
         isLocked && styles.locked,
         pressed && !isLocked && styles.pressed,
       ]}
@@ -96,6 +103,12 @@ export function CombatZoneCard({
           ))}
         </View>
       </View>
+
+      {!isLocked && isRecommended ? (
+        <View style={styles.recommendationChip}>
+          <Text style={styles.recommendationChipText}>{recommendationLabel}</Text>
+        </View>
+      ) : null}
 
       {!isLocked && zoneProjection ? (
         <View style={styles.projectionStrip}>
@@ -136,19 +149,28 @@ export function CombatZoneCard({
           {enemies.map((enemy) => {
             const enemyLocked = combatLevel < enemy.combatLevelRequired;
             const isEnemySelected = effectiveSelectedEnemyId === enemy.id;
+            const isEnemyRecommended = recommendedEnemyId === enemy.id;
             return (
               <Pressable
                 key={enemy.id}
                 style={({ pressed }) => [
                   styles.enemyOption,
                   isEnemySelected && styles.enemyOptionSelected,
+                  isEnemyRecommended && !isEnemySelected && styles.enemyOptionRecommended,
                   enemyLocked && styles.enemyOptionLocked,
                   pressed && isSelectionEnabled && styles.enemyOptionPressed,
                 ]}
                 onPress={isSelectionEnabled && !enemyLocked ? () => onSelectEnemy(enemy.id) : undefined}
                 disabled={!isSelectionEnabled || enemyLocked}
               >
-                <Text style={styles.enemyOptionIcon}>{enemy.icon}</Text>
+                <View style={styles.enemyOptionHeader}>
+                  <Text style={styles.enemyOptionIcon}>{enemy.icon}</Text>
+                  {isEnemyRecommended && !enemyLocked ? (
+                    <View style={styles.enemyRecommendationBadge}>
+                      <Text style={styles.enemyRecommendationBadgeText}>Top</Text>
+                    </View>
+                  ) : null}
+                </View>
                 <Text style={styles.enemyOptionName}>{enemy.name}</Text>
                 <Text style={styles.enemyOptionReq}>
                   Lv {enemy.combatLevelRequired}
@@ -213,6 +235,9 @@ const styles = StyleSheet.create({
   selected: {
     borderColor: colors.primary,
   },
+  recommended: {
+    borderColor: colors.warning,
+  },
   locked: {
     opacity: 0.6,
   },
@@ -260,6 +285,20 @@ const styles = StyleSheet.create({
   },
   enemyIcon: {
     fontSize: 20,
+  },
+  recommendationChip: {
+    alignSelf: 'flex-start',
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+    backgroundColor: 'rgba(251, 191, 36, 0.18)',
+  },
+  recommendationChipText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    color: colors.warning,
+    textTransform: 'uppercase',
   },
   projectionStrip: {
     flexDirection: 'row',
@@ -325,14 +364,34 @@ const styles = StyleSheet.create({
   enemyOptionSelected: {
     borderColor: colors.primary,
   },
+  enemyOptionRecommended: {
+    borderColor: colors.warning,
+  },
   enemyOptionLocked: {
     opacity: 0.6,
   },
   enemyOptionPressed: {
     opacity: 0.85,
   },
+  enemyOptionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   enemyOptionIcon: {
     fontSize: 18,
+  },
+  enemyRecommendationBadge: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+    backgroundColor: 'rgba(251, 191, 36, 0.18)',
+  },
+  enemyRecommendationBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    color: colors.warning,
+    textTransform: 'uppercase',
   },
   enemyOptionName: {
     fontSize: fontSize.sm,

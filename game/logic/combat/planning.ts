@@ -1,4 +1,4 @@
-import { COMBAT_DROP_TABLES, ENEMY_DEFINITIONS, ITEM_DEFINITIONS } from '../../data';
+import { COMBAT_DROP_TABLES, ENEMY_DEFINITIONS, ITEM_DEFINITIONS, ZONE_DEFINITIONS } from '../../data';
 import type { GameState } from '../../types';
 import type { ItemId } from '../../types/items';
 import { isFood } from '../../types/items';
@@ -16,6 +16,7 @@ const REGEN_INTERVAL_SECONDS = 5;
 const MIN_DAMAGE_EPSILON = 0.01;
 
 export type CombatRouteRisk = 'safe' | 'steady' | 'risky' | 'lethal';
+export type CombatPlanningFocus = 'xp' | 'value' | 'safe';
 
 export interface CombatPlanningState {
   bag: GameState['bag'];
@@ -55,6 +56,29 @@ export interface CombatRouteDropProjection {
   averageQuantity: number;
   expectedValuePerKill: number;
 }
+
+export interface CombatFarmCandidate {
+  zoneId: string;
+  zoneName: string;
+  zoneIcon: string;
+  enemyId: string;
+  projection: CombatRouteProjection;
+}
+
+export interface CombatFarmPlan {
+  focus: CombatPlanningFocus;
+  bestRoute: CombatFarmCandidate | null;
+  candidates: CombatFarmCandidate[];
+  zoneSummaries: Record<string, CombatFarmCandidate>;
+  enemyProjections: Record<string, CombatRouteProjection>;
+}
+
+const RISK_PRIORITY: Record<CombatRouteRisk, number> = {
+  safe: 3,
+  steady: 2,
+  risky: 1,
+  lethal: 0,
+};
 
 function getFoodStock(bag: GameState['bag']) {
   let totalFoodCount = 0;
@@ -107,6 +131,22 @@ function classifyRisk(killsBeforeRestock: number | null, totalDps: number): Comb
 
 function averageRoll(min: number, max: number) {
   return (min + max) / 2;
+}
+
+function getSustainScore(killsBeforeRestock: number | null) {
+  return killsBeforeRestock === null ? Number.POSITIVE_INFINITY : killsBeforeRestock;
+}
+
+function compareDescending(left: number, right: number) {
+  return right - left;
+}
+
+function compareAscending(left: number, right: number) {
+  return left - right;
+}
+
+function compareRisk(left: CombatRouteRisk, right: CombatRouteRisk) {
+  return compareDescending(RISK_PRIORITY[left], RISK_PRIORITY[right]);
 }
 
 function getLootProjection(enemyId: string) {
@@ -266,5 +306,142 @@ export function estimateCombatRoute(
     killsBeforeRestock,
     risk: classifyRisk(killsBeforeRestock, totalDps),
     notableDrops: lootProjection.notableDrops,
+  };
+}
+
+function compareCombatFarmCandidates(
+  left: CombatFarmCandidate,
+  right: CombatFarmCandidate,
+  focus: CombatPlanningFocus
+) {
+  const leftViable = left.projection.risk !== 'lethal' ? 1 : 0;
+  const rightViable = right.projection.risk !== 'lethal' ? 1 : 0;
+  const viabilityComparison = compareDescending(leftViable, rightViable);
+  if (viabilityComparison !== 0) {
+    return viabilityComparison;
+  }
+
+  if (focus === 'safe') {
+    const riskComparison = compareRisk(left.projection.risk, right.projection.risk);
+    if (riskComparison !== 0) {
+      return riskComparison;
+    }
+
+    const sustainComparison = compareDescending(
+      getSustainScore(left.projection.killsBeforeRestock),
+      getSustainScore(right.projection.killsBeforeRestock)
+    );
+    if (sustainComparison !== 0) {
+      return sustainComparison;
+    }
+
+    const damageComparison = compareAscending(
+      left.projection.netDamagePerKill,
+      right.projection.netDamagePerKill
+    );
+    if (damageComparison !== 0) {
+      return damageComparison;
+    }
+
+    const xpComparison = compareDescending(left.projection.xpPerMinute, right.projection.xpPerMinute);
+    if (xpComparison !== 0) {
+      return xpComparison;
+    }
+
+    return compareDescending(left.projection.valuePerMinute, right.projection.valuePerMinute);
+  }
+
+  const primaryComparison = focus === 'xp'
+    ? compareDescending(left.projection.xpPerMinute, right.projection.xpPerMinute)
+    : compareDescending(left.projection.valuePerMinute, right.projection.valuePerMinute);
+  if (primaryComparison !== 0) {
+    return primaryComparison;
+  }
+
+  const riskComparison = compareRisk(left.projection.risk, right.projection.risk);
+  if (riskComparison !== 0) {
+    return riskComparison;
+  }
+
+  const sustainComparison = compareDescending(
+    getSustainScore(left.projection.killsBeforeRestock),
+    getSustainScore(right.projection.killsBeforeRestock)
+  );
+  if (sustainComparison !== 0) {
+    return sustainComparison;
+  }
+
+  const secondaryComparison = focus === 'xp'
+    ? compareDescending(left.projection.valuePerMinute, right.projection.valuePerMinute)
+    : compareDescending(left.projection.xpPerMinute, right.projection.xpPerMinute);
+  if (secondaryComparison !== 0) {
+    return secondaryComparison;
+  }
+
+  return compareAscending(left.projection.netDamagePerKill, right.projection.netDamagePerKill);
+}
+
+export function rankCombatFarmCandidates(
+  candidates: CombatFarmCandidate[],
+  focus: CombatPlanningFocus
+) {
+  return [...candidates].sort((left, right) => compareCombatFarmCandidates(left, right, focus));
+}
+
+export function summarizeCombatFarmsByZone(
+  candidates: CombatFarmCandidate[],
+  focus: CombatPlanningFocus
+) {
+  const summaries: Record<string, CombatFarmCandidate> = {};
+
+  for (const candidate of rankCombatFarmCandidates(candidates, focus)) {
+    if (!summaries[candidate.zoneId]) {
+      summaries[candidate.zoneId] = candidate;
+    }
+  }
+
+  return summaries;
+}
+
+export function buildCombatFarmPlan(
+  state: CombatPlanningState,
+  combatLevel: number,
+  focus: CombatPlanningFocus
+): CombatFarmPlan {
+  const candidates: CombatFarmCandidate[] = [];
+  const enemyProjections: Record<string, CombatRouteProjection> = {};
+
+  for (const [zoneId, zone] of Object.entries(ZONE_DEFINITIONS)) {
+    if (combatLevel < zone.combatLevelRequired) {
+      continue;
+    }
+
+    for (const enemyId of zone.enemies) {
+      const enemy = ENEMY_DEFINITIONS[enemyId];
+      if (!enemy || combatLevel < enemy.combatLevelRequired) {
+        continue;
+      }
+
+      const projection = estimateCombatRoute(state, enemyId);
+      enemyProjections[enemyId] = projection;
+      candidates.push({
+        zoneId,
+        zoneName: zone.name,
+        zoneIcon: zone.icon,
+        enemyId,
+        projection,
+      });
+    }
+  }
+
+  const rankedCandidates = rankCombatFarmCandidates(candidates, focus);
+  const zoneSummaries = summarizeCombatFarmsByZone(candidates, focus);
+
+  return {
+    focus,
+    bestRoute: rankedCandidates[0] ?? null,
+    candidates: rankedCandidates,
+    zoneSummaries,
+    enemyProjections,
   };
 }
