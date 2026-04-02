@@ -1,28 +1,28 @@
 import React, { useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, Pressable } from 'react-native';
 import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { SafeContainer } from '../components/layout/SafeContainer';
-import { Card } from '../components/common/Card';
-import { CombatStats } from '../components/game/CombatStats';
-import { CombatPetCard } from '../components/game/CombatPetCard';
-import { CombatRhythmCard } from '../components/game/CombatRhythmCard';
-import { CombatLogCard } from '../components/game/CombatLogCard';
-import { EnemyDisplay } from '../components/game/EnemyDisplay';
-import { EquipmentPanel } from '../components/game/EquipmentPanel';
-import { CombatZoneCard } from '../components/game/CombatZoneCard';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+
+import { ENEMY_DEFINITIONS, ZONE_DEFINITIONS } from '@/game/data';
+import { scaleAttackIntervalSeconds } from '@/game/logic/combat/balance';
+import type { EquipmentSlot, TrainingMode } from '@/game/types';
 import {
-  useCombatSummary,
   useActiveCombat,
-  useCombatFeedback,
-  useEquipment,
-  useCombatActions,
   useBagFood,
   useBagPotions,
+  useCombatActions,
+  useCombatFeedback,
+  useCombatSummary,
+  useEquipment,
 } from '@/store';
-import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
-import { ENEMY_DEFINITIONS, ZONE_IDS } from '@/game/data';
-import type { TrainingMode, EquipmentSlot } from '@/game/types';
-import { scaleAttackIntervalSeconds } from '@/game/logic/combat/balance';
+import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/constants/theme';
+import { EquipmentPanel } from '@/ui/components/game/EquipmentPanel';
+import { SafeContainer } from '@/ui/components/layout/SafeContainer';
+
+import { CombatBattleView } from './combat/CombatBattleView';
+import { CombatHuntView } from './combat/CombatHuntView';
+import { CombatProfileView } from './combat/CombatProfileView';
+import { CombatScreenTabs } from './combat/CombatScreenTabs';
+import { useCombatScreenView } from './combat/useCombatScreenView';
 
 const AUTO_EAT_THRESHOLDS = [0.25, 0.5, 0.75] as const;
 
@@ -49,6 +49,7 @@ export function CombatScreen() {
   const bagPotions = useBagPotions();
   const suppliesSheetRef = useRef<BottomSheetModal>(null);
   const equipmentSheetRef = useRef<BottomSheetModal>(null);
+  const { activeView, setActiveView, views } = useCombatScreenView(!!activeCombat);
   const autoEatThresholdPercent = Math.round(combatSummary.autoEatThreshold * 100);
   const sheetSnapPoints = useMemo(() => ['60%', '88%'], []);
   const totalFoodCount = useMemo(
@@ -66,6 +67,31 @@ export function CombatScreen() {
 
     return (combatSummary.totalKills / Math.max(1, combatSummary.totalDeaths)).toFixed(1);
   }, [combatSummary.totalDeaths, combatSummary.totalKills]);
+  const selectedZone = useMemo(() => {
+    if (!combatSummary.selectedZoneId) {
+      return null;
+    }
+
+    return ZONE_DEFINITIONS[combatSummary.selectedZoneId] ?? null;
+  }, [combatSummary.selectedZoneId]);
+  const selectedEnemy = useMemo(() => {
+    if (!selectedZone) {
+      return null;
+    }
+
+    const preferredEnemyId = combatSummary.selectedEnemyByZone?.[selectedZone.id];
+    const unlockedEnemyId =
+      selectedZone.enemies.find((enemyId) => {
+        const enemy = ENEMY_DEFINITIONS[enemyId];
+        return !!enemy && combatSummary.combatLevel >= enemy.combatLevelRequired;
+      }) ?? selectedZone.enemies[0];
+    const effectiveEnemyId =
+      preferredEnemyId && selectedZone.enemies.includes(preferredEnemyId)
+        ? preferredEnemyId
+        : unlockedEnemyId;
+
+    return effectiveEnemyId ? ENEMY_DEFINITIONS[effectiveEnemyId] ?? null : null;
+  }, [combatSummary.combatLevel, combatSummary.selectedEnemyByZone, selectedZone]);
   const activeEnemy = activeCombat ? ENEMY_DEFINITIONS[activeCombat.enemyId] : null;
 
   const handleTrainingModeChange = (mode: TrainingMode) => {
@@ -99,141 +125,14 @@ export function CombatScreen() {
         contentContainerStyle={styles.contentContainer}
       >
         <Text style={styles.title}>Combat</Text>
+        <CombatScreenTabs
+          activeView={activeView}
+          views={views}
+          onChange={setActiveView}
+        />
 
-        {activeCombat && (
-          <View style={styles.section}>
-            <EnemyDisplay
-              enemyId={activeCombat.enemyId}
-              enemyCurrentHp={activeCombat.enemyCurrentHp}
-              playerCurrentHp={activeCombat.playerCurrentHp}
-              playerMaxHp={activeCombat.playerMaxHp}
-            />
-            <Pressable
-              style={({ pressed }) => [
-                styles.fleeButton,
-                pressed && styles.fleeButtonPressed,
-              ]}
-              onPress={fleeCombat}
-            >
-              <Text style={styles.fleeButtonText}>Flee</Text>
-            </Pressable>
-          </View>
-        )}
-
-        {activeCombat && activeEnemy && (
-          <View style={styles.section}>
-            <CombatRhythmCard
-              enemyName={activeEnemy.name}
-              playerNextAttackAt={activeCombat.playerNextAttackAt}
-              enemyNextAttackAt={activeCombat.enemyNextAttackAt}
-              petNextAttackAt={activeCombat.petNextAttackAt}
-              playerAttackIntervalSeconds={combatSummary.attackSpeed}
-              enemyAttackIntervalSeconds={scaleAttackIntervalSeconds(activeEnemy.attackSpeed)}
-              petAttackIntervalSeconds={combatSummary.activePet?.attackIntervalSeconds ?? null}
-            />
-          </View>
-        )}
-
-        {(activeCombat || combatFeedback.entries.length > 0) && (
-          <View style={styles.section}>
-            <CombatLogCard
-              entries={combatFeedback.entries}
-              killsThisSession={combatFeedback.killsThisSession}
-            />
-          </View>
-        )}
-
-        <Card style={styles.section}>
-          <View style={styles.setupHeader}>
-            <View style={styles.setupCopy}>
-              <Text style={styles.cardTitle}>Combat Setup</Text>
-              <Text style={styles.cardSubtitle}>
-                Keep supplies and gear tucked away until you need them.
-              </Text>
-            </View>
-            <View style={styles.autoFightToggle}>
-              <Text style={styles.toggleLabel}>Auto-Fight</Text>
-              <Switch
-                value={combatSummary.autoFight}
-                onValueChange={toggleAutoFight}
-                trackColor={{ false: colors.surfaceLight, true: colors.primaryDark }}
-                thumbColor={combatSummary.autoFight ? colors.primary : colors.textMuted}
-              />
-            </View>
-          </View>
-
-          <View style={styles.summaryGrid}>
-            <View style={styles.summaryChip}>
-              <Text style={styles.summaryLabel}>Food</Text>
-              <Text style={styles.summaryValue}>{totalFoodCount}</Text>
-            </View>
-            <View style={styles.summaryChip}>
-              <Text style={styles.summaryLabel}>Potions</Text>
-              <Text style={styles.summaryValue}>{totalPotionCount}</Text>
-            </View>
-            <View style={styles.summaryChip}>
-              <Text style={styles.summaryLabel}>Auto-Eat</Text>
-              <Text style={styles.summaryValue}>
-                {combatSummary.autoEat ? `${autoEatThresholdPercent}%` : 'Off'}
-              </Text>
-            </View>
-            <View style={styles.summaryChip}>
-              <Text style={styles.summaryLabel}>Auto-Drink</Text>
-              <Text style={styles.summaryValue}>{combatSummary.autoDrink ? 'On' : 'Off'}</Text>
-            </View>
-            <View style={styles.summaryChip}>
-              <Text style={styles.summaryLabel}>Kills</Text>
-              <Text style={styles.summaryValue}>{combatSummary.totalKills}</Text>
-            </View>
-            <View style={styles.summaryChip}>
-              <Text style={styles.summaryLabel}>K/D</Text>
-              <Text style={styles.summaryValue}>{kdRatio}</Text>
-            </View>
-          </View>
-
-          <View style={styles.manageActions}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.manageButton,
-                pressed && styles.manageButtonPressed,
-              ]}
-              onPress={() => suppliesSheetRef.current?.present()}
-            >
-              <Text style={styles.manageButtonLabel}>Supplies</Text>
-              <Text style={styles.manageButtonHint}>Food, potions, automation</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.manageButton,
-                pressed && styles.manageButtonPressed,
-              ]}
-              onPress={() => equipmentSheetRef.current?.present()}
-            >
-              <Text style={styles.manageButtonLabel}>Equipment</Text>
-              <Text style={styles.manageButtonHint}>Manage your loadout</Text>
-            </Pressable>
-          </View>
-        </Card>
-
-        <Text style={styles.sectionTitle}>Combat Zones</Text>
-        <View style={styles.zonesContainer}>
-          {ZONE_IDS.map((zoneId) => (
-            <CombatZoneCard
-              key={zoneId}
-              zoneId={zoneId}
-              combatLevel={combatSummary.combatLevel}
-              isSelected={combatSummary.selectedZoneId === zoneId}
-              isInCombat={activeCombat?.zoneId === zoneId}
-              selectedEnemyId={combatSummary.selectedEnemyByZone?.[zoneId] ?? null}
-              onSelect={() => handleZoneSelect(zoneId)}
-              onSelectEnemy={(enemyId) => selectEnemyForZone(zoneId, enemyId)}
-              onStartCombat={handleStartCombat}
-            />
-          ))}
-        </View>
-
-        <View style={styles.section}>
-          <CombatStats
+        {activeView === 'combat-profile' ? (
+          <CombatProfileView
             combatLevel={combatSummary.combatLevel}
             skills={combatSummary.skills}
             effectiveAttack={combatSummary.effectiveAttack}
@@ -241,14 +140,50 @@ export function CombatScreen() {
             effectiveDefense={combatSummary.effectiveDefense}
             trainingMode={combatSummary.trainingMode}
             onTrainingModeChange={handleTrainingModeChange}
+            activePet={combatSummary.activePet}
+            petBonuses={combatSummary.petBonuses}
           />
-        </View>
+        ) : null}
 
-        {combatSummary.activePet && (
-          <View style={styles.section}>
-            <CombatPetCard pet={combatSummary.activePet} bonuses={combatSummary.petBonuses} />
-          </View>
-        )}
+        {activeView === 'hunt-setup' ? (
+          <CombatHuntView
+            autoFight={combatSummary.autoFight}
+            autoEat={combatSummary.autoEat}
+            autoDrink={combatSummary.autoDrink}
+            autoEatThresholdPercent={autoEatThresholdPercent}
+            combatLevel={combatSummary.combatLevel}
+            totalFoodCount={totalFoodCount}
+            totalPotionCount={totalPotionCount}
+            selectedZone={selectedZone}
+            selectedEnemy={selectedEnemy}
+            selectedZoneId={combatSummary.selectedZoneId}
+            selectedEnemyByZone={combatSummary.selectedEnemyByZone}
+            activeCombatZoneId={activeCombat?.zoneId ?? null}
+            onToggleAutoFight={toggleAutoFight}
+            onOpenSupplies={() => suppliesSheetRef.current?.present()}
+            onOpenEquipment={() => equipmentSheetRef.current?.present()}
+            onSelectZone={handleZoneSelect}
+            onSelectEnemyForZone={selectEnemyForZone}
+            onStartCombat={handleStartCombat}
+          />
+        ) : null}
+
+        {activeView === 'battle-feed' ? (
+          <CombatBattleView
+            totalKills={combatSummary.totalKills}
+            kdRatio={kdRatio}
+            activeCombat={activeCombat}
+            activeEnemyName={activeEnemy?.name ?? null}
+            playerAttackIntervalSeconds={combatSummary.attackSpeed}
+            enemyAttackIntervalSeconds={
+              activeEnemy ? scaleAttackIntervalSeconds(activeEnemy.attackSpeed) : null
+            }
+            petAttackIntervalSeconds={combatSummary.activePet?.attackIntervalSeconds ?? null}
+            onFleeCombat={fleeCombat}
+            entries={combatFeedback.entries}
+            killsThisSession={combatFeedback.killsThisSession}
+          />
+        ) : null}
       </ScrollView>
 
       <BottomSheetModal
@@ -327,7 +262,7 @@ export function CombatScreen() {
             </View>
           </View>
 
-          {combatSummary.potionBuffs.length > 0 && (
+          {combatSummary.potionBuffs.length > 0 ? (
             <View style={styles.sheetBlock}>
               <Text style={styles.sheetSectionTitle}>Active Buffs</Text>
               <View style={styles.activeBuffsRow}>
@@ -348,7 +283,7 @@ export function CombatScreen() {
                 })}
               </View>
             </View>
-          )}
+          ) : null}
 
           <View style={styles.sheetBlock}>
             <Text style={styles.sheetSectionTitle}>Food</Text>
@@ -366,10 +301,7 @@ export function CombatScreen() {
                     </View>
                     <Text style={styles.itemQty}>x{food.quantity}</Text>
                     <Pressable
-                      style={({ pressed }) => [
-                        styles.useButton,
-                        pressed && styles.useButtonPressed,
-                      ]}
+                      style={({ pressed }) => [styles.useButton, pressed && styles.useButtonPressed]}
                       onPress={() => eatFood(food.itemId)}
                     >
                       <Text style={styles.useButtonText}>Eat</Text>
@@ -402,10 +334,7 @@ export function CombatScreen() {
                     </View>
                     <Text style={styles.itemQty}>x{potion.quantity}</Text>
                     <Pressable
-                      style={({ pressed }) => [
-                        styles.useButton,
-                        pressed && styles.useButtonPressed,
-                      ]}
+                      style={({ pressed }) => [styles.useButton, pressed && styles.useButtonPressed]}
                       onPress={() => drinkPotion(potion.itemId)}
                     >
                       <Text style={styles.useButtonText}>Drink</Text>
@@ -456,115 +385,6 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.text,
     marginVertical: spacing.md,
-  },
-  section: {
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.md,
-    marginTop: spacing.sm,
-  },
-  fleeButton: {
-    backgroundColor: colors.error,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  fleeButtonPressed: {
-    opacity: 0.8,
-  },
-  fleeButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text,
-  },
-  setupHeader: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    alignItems: 'flex-start',
-  },
-  setupCopy: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    color: colors.text,
-  },
-  cardSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  autoFightToggle: {
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  toggleLabel: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  summaryChip: {
-    minWidth: '30%',
-    flexGrow: 1,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: borderRadius.md,
-  },
-  summaryLabel: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-  },
-  summaryValue: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text,
-    marginTop: spacing.xs,
-  },
-  manageActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  manageButton: {
-    flex: 1,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
-  },
-  manageButtonPressed: {
-    opacity: 0.85,
-  },
-  manageButtonLabel: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.text,
-  },
-  manageButtonHint: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  zonesContainer: {
-    gap: spacing.md,
-    marginBottom: spacing.md,
   },
   sheetBackground: {
     backgroundColor: colors.surface,
