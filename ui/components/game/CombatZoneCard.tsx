@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
 import { ZONE_DEFINITIONS, ENEMY_DEFINITIONS } from '@/game/data';
-import type { CombatRouteProjection } from '@/game/logic';
+import type { CombatQuestRoute, CombatRouteProjection } from '@/game/logic';
 import { formatNumber } from '@/utils/format';
 
 interface CombatZoneCardProps {
@@ -13,6 +13,7 @@ interface CombatZoneCardProps {
   selectedEnemyId: string | null;
   zoneProjection?: CombatRouteProjection | null;
   enemyProjections?: Record<string, CombatRouteProjection>;
+  enemyQuestRoutes?: Record<string, CombatQuestRoute | null>;
   isRecommended?: boolean;
   recommendationLabel?: string;
   recommendedEnemyId?: string | null;
@@ -43,6 +44,7 @@ export function CombatZoneCard({
   selectedEnemyId,
   zoneProjection,
   enemyProjections,
+  enemyQuestRoutes,
   isRecommended = false,
   recommendationLabel = 'Recommended',
   recommendedEnemyId = null,
@@ -150,6 +152,7 @@ export function CombatZoneCard({
             const enemyLocked = combatLevel < enemy.combatLevelRequired;
             const isEnemySelected = effectiveSelectedEnemyId === enemy.id;
             const isEnemyRecommended = recommendedEnemyId === enemy.id;
+            const enemyQuestRoute = enemyQuestRoutes?.[enemy.id] ?? null;
             return (
               <Pressable
                 key={enemy.id}
@@ -175,6 +178,15 @@ export function CombatZoneCard({
                 <Text style={styles.enemyOptionReq}>
                   Lv {enemy.combatLevelRequired}
                 </Text>
+                {enemyQuestRoute ? (
+                  <View style={styles.enemyQuestBadge}>
+                    <Text style={styles.enemyQuestBadgeText}>
+                      {enemyQuestRoute.questMatches > 1
+                        ? `${enemyQuestRoute.questMatches} quests`
+                        : 'Quest target'}
+                    </Text>
+                  </View>
+                ) : null}
                 {!enemyLocked && enemyProjections?.[enemy.id] ? (
                   <View style={styles.enemyStats}>
                     <Text style={styles.enemyStat}>
@@ -401,6 +413,18 @@ const styles = StyleSheet.create({
   enemyOptionReq: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+  },
+  enemyQuestBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(251, 191, 36, 0.18)',
+  },
+  enemyQuestBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.warning,
   },
   fightButton: {
     backgroundColor: colors.primary,

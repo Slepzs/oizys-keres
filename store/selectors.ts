@@ -1,15 +1,17 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from './gameStore';
-import { xpForPlayerLevel, xpForSkillLevel } from '@/game/data';
-import type { SkillId, CombatSkillId, PetId } from '@/game/types';
 import {
+  xpForPlayerLevel,
+  xpForSkillLevel,
   SKILL_IDS,
   COMBAT_SKILL_DEFINITIONS,
   ENEMY_DEFINITIONS,
   PET_DEFINITIONS,
-  WOODCUTTING_TREES,
+  ITEM_DEFINITIONS,
+  ITEM_IDS,
 } from '@/game/data';
+import type { SkillId, CombatSkillId, PetId } from '@/game/types';
 import {
   getCombatSkillLevel,
   getCombatSkillXpProgress,
@@ -38,7 +40,6 @@ import {
   type CombatPlanningFocus,
 } from '@/game/logic';
 import { scaleEnemyMaxHp } from '@/game/logic/combat/balance';
-import { ITEM_DEFINITIONS, ITEM_IDS } from '@/game/data';
 import { isFood, isPotion } from '@/game/types/items';
 import { COMBAT_SKILL_IDS } from '@/game/types';
 
@@ -582,12 +583,13 @@ export function useHerbloreRecipes() {
 }
 
 export function useAllZoneProjections(focus: CombatPlanningFocus = 'xp') {
-  const { combat, summoning, summoningLevel, bag } = useGameStore(
+  const { combat, summoning, summoningLevel, bag, activeQuests } = useGameStore(
     useShallow((state) => ({
       combat: state.combat,
       summoning: state.summoning,
       summoningLevel: state.skills.summoning.level,
       bag: state.bag,
+      activeQuests: state.quests.active,
     }))
   );
 
@@ -595,7 +597,7 @@ export function useAllZoneProjections(focus: CombatPlanningFocus = 'xp') {
 
   return useMemo(() => {
     const plan = buildCombatFarmPlan(
-      { bag, combat, summoning, summoningLevel },
+      { bag, combat, summoning, summoningLevel, activeQuests },
       combatLevel,
       focus
     );
@@ -610,8 +612,10 @@ export function useAllZoneProjections(focus: CombatPlanningFocus = 'xp') {
     return {
       zoneProjections,
       enemyProjections: plan.enemyProjections,
+      enemyQuestRoutes: plan.enemyQuestRoutes,
       recommendedRoute: plan.bestRoute,
       recommendedEnemyByZone,
+      hasQuestTargets: Object.values(plan.enemyQuestRoutes).some((route) => route !== null),
     };
-  }, [bag, combat, combatLevel, focus, summoning, summoningLevel]);
+  }, [activeQuests, bag, combat, combatLevel, focus, summoning, summoningLevel]);
 }

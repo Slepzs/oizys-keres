@@ -5,6 +5,7 @@ import { totalXpForCombatSkillLevel } from '../../data/curves.ts';
 import { createInitialGameState } from '../../save/initial-state.ts';
 import { calculateMaxHp } from '../combat.ts';
 import {
+  buildCombatFarmPlan,
   estimateCombatRoute,
   rankCombatFarmCandidates,
   summarizeCombatFarmsByZone,
@@ -105,13 +106,24 @@ test('notable drops are sorted by expected value and capped to the top three', (
 function makeCandidate(
   zoneId: string,
   enemyId: string,
-  overrides: Partial<CombatFarmCandidate['projection']> = {}
+  overrides: Partial<CombatFarmCandidate['projection']> = {},
+  questOverrides: Partial<NonNullable<CombatFarmCandidate['questRoute']>> | null = null
 ): CombatFarmCandidate {
   return {
     zoneId,
     zoneName: zoneId,
     zoneIcon: '⚔️',
     enemyId,
+    questRoute: questOverrides
+      ? {
+          enemyId,
+          questMatches: 1,
+          killsToComplete: 10,
+          projectedMinutesToComplete: 2,
+          targets: [],
+          ...questOverrides,
+        }
+      : null,
     projection: {
       enemyId,
       enemyName: enemyId,
@@ -209,4 +221,66 @@ test('safe focus and zone summaries choose the safest route instead of the highe
   assert.equal(safeRanked[0]?.enemyId, 'rat');
   assert.equal(safeZoneSummaries.sewers?.enemyId, 'rat');
   assert.equal(xpZoneSummaries.sewers?.enemyId, 'nerd');
+});
+
+test('quest focus prioritizes routes that advance active kill quests', () => {
+  const candidates = [
+    makeCandidate('crypt', 'skeleton', {
+      xpPerMinute: 140,
+      valuePerMinute: 70,
+      risk: 'steady',
+    }),
+    makeCandidate(
+      'sewers',
+      'rat',
+      {
+        xpPerMinute: 65,
+        valuePerMinute: 22,
+        risk: 'safe',
+      },
+      {
+        questMatches: 1,
+        killsToComplete: 12,
+        projectedMinutesToComplete: 3,
+      }
+    ),
+  ];
+
+  const questRanked = rankCombatFarmCandidates(candidates, 'quest');
+
+  assert.equal(questRanked[0]?.enemyId, 'rat');
+});
+
+test('quest focus metadata tracks overlapping kill objectives on the same enemy', () => {
+  const state = withCombatLevel(20);
+
+  state.quests.active = [
+    {
+      questId: 'sewers_cleanup',
+      progress: { rat_kills: 10 },
+      completed: false,
+      startedAt: 1,
+    },
+    {
+      questId: 'fang_stockpile',
+      progress: { rat_kills: 28, rat_fangs: 0 },
+      completed: false,
+      startedAt: 2,
+    },
+  ];
+
+  const plan = buildCombatFarmPlan(
+    {
+      ...asPlanningState(state),
+      activeQuests: state.quests.active,
+    },
+    20,
+    'quest'
+  );
+
+  assert.equal(plan.bestRoute?.enemyId, 'rat');
+  assert.equal(plan.enemyQuestRoutes.rat?.questMatches, 2);
+  assert.equal(plan.enemyQuestRoutes.rat?.killsToComplete, 5);
+  assert.ok((plan.enemyQuestRoutes.rat?.projectedMinutesToComplete ?? 0) > 0);
+  assert.equal(plan.enemyQuestRoutes.wolf?.questMatches ?? 0, 0);
 });

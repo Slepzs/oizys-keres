@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/constants/theme';
-import type { CombatPlanningFocus, CombatRouteProjection } from '@/game/logic';
+import type { CombatPlanningFocus, CombatQuestRoute, CombatRouteProjection } from '@/game/logic';
 import { ZONE_IDS } from '@/game/data';
 import { CombatZoneCard } from '@/ui/components/game/CombatZoneCard';
 import { Card } from '@/ui/components/common';
@@ -16,18 +16,25 @@ interface SelectionSummary {
   combatLevelRequired: number;
 }
 
-const FARM_FOCUS_OPTIONS: Array<{
+const BASE_FARM_FOCUS_OPTIONS: {
   id: CombatPlanningFocus;
   label: string;
   description: string;
-}> = [
+}[] = [
   { id: 'xp', label: 'XP', description: 'Level fastest' },
   { id: 'value', label: 'Coins', description: 'Farm the best loot value' },
   { id: 'safe', label: 'Safe', description: 'Lower sustain pressure' },
 ];
+const QUEST_FOCUS_OPTION = {
+  id: 'quest' as const,
+  label: 'Quest',
+  description: 'Close active kill quests',
+};
 
 function getRecommendationLabel(focus: CombatPlanningFocus) {
   switch (focus) {
+    case 'quest':
+      return 'Quest Route';
     case 'value':
       return 'Best Value';
     case 'safe':
@@ -68,6 +75,18 @@ function formatProjectionCoins(value: number) {
   return value.toFixed(1);
 }
 
+function formatQuestRouteHint(questRoute: CombatQuestRoute | null) {
+  if (!questRoute) {
+    return 'Quest targets are not currently safe to auto-farm. Use this route to stabilize first.';
+  }
+
+  const eta = questRoute.projectedMinutesToComplete !== null
+    ? formatTime(questRoute.projectedMinutesToComplete * 60 * 1000)
+    : 'No clear ETA';
+
+  return `${questRoute.questMatches > 1 ? `${questRoute.questMatches} quests` : '1 quest'} • ${formatNumber(questRoute.killsToComplete)} kills left • ${eta}`;
+}
+
 export function CombatHuntView({
   autoFight,
   autoEat,
@@ -91,9 +110,37 @@ export function CombatHuntView({
 }: CombatHuntViewProps) {
   const isInCombat = activeCombatZoneId !== null;
   const [farmFocus, setFarmFocus] = React.useState<CombatPlanningFocus>('xp');
-  const { zoneProjections, enemyProjections, recommendedRoute, recommendedEnemyByZone } =
+  const { zoneProjections, enemyProjections, enemyQuestRoutes, recommendedRoute, recommendedEnemyByZone, hasQuestTargets } =
     useAllZoneProjections(farmFocus);
-  const recommendationLabel = getRecommendationLabel(farmFocus);
+  const focusOptions = React.useMemo(
+    () => (hasQuestTargets ? [...BASE_FARM_FOCUS_OPTIONS, QUEST_FOCUS_OPTION] : BASE_FARM_FOCUS_OPTIONS),
+    [hasQuestTargets]
+  );
+  const selectedQuestRoute = selectedEnemy ? enemyQuestRoutes[selectedEnemy.id] ?? null : null;
+  const recommendationLabel = React.useMemo(() => {
+    if (farmFocus === 'quest' && recommendedRoute && !recommendedRoute.questRoute) {
+      return 'Prep Route';
+    }
+
+    return getRecommendationLabel(farmFocus);
+  }, [farmFocus, recommendedRoute]);
+  const recommendationHint = React.useMemo(() => {
+    if (!recommendedRoute) {
+      return null;
+    }
+
+    if (farmFocus === 'quest') {
+      return formatQuestRouteHint(recommendedRoute.questRoute);
+    }
+
+    return `${formatNumber(recommendedRoute.projection.xpPerMinute)} XP/min • 🪙 ${formatProjectionCoins(recommendedRoute.projection.valuePerMinute)}/min • ${recommendedRoute.projection.risk.toUpperCase()}`;
+  }, [farmFocus, recommendedRoute]);
+
+  React.useEffect(() => {
+    if (!hasQuestTargets && farmFocus === 'quest') {
+      setFarmFocus('xp');
+    }
+  }, [farmFocus, hasQuestTargets]);
 
   const handleApplyRecommendedRoute = () => {
     if (!recommendedRoute) {
@@ -152,7 +199,7 @@ export function CombatHuntView({
           </View>
 
           <View style={styles.focusRow}>
-            {FARM_FOCUS_OPTIONS.map((option) => {
+            {focusOptions.map((option) => {
               const isFocusSelected = option.id === farmFocus;
               return (
                 <Pressable
@@ -192,11 +239,9 @@ export function CombatHuntView({
                 <Text style={styles.recommendationValue}>
                   {recommendedRoute.zoneIcon} {recommendedRoute.zoneName} • {recommendedRoute.projection.enemyName}
                 </Text>
-                <Text style={styles.recommendationHint}>
-                  {formatNumber(recommendedRoute.projection.xpPerMinute)} XP/min • 🪙{' '}
-                  {formatProjectionCoins(recommendedRoute.projection.valuePerMinute)}/min •{' '}
-                  {recommendedRoute.projection.risk.toUpperCase()}
-                </Text>
+                {recommendationHint ? (
+                  <Text style={styles.recommendationHint}>{recommendationHint}</Text>
+                ) : null}
               </View>
               <Pressable
                 style={({ pressed }) => [
@@ -335,6 +380,27 @@ export function CombatHuntView({
                   </View>
                 </View>
               ) : null}
+              {selectedQuestRoute ? (
+                <View style={styles.questTargetsSection}>
+                  <Text style={styles.questTargetsTitle}>Quest Targets</Text>
+                  <View style={styles.questTargetsGrid}>
+                    {selectedQuestRoute.targets.map((target) => (
+                      <View
+                        key={`${target.questId}:${target.objectiveId}`}
+                        style={styles.questTargetChip}
+                      >
+                        <Text style={styles.questTargetName}>
+                          {target.questIcon} {target.questName}
+                        </Text>
+                        <Text style={styles.questTargetMeta}>
+                          {formatNumber(target.currentKills)}/{formatNumber(target.targetKills)} kills •{' '}
+                          {formatNumber(target.remainingKills)} left
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
             </>
           ) : null}
         </View>
@@ -393,6 +459,7 @@ export function CombatHuntView({
             selectedEnemyId={selectedEnemyByZone?.[zoneId] ?? null}
             zoneProjection={zoneProjections[zoneId] ?? null}
             enemyProjections={enemyProjections}
+            enemyQuestRoutes={enemyQuestRoutes}
             isRecommended={recommendedRoute?.zoneId === zoneId}
             recommendationLabel={recommendationLabel}
             recommendedEnemyId={recommendedEnemyByZone[zoneId] ?? null}
@@ -702,6 +769,33 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   notableDropMeta: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+  },
+  questTargetsSection: {
+    gap: spacing.sm,
+  },
+  questTargetsTitle: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  questTargetsGrid: {
+    gap: spacing.sm,
+  },
+  questTargetChip: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.xs,
+  },
+  questTargetName: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  questTargetMeta: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
   },

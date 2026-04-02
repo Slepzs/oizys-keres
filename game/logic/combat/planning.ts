@@ -1,6 +1,13 @@
-import { COMBAT_DROP_TABLES, ENEMY_DEFINITIONS, ITEM_DEFINITIONS, ZONE_DEFINITIONS } from '../../data';
+import {
+  COMBAT_DROP_TABLES,
+  ENEMY_DEFINITIONS,
+  ITEM_DEFINITIONS,
+  ZONE_DEFINITIONS,
+  getQuestDefinition,
+} from '../../data';
 import type { GameState } from '../../types';
 import type { ItemId } from '../../types/items';
+import type { PlayerQuestState } from '../../types/quests';
 import { isFood } from '../../types/items';
 import { getActivePetCombatProfile, getSummoningCombatBonuses } from '../summoning';
 import { scaleAttackIntervalSeconds, scaleEnemyMaxHp } from './balance';
@@ -16,13 +23,14 @@ const REGEN_INTERVAL_SECONDS = 5;
 const MIN_DAMAGE_EPSILON = 0.01;
 
 export type CombatRouteRisk = 'safe' | 'steady' | 'risky' | 'lethal';
-export type CombatPlanningFocus = 'xp' | 'value' | 'safe';
+export type CombatPlanningFocus = 'xp' | 'value' | 'safe' | 'quest';
 
 export interface CombatPlanningState {
   bag: GameState['bag'];
   combat: GameState['combat'];
   summoning: GameState['summoning'];
   summoningLevel: number;
+  activeQuests?: GameState['quests']['active'];
 }
 
 export interface CombatRouteProjection {
@@ -62,6 +70,7 @@ export interface CombatFarmCandidate {
   zoneName: string;
   zoneIcon: string;
   enemyId: string;
+  questRoute: CombatQuestRoute | null;
   projection: CombatRouteProjection;
 }
 
@@ -71,6 +80,26 @@ export interface CombatFarmPlan {
   candidates: CombatFarmCandidate[];
   zoneSummaries: Record<string, CombatFarmCandidate>;
   enemyProjections: Record<string, CombatRouteProjection>;
+  enemyQuestRoutes: Record<string, CombatQuestRoute | null>;
+}
+
+export interface CombatQuestTarget {
+  questId: string;
+  questName: string;
+  questIcon: string;
+  objectiveId: string;
+  enemyId: string;
+  currentKills: number;
+  targetKills: number;
+  remainingKills: number;
+}
+
+export interface CombatQuestRoute {
+  enemyId: string;
+  questMatches: number;
+  killsToComplete: number;
+  projectedMinutesToComplete: number | null;
+  targets: CombatQuestTarget[];
 }
 
 const RISK_PRIORITY: Record<CombatRouteRisk, number> = {
@@ -147,6 +176,90 @@ function compareAscending(left: number, right: number) {
 
 function compareRisk(left: CombatRouteRisk, right: CombatRouteRisk) {
   return compareDescending(RISK_PRIORITY[left], RISK_PRIORITY[right]);
+}
+
+function getQuestMinutesScore(questRoute: CombatQuestRoute | null) {
+  if (!questRoute || questRoute.projectedMinutesToComplete === null) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return questRoute.projectedMinutesToComplete;
+}
+
+function getActiveKillQuestTargets(activeQuests: PlayerQuestState[] | undefined) {
+  const targetsByEnemy: Record<string, CombatQuestTarget[]> = {};
+
+  for (const questState of activeQuests ?? []) {
+    if (questState.completed) {
+      continue;
+    }
+
+    const definition = getQuestDefinition(questState.questId);
+    if (!definition) {
+      continue;
+    }
+
+    for (const objective of definition.objectives) {
+      if (objective.type !== 'kill') {
+        continue;
+      }
+
+      const currentKills = questState.progress[objective.id] ?? 0;
+      const remainingKills = Math.max(0, objective.amount - currentKills);
+      if (remainingKills <= 0) {
+        continue;
+      }
+
+      const enemyTargets = targetsByEnemy[objective.target] ?? [];
+      enemyTargets.push({
+        questId: definition.id,
+        questName: definition.name,
+        questIcon: definition.icon,
+        objectiveId: objective.id,
+        enemyId: objective.target,
+        currentKills,
+        targetKills: objective.amount,
+        remainingKills,
+      });
+      targetsByEnemy[objective.target] = enemyTargets;
+    }
+  }
+
+  for (const enemyId of Object.keys(targetsByEnemy)) {
+    targetsByEnemy[enemyId]!.sort((left, right) => {
+      if (left.remainingKills !== right.remainingKills) {
+        return left.remainingKills - right.remainingKills;
+      }
+
+      return left.questName.localeCompare(right.questName);
+    });
+  }
+
+  return targetsByEnemy;
+}
+
+function getQuestRoute(enemyId: string, projection: CombatRouteProjection, targets: CombatQuestTarget[]) {
+  if (targets.length === 0) {
+    return null;
+  }
+
+  const killsToComplete = targets.reduce((maxRemaining, target) => {
+    return Math.max(maxRemaining, target.remainingKills);
+  }, 0);
+  const killsPerMinute = Number.isFinite(projection.timeToKillSeconds) && projection.timeToKillSeconds > 0
+    ? 60 / projection.timeToKillSeconds
+    : 0;
+  const projectedMinutesToComplete = killsPerMinute > 0
+    ? killsToComplete / killsPerMinute
+    : null;
+
+  return {
+    enemyId,
+    questMatches: targets.length,
+    killsToComplete,
+    projectedMinutesToComplete,
+    targets,
+  };
 }
 
 function getLootProjection(enemyId: string) {
@@ -321,6 +434,53 @@ function compareCombatFarmCandidates(
     return viabilityComparison;
   }
 
+  if (focus === 'quest') {
+    const leftQuestScore = left.questRoute ? 1 : 0;
+    const rightQuestScore = right.questRoute ? 1 : 0;
+    const questPresenceComparison = compareDescending(leftQuestScore, rightQuestScore);
+    if (questPresenceComparison !== 0) {
+      return questPresenceComparison;
+    }
+
+    if (left.questRoute && right.questRoute) {
+      const completionComparison = compareAscending(
+        getQuestMinutesScore(left.questRoute),
+        getQuestMinutesScore(right.questRoute)
+      );
+      if (completionComparison !== 0) {
+        return completionComparison;
+      }
+
+      const questMatchesComparison = compareDescending(
+        left.questRoute.questMatches,
+        right.questRoute.questMatches
+      );
+      if (questMatchesComparison !== 0) {
+        return questMatchesComparison;
+      }
+
+      const remainingKillsComparison = compareAscending(
+        left.questRoute.killsToComplete,
+        right.questRoute.killsToComplete
+      );
+      if (remainingKillsComparison !== 0) {
+        return remainingKillsComparison;
+      }
+    }
+
+    const riskComparison = compareRisk(left.projection.risk, right.projection.risk);
+    if (riskComparison !== 0) {
+      return riskComparison;
+    }
+
+    const xpComparison = compareDescending(left.projection.xpPerMinute, right.projection.xpPerMinute);
+    if (xpComparison !== 0) {
+      return xpComparison;
+    }
+
+    return compareDescending(left.projection.valuePerMinute, right.projection.valuePerMinute);
+  }
+
   if (focus === 'safe') {
     const riskComparison = compareRisk(left.projection.risk, right.projection.risk);
     if (riskComparison !== 0) {
@@ -410,6 +570,8 @@ export function buildCombatFarmPlan(
 ): CombatFarmPlan {
   const candidates: CombatFarmCandidate[] = [];
   const enemyProjections: Record<string, CombatRouteProjection> = {};
+  const enemyQuestRoutes: Record<string, CombatQuestRoute | null> = {};
+  const questTargetsByEnemy = getActiveKillQuestTargets(state.activeQuests);
 
   for (const [zoneId, zone] of Object.entries(ZONE_DEFINITIONS)) {
     if (combatLevel < zone.combatLevelRequired) {
@@ -423,12 +585,15 @@ export function buildCombatFarmPlan(
       }
 
       const projection = estimateCombatRoute(state, enemyId);
+      const questRoute = getQuestRoute(enemyId, projection, questTargetsByEnemy[enemyId] ?? []);
       enemyProjections[enemyId] = projection;
+      enemyQuestRoutes[enemyId] = questRoute;
       candidates.push({
         zoneId,
         zoneName: zone.name,
         zoneIcon: zone.icon,
         enemyId,
+        questRoute,
         projection,
       });
     }
@@ -443,5 +608,6 @@ export function buildCombatFarmPlan(
     candidates: rankedCandidates,
     zoneSummaries,
     enemyProjections,
+    enemyQuestRoutes,
   };
 }
