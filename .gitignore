@@ -53,3 +53,4 @@ coverage/
 .agents/**/*
 .codex/**/
 docs/**/
+.worktrees/
