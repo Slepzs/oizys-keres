@@ -429,12 +429,12 @@ test('completion progress explains ready support guidance with branch leverage a
         'First Cast opens 9 downstream support quests, ahead of First Brew with 4.',
     },
     alternative: {
+      kind: 'start-quest',
+      focusArea: 'quests',
+      title: 'Start First Brew',
+      detail: 'Crush your first herb and concoct a basic potion from the forest floor.',
+      actionLabel: 'Next non-combat quest',
       questId: 'first_brew',
-      title: 'First Brew',
-      label: 'Ready now',
-      detail: 'First Brew can be started immediately.',
-      kind: 'ready',
-      category: 'skill',
     },
   });
 });
@@ -502,12 +502,13 @@ test('completion progress chooses the closest locked support unlock instead of t
       detail: 'Gem Finder is 80% unlocked, ahead of Seed Collector at 33%.',
     },
     alternative: {
+      kind: 'train-skill',
+      focusArea: 'skills',
+      title: 'Reach woodcutting level 3',
+      detail: 'Seed Collector unlocks once woodcutting reaches level 3.',
+      actionLabel: 'Unlock the next non-combat quest',
       questId: 'seed_collector',
-      title: 'Seed Collector',
-      label: 'woodcutting level 3',
-      detail: 'Seed Collector is gated by a woodcutting requirement.',
-      kind: 'skill',
-      category: 'exploration',
+      skillId: 'woodcutting',
     },
   });
 });

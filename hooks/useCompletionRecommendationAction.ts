@@ -6,17 +6,21 @@ import { useCombatActions, useGameActions } from '@/store';
 import { getCompletionRecommendationAction } from '@/ui/components/game/completion-recommendation-action';
 
 export function useCompletionRecommendationAction(
-  recommendation: CompletionRecommendation
+  recommendation: CompletionRecommendation | null
 ) {
   const router = useRouter();
   const { startQuest } = useGameActions();
   const { selectZone, selectEnemyForZone } = useCombatActions();
 
   const action = useMemo(() => {
-    return getCompletionRecommendationAction(recommendation);
+    return recommendation ? getCompletionRecommendationAction(recommendation) : null;
   }, [recommendation]);
 
   const handlePress = useCallback(() => {
+    if (!action) {
+      return;
+    }
+
     if (action.shouldStartQuest && action.questId) {
       startQuest(action.questId);
     }

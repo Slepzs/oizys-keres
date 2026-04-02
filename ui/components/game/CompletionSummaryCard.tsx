@@ -98,8 +98,12 @@ export function CompletionSummaryCard() {
   const { action, handlePress } = useCompletionRecommendationAction(
     completion.recommendation
   );
+  const { action: completionAlternativeAction, handlePress: handleCompletionAlternativePress } =
+    useCompletionRecommendationAction(completion.completionAdvisor.alternative);
   const { action: nonCombatAction, handlePress: handleNonCombatPress } =
     useCompletionRecommendationAction(completion.nonCombatRecommendation);
+  const { action: nonCombatAlternativeAction, handlePress: handleNonCombatAlternativePress } =
+    useCompletionRecommendationAction(completion.nonCombatAdvisor.alternative);
   const meta = useMemo(() => {
     return getRecommendationMeta(completion.recommendation.kind);
   }, [completion.recommendation.kind]);
@@ -111,6 +115,11 @@ export function CompletionSummaryCard() {
       ? getRecommendationMeta(completion.completionAdvisor.alternative.kind)
       : null;
   }, [completion.completionAdvisor.alternative]);
+  const nonCombatAdvisorAlternativeMeta = useMemo(() => {
+    return completion.nonCombatAdvisor.alternative
+      ? getRecommendationMeta(completion.nonCombatAdvisor.alternative.kind)
+      : null;
+  }, [completion.nonCombatAdvisor.alternative]);
 
   return (
     <Card style={styles.card} variant="elevated">
@@ -152,6 +161,14 @@ export function CompletionSummaryCard() {
             <Text style={styles.advisorAlternativeDetail}>
               {completion.completionAdvisor.alternative.detail}
             </Text>
+            {completionAlternativeAction ? (
+              <Button
+                title={completionAlternativeAction.ctaLabel}
+                onPress={handleCompletionAlternativePress}
+                variant="secondary"
+                size="sm"
+              />
+            ) : null}
           </View>
         ) : null}
       </View>
@@ -167,7 +184,7 @@ export function CompletionSummaryCard() {
         </View>
         <View style={styles.buttonRow}>
           <Button
-            title={action.ctaLabel}
+            title={action?.ctaLabel ?? 'Open plan'}
             onPress={handlePress}
             size="sm"
             style={styles.primaryButton}
@@ -245,7 +262,7 @@ export function CompletionSummaryCard() {
           <Text style={styles.advisorEyebrow}>Why this branch</Text>
           <Text style={styles.advisorTitle}>{completion.nonCombatAdvisor.rationale.label}</Text>
           <Text style={styles.advisorDetail}>{completion.nonCombatAdvisor.rationale.detail}</Text>
-          {completion.nonCombatAdvisor.alternative ? (
+          {completion.nonCombatAdvisor.alternative && nonCombatAdvisorAlternativeMeta ? (
             <View style={styles.advisorAlternativeCard}>
               <View style={styles.advisorAlternativeHeader}>
                 <Text style={styles.advisorAlternativeEyebrow}>After this</Text>
@@ -253,16 +270,12 @@ export function CompletionSummaryCard() {
                   style={[
                     styles.actionPill,
                     {
-                      borderColor: getNonCombatBlockerAccent(
-                        completion.nonCombatAdvisor.alternative.kind
-                      ),
-                      color: getNonCombatBlockerAccent(
-                        completion.nonCombatAdvisor.alternative.kind
-                      ),
+                      borderColor: nonCombatAdvisorAlternativeMeta.accent,
+                      color: nonCombatAdvisorAlternativeMeta.accent,
                     },
                   ]}
                 >
-                  {completion.nonCombatAdvisor.alternative.label}
+                  {completion.nonCombatAdvisor.alternative.actionLabel}
                 </Text>
               </View>
               <Text style={styles.advisorAlternativeTitle}>
@@ -271,11 +284,19 @@ export function CompletionSummaryCard() {
               <Text style={styles.advisorAlternativeDetail}>
                 {completion.nonCombatAdvisor.alternative.detail}
               </Text>
+              {nonCombatAlternativeAction ? (
+                <Button
+                  title={nonCombatAlternativeAction.ctaLabel}
+                  onPress={handleNonCombatAlternativePress}
+                  variant="secondary"
+                  size="sm"
+                />
+              ) : null}
             </View>
           ) : null}
         </View>
         <Button
-          title={nonCombatAction.ctaLabel}
+          title={nonCombatAction?.ctaLabel ?? 'Open plan'}
           onPress={handleNonCombatPress}
           variant="secondary"
           size="sm"

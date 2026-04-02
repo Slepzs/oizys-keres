@@ -193,8 +193,16 @@ function CompletionTabContent() {
   const { action, handlePress } = useCompletionRecommendationAction(
     completion.recommendation
   );
+  const {
+    action: completionAlternativeAction,
+    handlePress: handleCompletionAlternativePress,
+  } = useCompletionRecommendationAction(completion.completionAdvisor.alternative);
   const { action: nonCombatAction, handlePress: handleNonCombatPress } =
     useCompletionRecommendationAction(completion.nonCombatRecommendation);
+  const {
+    action: nonCombatAlternativeAction,
+    handlePress: handleNonCombatAlternativePress,
+  } = useCompletionRecommendationAction(completion.nonCombatAdvisor.alternative);
   const recommendationMeta = useMemo(() => {
     return getRecommendationMeta(completion.recommendation.kind);
   }, [completion.recommendation.kind]);
@@ -206,6 +214,11 @@ function CompletionTabContent() {
       ? getRecommendationMeta(completion.completionAdvisor.alternative.kind)
       : null;
   }, [completion.completionAdvisor.alternative]);
+  const nonCombatAdvisorAlternativeMeta = useMemo(() => {
+    return completion.nonCombatAdvisor.alternative
+      ? getRecommendationMeta(completion.nonCombatAdvisor.alternative.kind)
+      : null;
+  }, [completion.nonCombatAdvisor.alternative]);
   const overviewCards = useMemo(() => {
     return [
       {
@@ -299,11 +312,19 @@ function CompletionTabContent() {
               <Text style={styles.supportAlternativeDetail}>
                 {completion.completionAdvisor.alternative.detail}
               </Text>
+              {completionAlternativeAction ? (
+                <Button
+                  title={completionAlternativeAction.ctaLabel}
+                  onPress={handleCompletionAlternativePress}
+                  variant="secondary"
+                  size="sm"
+                />
+              ) : null}
             </View>
           ) : null}
         </View>
         <Button
-          title={action.ctaLabel}
+          title={action?.ctaLabel ?? 'Open plan'}
           onPress={handlePress}
           variant="secondary"
           size="sm"
@@ -337,7 +358,7 @@ function CompletionTabContent() {
           {completion.nonCombatRecommendation.detail}
         </Text>
         <Button
-          title={nonCombatAction.ctaLabel}
+          title={nonCombatAction?.ctaLabel ?? 'Open plan'}
           onPress={handleNonCombatPress}
           variant="secondary"
           size="sm"
@@ -407,7 +428,7 @@ function CompletionTabContent() {
           <Text style={styles.supportAdvisorDetail}>
             {completion.nonCombatAdvisor.rationale.detail}
           </Text>
-          {completion.nonCombatAdvisor.alternative ? (
+          {completion.nonCombatAdvisor.alternative && nonCombatAdvisorAlternativeMeta ? (
             <View style={styles.supportAlternativeCard}>
               <View style={styles.supportAlternativeHeader}>
                 <Text style={styles.supportAlternativeEyebrow}>After this</Text>
@@ -415,16 +436,12 @@ function CompletionTabContent() {
                   style={[
                     styles.recommendationBadge,
                     {
-                      borderColor: getNonCombatBlockerAccent(
-                        completion.nonCombatAdvisor.alternative.kind
-                      ),
-                      color: getNonCombatBlockerAccent(
-                        completion.nonCombatAdvisor.alternative.kind
-                      ),
+                      borderColor: nonCombatAdvisorAlternativeMeta.accent,
+                      color: nonCombatAdvisorAlternativeMeta.accent,
                     },
                   ]}
                 >
-                  {completion.nonCombatAdvisor.alternative.label}
+                  {completion.nonCombatAdvisor.alternative.actionLabel}
                 </Text>
               </View>
               <Text style={styles.supportAlternativeTitle}>
@@ -433,6 +450,14 @@ function CompletionTabContent() {
               <Text style={styles.supportAlternativeDetail}>
                 {completion.nonCombatAdvisor.alternative.detail}
               </Text>
+              {nonCombatAlternativeAction ? (
+                <Button
+                  title={nonCombatAlternativeAction.ctaLabel}
+                  onPress={handleNonCombatAlternativePress}
+                  variant="secondary"
+                  size="sm"
+                />
+              ) : null}
             </View>
           ) : null}
         </View>

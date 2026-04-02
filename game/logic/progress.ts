@@ -142,14 +142,7 @@ interface NonCombatAdvisorSummary {
     label: string;
     detail: string;
   };
-  alternative: {
-    questId: string;
-    title: string;
-    label: string;
-    detail: string;
-    kind: NonCombatBlockerKind;
-    category: NonCombatCategory | null;
-  } | null;
+  alternative: CompletionRecommendation | null;
 }
 
 interface CompletionAdvisorSummary {
@@ -784,6 +777,9 @@ function buildNonCombatSummary(
 }
 
 function buildNonCombatAdvisor(
+  state: CompletionState,
+  completedQuestIds: Set<string>,
+  activeQuestById: Map<string, PlayerQuestState>,
   rankedCandidates: RankedNonCombatQuest[]
 ): NonCombatAdvisorSummary {
   const primary = rankedCandidates[0] ?? null;
@@ -802,14 +798,7 @@ function buildNonCombatAdvisor(
   const primaryName = primary.definition?.name ?? primary.questId;
   const secondaryName = secondary?.definition?.name ?? secondary.questId;
   const alternative = secondary
-    ? {
-        questId: secondary.questId,
-        title: secondaryName,
-        label: secondary.blocker.label,
-        detail: secondary.blocker.detail,
-        kind: secondary.blocker.kind,
-        category: secondary.category,
-      }
+    ? buildNonCombatCandidateRecommendation(state, secondary, completedQuestIds, activeQuestById)
     : null;
 
   if (primary.status === 'active') {
@@ -967,6 +956,56 @@ function buildNonCombatLockedRecommendation(
   }
 }
 
+function buildNonCombatCandidateRecommendation(
+  state: CompletionState,
+  candidate: NextNonCombatQuest,
+  completedQuestIds: Set<string>,
+  activeQuestById: Map<string, PlayerQuestState>
+): CompletionRecommendation {
+  const { questId, definition, status } = candidate;
+
+  if (!definition) {
+    return {
+      kind: 'start-quest',
+      focusArea: 'quests',
+      title: `Start ${questId}`,
+      detail: 'Open the quests board and continue your non-combat ledger.',
+      actionLabel: 'Next non-combat quest',
+      questId,
+    };
+  }
+
+  if (status === 'active') {
+    const remainingObjectives = getRemainingObjectiveLabels(
+      questId,
+      activeQuestById.get(questId),
+      state
+    );
+
+    return {
+      kind: 'advance-quest',
+      focusArea: 'quests',
+      title: `Advance ${definition.name}`,
+      detail: `${definition.name} is active in your support track.`,
+      actionLabel: formatRemainingObjectives(remainingObjectives),
+      questId,
+    };
+  }
+
+  if (status === 'available') {
+    return {
+      kind: 'start-quest',
+      focusArea: 'quests',
+      title: `Start ${definition.name}`,
+      detail: definition.description,
+      actionLabel: 'Next non-combat quest',
+      questId,
+    };
+  }
+
+  return buildNonCombatLockedRecommendation(state, questId, completedQuestIds, activeQuestById);
+}
+
 function buildNonCombatRecommendation(
   state: CompletionState,
   completedQuestIds: Set<string>,
@@ -985,48 +1024,12 @@ function buildNonCombatRecommendation(
     };
   }
 
-  const { questId: nextQuestId, definition, status } = nextQuest;
-
-  if (!definition) {
-    return {
-      kind: 'start-quest',
-      focusArea: 'quests',
-      title: `Start ${nextQuestId}`,
-      detail: 'Open the quests board and continue your non-combat ledger.',
-      actionLabel: 'Next non-combat quest',
-      questId: nextQuestId,
-    };
-  }
-
-  if (status === 'active') {
-    const remainingObjectives = getRemainingObjectiveLabels(
-      nextQuestId,
-      activeQuestById.get(nextQuestId),
-      state
-    );
-
-    return {
-      kind: 'advance-quest',
-      focusArea: 'quests',
-      title: `Advance ${definition.name}`,
-      detail: `${definition.name} is active in your support track.`,
-      actionLabel: formatRemainingObjectives(remainingObjectives),
-      questId: nextQuestId,
-    };
-  }
-
-  if (status === 'available') {
-    return {
-      kind: 'start-quest',
-      focusArea: 'quests',
-      title: `Start ${definition.name}`,
-      detail: definition.description,
-      actionLabel: 'Next non-combat quest',
-      questId: nextQuestId,
-    };
-  }
-
-  return buildNonCombatLockedRecommendation(state, nextQuestId, completedQuestIds, activeQuestById);
+  return buildNonCombatCandidateRecommendation(
+    state,
+    nextQuest,
+    completedQuestIds,
+    activeQuestById
+  );
 }
 
 function getAscensionRecommendation(progress: CompletionProgress): CompletionRecommendation {
@@ -1553,7 +1556,12 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
     activeQuestById
   );
   progress.nonCombat = buildNonCombatSummary(completedQuestIds, rankedNonCombatQuests);
-  progress.nonCombatAdvisor = buildNonCombatAdvisor(rankedNonCombatQuests);
+  progress.nonCombatAdvisor = buildNonCombatAdvisor(
+    state,
+    completedQuestIds,
+    activeQuestById,
+    rankedNonCombatQuests
+  );
 
   return progress;
 }
