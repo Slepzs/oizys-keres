@@ -35,7 +35,7 @@ export function PlayerCard({ children, style, onPress, variant = 'default' }: Ca
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     // borderRadius: borderRadius.lg,
     padding: spacing.md,
   },

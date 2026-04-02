@@ -39,10 +39,24 @@ export function SafeContainer({
         resizeMode="cover"
       >
         <View pointerEvents="none" style={styles.overlay} />
+        
         {showPlayerHeader ? (
-          <View style={[styles.fixedHeader, { top: metrics.headerTop }]}>
+          <>
+          <View 
+          style={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            height: insets.top - 10, 
+            backgroundColor: colors.background, // Change this if you want a different color
+            zIndex: 10 
+          }} 
+        />
+          <View style={[styles.fixedHeader, { top: metrics.headerTop - 10 }]}>
             <PlayerHeaderBar />
           </View>
+          </>
         ) : null}
         <View
           style={[

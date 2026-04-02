@@ -17,7 +17,7 @@ export function getSafeContainerMetrics({
   padBottom = true,
   showPlayerHeader = false,
 }: SafeContainerMetricsOptions) {
-  const headerTop = insetsTop + spacing.sm;
+  const headerTop = insetsTop; // Removed + spacing.sm to eliminate the gap
   const contentPaddingBottom = padBottom ? insetsBottom + spacing.md : spacing.md;
 
   if (showPlayerHeader) {
