@@ -5,6 +5,8 @@ import {
   COMPLETION_TARGETS,
   ENEMY_DEFINITIONS,
   ITEM_DEFINITIONS,
+  QUEST_IDS,
+  SKILL_DEFINITIONS,
   getQuestDefinition,
   ZONE_DEFINITIONS,
 } from '@/game/data';
@@ -14,7 +16,10 @@ import type { Objective, PlayerQuestState, QuestCondition } from '@/game/types/q
 import { countItemInBag } from './bag';
 import { calculateCombatLevel } from './combat';
 
-type CompletionState = Pick<GameState, 'player' | 'combat' | 'quests' | 'bag'>;
+type CompletionState = Pick<
+  GameState,
+  'player' | 'combat' | 'quests' | 'bag' | 'skills' | 'resources'
+>;
 type CompletionQuestStatus = 'completed' | 'active' | 'available' | 'locked';
 
 interface ProgressMetric {
@@ -54,6 +59,7 @@ interface CompletionHuntEntry {
 
 export type CompletionRecommendationFocusArea =
   | 'player'
+  | 'skills'
   | 'combat'
   | 'quests'
   | 'kills'
@@ -63,8 +69,11 @@ export type CompletionRecommendationFocusArea =
 export interface CompletionRecommendation {
   kind:
     | 'start-contract'
+    | 'start-quest'
+    | 'advance-quest'
     | 'hunt-contract'
     | 'train-combat'
+    | 'train-skill'
     | 'finish-ascension'
     | 'complete-ledger';
   focusArea: CompletionRecommendationFocusArea;
@@ -74,6 +83,7 @@ export interface CompletionRecommendation {
   questId?: string;
   enemyId?: string;
   zoneId?: string;
+  skillId?: keyof typeof SKILL_DEFINITIONS;
 }
 
 interface QuestHuntRoute {
@@ -102,7 +112,10 @@ export interface CompletionProgress {
   };
   finalHunts: CompletionHuntEntry[];
   recommendation: CompletionRecommendation;
+  nonCombatRecommendation: CompletionRecommendation;
 }
+
+const NON_COMBAT_QUEST_CATEGORIES = new Set(['skill', 'exploration']);
 
 function buildMetric(current: number, target: number): ProgressMetric {
   const safeTarget = Math.max(1, target);
@@ -120,8 +133,16 @@ function evaluateQuestUnlockCondition(
   completedQuestIds: Set<string>
 ) {
   switch (condition.type) {
+    case 'level_at_least': {
+      const skill = state.skills[condition.skill];
+      return skill ? skill.level >= condition.value : false;
+    }
     case 'quest_completed':
       return completedQuestIds.has(condition.questId);
+    case 'resource_at_least': {
+      const resource = state.resources[condition.resource];
+      return resource ? resource.amount >= condition.value : false;
+    }
     case 'player_level_at_least':
       return state.player.level >= condition.value;
     default:
@@ -295,9 +316,180 @@ function formatRemainingObjectives(labels: string[]) {
   return `${allButLast}, and ${last} remaining`;
 }
 
+function formatSkillName(skillId: keyof typeof SKILL_DEFINITIONS) {
+  return SKILL_DEFINITIONS[skillId]?.name.toLowerCase() ?? skillId;
+}
+
+function isNonCombatQuest(questId: string) {
+  const definition = getQuestDefinition(questId);
+
+  if (!definition || definition.repeatable) {
+    return false;
+  }
+
+  if (!definition.category || !NON_COMBAT_QUEST_CATEGORIES.has(definition.category)) {
+    return false;
+  }
+
+  return !definition.objectives.some((objective) => objective.type === 'kill');
+}
+
+function buildNonCombatLockedRecommendation(
+  state: CompletionState,
+  questId: string,
+  completedQuestIds: Set<string>,
+  activeQuestById: Map<string, PlayerQuestState>
+): CompletionRecommendation {
+  const definition = getQuestDefinition(questId);
+  const unmetCondition = definition?.unlock?.find(
+    (condition) => !evaluateQuestUnlockCondition(condition, state, completedQuestIds)
+  );
+
+  if (!definition || !unmetCondition) {
+    return {
+      kind: 'start-quest',
+      focusArea: 'quests',
+      title: `Start ${definition?.name ?? questId}`,
+      detail: definition?.description ?? 'Open the quests board and continue your non-combat ledger.',
+      actionLabel: 'Next non-combat quest',
+      questId,
+    };
+  }
+
+  switch (unmetCondition.type) {
+    case 'level_at_least':
+      return {
+        kind: 'train-skill',
+        focusArea: 'skills',
+        title: `Reach ${formatSkillName(unmetCondition.skill)} level ${unmetCondition.value}`,
+        detail: `${definition.name} unlocks once ${formatSkillName(unmetCondition.skill)} reaches level ${unmetCondition.value}.`,
+        actionLabel: 'Unlock the next non-combat quest',
+        questId,
+        skillId: unmetCondition.skill,
+      };
+    case 'player_level_at_least':
+      return {
+        kind: 'finish-ascension',
+        focusArea: 'player',
+        title: `Reach player level ${unmetCondition.value}`,
+        detail: `${definition.name} unlocks at player level ${unmetCondition.value}.`,
+        actionLabel: 'Unlock the next non-combat quest',
+        questId,
+      };
+    case 'quest_completed': {
+      const prerequisite = getQuestDefinition(unmetCondition.questId);
+      const prerequisiteStatus = getCompletionQuestStatus(
+        unmetCondition.questId,
+        state,
+        completedQuestIds,
+        activeQuestById
+      );
+
+      if (prerequisiteStatus === 'active') {
+        const remainingObjectives = getRemainingObjectiveLabels(
+          unmetCondition.questId,
+          activeQuestById.get(unmetCondition.questId),
+          state
+        );
+
+        return {
+          kind: 'advance-quest',
+          focusArea: 'quests',
+          title: `Advance ${prerequisite?.name ?? unmetCondition.questId}`,
+          detail: `${prerequisite?.name ?? unmetCondition.questId} gates ${definition.name}.`,
+          actionLabel: formatRemainingObjectives(remainingObjectives),
+          questId: unmetCondition.questId,
+        };
+      }
+
+      return {
+        kind: 'start-quest',
+        focusArea: 'quests',
+        title: `Start ${prerequisite?.name ?? unmetCondition.questId}`,
+        detail: `${prerequisite?.name ?? unmetCondition.questId} must be completed before ${definition.name}.`,
+        actionLabel: 'Prerequisite quest',
+        questId: unmetCondition.questId,
+      };
+    }
+    default:
+      return {
+        kind: 'start-quest',
+        focusArea: 'quests',
+        title: `Start ${definition.name}`,
+        detail: definition.description,
+        actionLabel: 'Next non-combat quest',
+        questId,
+      };
+  }
+}
+
+function buildNonCombatRecommendation(
+  state: CompletionState,
+  completedQuestIds: Set<string>,
+  activeQuestById: Map<string, PlayerQuestState>
+): CompletionRecommendation {
+  const nextQuestId = QUEST_IDS.find((questId) => {
+    return isNonCombatQuest(questId) && !completedQuestIds.has(questId);
+  });
+
+  if (!nextQuestId) {
+    return {
+      kind: 'complete-ledger',
+      focusArea: 'completion',
+      title: 'Non-Combat Ledger Closed',
+      detail: 'Every tracked non-combat quest chain is complete.',
+      actionLabel: 'Support systems complete',
+    };
+  }
+
+  const definition = getQuestDefinition(nextQuestId);
+  const status = getCompletionQuestStatus(nextQuestId, state, completedQuestIds, activeQuestById);
+
+  if (!definition) {
+    return {
+      kind: 'start-quest',
+      focusArea: 'quests',
+      title: `Start ${nextQuestId}`,
+      detail: 'Open the quests board and continue your non-combat ledger.',
+      actionLabel: 'Next non-combat quest',
+      questId: nextQuestId,
+    };
+  }
+
+  if (status === 'active') {
+    const remainingObjectives = getRemainingObjectiveLabels(
+      nextQuestId,
+      activeQuestById.get(nextQuestId),
+      state
+    );
+
+    return {
+      kind: 'advance-quest',
+      focusArea: 'quests',
+      title: `Advance ${definition.name}`,
+      detail: `${definition.name} is active in your support track.`,
+      actionLabel: formatRemainingObjectives(remainingObjectives),
+      questId: nextQuestId,
+    };
+  }
+
+  if (status === 'available') {
+    return {
+      kind: 'start-quest',
+      focusArea: 'quests',
+      title: `Start ${definition.name}`,
+      detail: definition.description,
+      actionLabel: 'Next non-combat quest',
+      questId: nextQuestId,
+    };
+  }
+
+  return buildNonCombatLockedRecommendation(state, nextQuestId, completedQuestIds, activeQuestById);
+}
+
 function getAscensionRecommendation(progress: CompletionProgress): CompletionRecommendation {
   const candidates: Array<{
-    key: Exclude<CompletionRecommendationFocusArea, 'completion'>;
+    key: Exclude<CompletionRecommendationFocusArea, 'completion' | 'skills'>;
     label: string;
     metric: ProgressMetric;
   }> = [
@@ -524,6 +716,13 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
       detail: '0/0 recorded toward the final ledger.',
       actionLabel: '0 remaining',
     },
+    nonCombatRecommendation: {
+      kind: 'complete-ledger',
+      focusArea: 'completion',
+      title: 'Non-Combat Ledger Closed',
+      detail: 'Every tracked non-combat quest chain is complete.',
+      actionLabel: 'Support systems complete',
+    },
   };
 
   progress.recommendation = buildCompletionRecommendation(
@@ -532,6 +731,11 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
     finalHunts,
     activeQuestById
   ) ?? getAscensionRecommendation(progress);
+  progress.nonCombatRecommendation = buildNonCombatRecommendation(
+    state,
+    completedQuestIds,
+    activeQuestById
+  );
 
   return progress;
 }

@@ -14,10 +14,18 @@ export function getCompletionRecommendationAction(
 ): CompletionRecommendationAction {
   switch (recommendation.kind) {
     case 'start-contract':
+    case 'start-quest':
       return {
-        ctaLabel: 'Start contract',
+        ctaLabel: recommendation.kind === 'start-contract' ? 'Start contract' : 'Start quest',
         route: '/quests',
         shouldStartQuest: true,
+        questId: recommendation.questId,
+      };
+    case 'advance-quest':
+      return {
+        ctaLabel: 'Open quests',
+        route: '/quests',
+        shouldStartQuest: false,
         questId: recommendation.questId,
       };
     case 'hunt-contract':
@@ -40,6 +48,7 @@ export function getCompletionRecommendationAction(
     default:
       switch (recommendation.focusArea) {
         case 'player':
+        case 'skills':
           return {
             ctaLabel: 'Train skills',
             route: '/skills',

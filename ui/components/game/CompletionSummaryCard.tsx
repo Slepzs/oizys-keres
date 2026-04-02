@@ -17,11 +17,29 @@ function getRecommendationMeta(kind: string) {
         icon: '📜',
         accent: colors.warning,
       };
+    case 'start-quest':
+      return {
+        eyebrow: 'Next Quest',
+        icon: '🧭',
+        accent: colors.primary,
+      };
+    case 'advance-quest':
+      return {
+        eyebrow: 'Support Track',
+        icon: '🗂️',
+        accent: colors.rarityRare,
+      };
     case 'hunt-contract':
       return {
         eyebrow: 'Active Hunt',
         icon: '🎯',
         accent: colors.error,
+      };
+    case 'train-skill':
+      return {
+        eyebrow: 'Skill Gate',
+        icon: '🪓',
+        accent: colors.primary,
       };
     case 'train-combat':
       return {
@@ -50,9 +68,14 @@ export function CompletionSummaryCard() {
   const { action, handlePress } = useCompletionRecommendationAction(
     completion.recommendation
   );
+  const { action: nonCombatAction, handlePress: handleNonCombatPress } =
+    useCompletionRecommendationAction(completion.nonCombatRecommendation);
   const meta = useMemo(() => {
     return getRecommendationMeta(completion.recommendation.kind);
   }, [completion.recommendation.kind]);
+  const nonCombatMeta = useMemo(() => {
+    return getRecommendationMeta(completion.nonCombatRecommendation.kind);
+  }, [completion.nonCombatRecommendation.kind]);
 
   return (
     <Card style={styles.card} variant="elevated">
@@ -93,6 +116,27 @@ export function CompletionSummaryCard() {
             style={styles.secondaryButton}
           />
         </View>
+      </View>
+
+      <View style={styles.secondarySection}>
+        <View style={styles.secondaryHeader}>
+          <Text style={[styles.secondaryEyebrow, { color: nonCombatMeta.accent }]}>
+            {nonCombatMeta.eyebrow}
+          </Text>
+          <Text
+            style={[styles.actionPill, { borderColor: nonCombatMeta.accent, color: nonCombatMeta.accent }]}
+          >
+            {completion.nonCombatRecommendation.actionLabel}
+          </Text>
+        </View>
+        <Text style={styles.secondaryTitle}>{completion.nonCombatRecommendation.title}</Text>
+        <Text style={styles.secondaryDetail}>{completion.nonCombatRecommendation.detail}</Text>
+        <Button
+          title={nonCombatAction.ctaLabel}
+          onPress={handleNonCombatPress}
+          variant="secondary"
+          size="sm"
+        />
       </View>
     </Card>
   );
@@ -174,5 +218,33 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     flex: 1,
+  },
+  secondarySection: {
+    gap: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+    paddingTop: spacing.md,
+  },
+  secondaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  secondaryEyebrow: {
+    flex: 1,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    textTransform: 'uppercase',
+  },
+  secondaryTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  secondaryDetail: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: 19,
   },
 });

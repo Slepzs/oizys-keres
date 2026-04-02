@@ -203,12 +203,14 @@ export function useCombatSummary() {
 }
 
 export function useCompletionProgress() {
-  const { player, combat, quests, bag } = useGameStore(
+  const { player, combat, quests, bag, skills, resources } = useGameStore(
     useShallow((state) => ({
       player: state.player,
       combat: state.combat,
       quests: state.quests,
       bag: state.bag,
+      skills: state.skills,
+      resources: state.resources,
     }))
   );
 
@@ -218,8 +220,10 @@ export function useCompletionProgress() {
       combat,
       quests,
       bag,
+      skills,
+      resources,
     });
-  }, [bag, combat, player, quests]);
+  }, [bag, combat, player, quests, resources, skills]);
 }
 
 export function useCombatRouteProjection(enemyId: string | null) {

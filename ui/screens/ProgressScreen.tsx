@@ -59,11 +59,29 @@ function getRecommendationMeta(kind: string) {
         icon: '📜',
         accent: colors.warning,
       };
+    case 'start-quest':
+      return {
+        eyebrow: 'Next Quest',
+        icon: '🧭',
+        accent: colors.primary,
+      };
+    case 'advance-quest':
+      return {
+        eyebrow: 'Support Track',
+        icon: '🗂️',
+        accent: colors.rarityRare,
+      };
     case 'hunt-contract':
       return {
         eyebrow: 'Active Hunt',
         icon: '🎯',
         accent: colors.error,
+      };
+    case 'train-skill':
+      return {
+        eyebrow: 'Skill Gate',
+        icon: '🪓',
+        accent: colors.primary,
       };
     case 'train-combat':
       return {
@@ -131,9 +149,14 @@ function CompletionTabContent() {
   const { action, handlePress } = useCompletionRecommendationAction(
     completion.recommendation
   );
+  const { action: nonCombatAction, handlePress: handleNonCombatPress } =
+    useCompletionRecommendationAction(completion.nonCombatRecommendation);
   const recommendationMeta = useMemo(() => {
     return getRecommendationMeta(completion.recommendation.kind);
   }, [completion.recommendation.kind]);
+  const nonCombatMeta = useMemo(() => {
+    return getRecommendationMeta(completion.nonCombatRecommendation.kind);
+  }, [completion.nonCombatRecommendation.kind]);
   const overviewCards = useMemo(() => {
     return [
       {
@@ -200,6 +223,40 @@ function CompletionTabContent() {
         <Button
           title={action.ctaLabel}
           onPress={handlePress}
+          variant="secondary"
+          size="sm"
+          style={styles.recommendationButton}
+        />
+      </Card>
+
+      <Card style={styles.recommendationCard} variant="elevated">
+        <View style={styles.recommendationHeader}>
+          <View style={styles.recommendationTitleRow}>
+            <Text style={styles.recommendationIcon}>{nonCombatMeta.icon}</Text>
+            <View style={styles.recommendationCopy}>
+              <Text style={[styles.recommendationEyebrow, { color: nonCombatMeta.accent }]}>
+                {nonCombatMeta.eyebrow}
+              </Text>
+              <Text style={styles.recommendationTitle}>
+                {completion.nonCombatRecommendation.title}
+              </Text>
+            </View>
+          </View>
+          <Text
+            style={[
+              styles.recommendationBadge,
+              { borderColor: nonCombatMeta.accent, color: nonCombatMeta.accent },
+            ]}
+          >
+            {completion.nonCombatRecommendation.actionLabel}
+          </Text>
+        </View>
+        <Text style={styles.recommendationDetail}>
+          {completion.nonCombatRecommendation.detail}
+        </Text>
+        <Button
+          title={nonCombatAction.ctaLabel}
+          onPress={handleNonCombatPress}
           variant="secondary"
           size="sm"
           style={styles.recommendationButton}

@@ -173,6 +173,53 @@ test('completion progress recommends combat training when the active final hunt 
   });
 });
 
+test('completion progress surfaces the next available non-combat quest as a secondary recommendation', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+
+  state.quests.completed = ['first_steps', 'wood_for_days'];
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.nonCombatRecommendation, {
+    kind: 'start-quest',
+    focusArea: 'quests',
+    title: 'Start Aspiring Lumberjack',
+    detail: 'Train woodcutting seriously and secure seed reserves.',
+    actionLabel: 'Next non-combat quest',
+    questId: 'aspiring_lumberjack',
+  });
+});
+
+test('completion progress recommends skill training when the next non-combat quest is skill-gated', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+
+  state.quests.completed = [
+    'aspiring_lumberjack',
+    'copper_vein',
+    'iron_hand',
+    'coal_runner',
+    'mithril_seeker',
+    'adamantite_lord',
+    'forge_journeyman',
+    'bonded_companion',
+    'awakened_bond',
+    'ascending_spirit',
+    'mythic_pact',
+  ];
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.nonCombatRecommendation, {
+    kind: 'train-skill',
+    focusArea: 'skills',
+    title: 'Reach woodcutting level 3',
+    detail: 'Seed Collector unlocks once woodcutting reaches level 3.',
+    actionLabel: 'Unlock the next non-combat quest',
+    questId: 'seed_collector',
+    skillId: 'woodcutting',
+  });
+});
+
 test('completion progress exposes combat ascension focus after the final contracts are cleared', () => {
   const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
   const combatXp = totalXpForCombatSkillLevel(90);

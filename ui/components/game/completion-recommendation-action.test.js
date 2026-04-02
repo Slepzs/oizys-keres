@@ -63,6 +63,42 @@ test('player ascension recommendations route to skills training', () => {
   });
 });
 
+test('non-combat quest recommendations can start the next quest directly', () => {
+  const action = getCompletionRecommendationAction({
+    kind: 'start-quest',
+    focusArea: 'quests',
+    title: 'Start First Cast',
+    detail: 'Try your luck at the pond and reel in some shrimp.',
+    actionLabel: 'Next non-combat quest',
+    questId: 'first_cast',
+  });
+
+  assert.deepEqual(action, {
+    ctaLabel: 'Start quest',
+    route: '/quests',
+    shouldStartQuest: true,
+    questId: 'first_cast',
+  });
+});
+
+test('skill-gated non-combat recommendations route back to skills training', () => {
+  const action = getCompletionRecommendationAction({
+    kind: 'train-skill',
+    focusArea: 'skills',
+    title: 'Reach woodcutting level 3',
+    detail: 'Seed Collector unlocks once woodcutting reaches level 3.',
+    actionLabel: 'Unlock the next non-combat quest',
+    questId: 'seed_collector',
+    skillId: 'woodcutting',
+  });
+
+  assert.deepEqual(action, {
+    ctaLabel: 'Train skills',
+    route: '/skills',
+    shouldStartQuest: false,
+  });
+});
+
 test('completed ledgers stay on the progress route', () => {
   const action = getCompletionRecommendationAction({
     kind: 'complete-ledger',
