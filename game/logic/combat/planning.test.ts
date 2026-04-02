@@ -39,6 +39,10 @@ test('active pets materially improve projected kill pace', () => {
   assert.ok(projectedWithPet.totalDps > projectedWithoutPet.totalDps);
   assert.ok(projectedWithPet.timeToKillSeconds < projectedWithoutPet.timeToKillSeconds);
   assert.ok(projectedWithPet.xpPerMinute > projectedWithoutPet.xpPerMinute);
+  assert.ok(projectedWithPet.valuePerMinute > projectedWithoutPet.valuePerMinute);
+  assert.ok(
+    Math.abs(projectedWithPet.totalValuePerKill - projectedWithoutPet.totalValuePerKill) < 0.0001
+  );
 });
 
 test('stocked food extends projected sustain for hard fights', () => {
@@ -65,4 +69,30 @@ test('overmatched targets are flagged as lethal', () => {
   assert.equal(projection.risk, 'lethal');
   assert.ok(projection.killsBeforeRestock === 0 || projection.killsBeforeRestock === 1);
   assert.ok(projection.netDamagePerKill > state.combat.playerCurrentHp);
+});
+
+test('projected loot value combines average coins and expected sell value from drops', () => {
+  const state = withCombatLevel(10);
+
+  const projection = estimateCombatRoute(asPlanningState(state), 'rat');
+
+  assert.equal(projection.averageCoinsPerKill, 2);
+  assert.ok(Math.abs(projection.averageLootValuePerKill - 0.875) < 0.0001);
+  assert.ok(Math.abs(projection.totalValuePerKill - 2.875) < 0.0001);
+});
+
+test('notable drops are sorted by expected value and capped to the top three', () => {
+  const state = withCombatLevel(70);
+
+  const projection = estimateCombatRoute(asPlanningState(state), 'elder_demon');
+
+  assert.equal(projection.notableDrops.length, 3);
+  assert.deepEqual(
+    projection.notableDrops.map((drop) => drop.itemId),
+    ['elder_demon_core', 'arcane_warblade', 'arcane_chestplate']
+  );
+  assert.ok(
+    projection.notableDrops[0]!.expectedValuePerKill
+      > projection.notableDrops[1]!.expectedValuePerKill
+  );
 });

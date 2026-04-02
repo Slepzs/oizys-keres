@@ -6,7 +6,7 @@ import type { CombatRouteProjection } from '@/game/logic';
 import { ZONE_IDS } from '@/game/data';
 import { CombatZoneCard } from '@/ui/components/game/CombatZoneCard';
 import { Card } from '@/ui/components/common';
-import { formatNumber, formatTime } from '@/utils/format';
+import { formatNumber, formatPercent, formatTime } from '@/utils/format';
 
 interface SelectionSummary {
   id: string;
@@ -35,6 +35,14 @@ interface CombatHuntViewProps {
   onSelectZone: (zoneId: string) => void;
   onSelectEnemyForZone: (zoneId: string, enemyId: string) => void;
   onStartCombat: () => void;
+}
+
+function formatProjectionCoins(value: number) {
+  if (value >= 100) {
+    return formatNumber(value);
+  }
+
+  return value.toFixed(1);
 }
 
 export function CombatHuntView({
@@ -122,8 +130,8 @@ export function CombatHuntView({
               <Text style={styles.projectionTitle}>Route Projection</Text>
               <Text style={styles.projectionSubtitle}>
                 {routeProjection
-                  ? `Projected from your current gear, pet, and stocked supplies against ${routeProjection.enemyName}.`
-                  : 'Pick a target to estimate kill pace, pressure, and sustain before starting.'}
+                  ? `Projected from your current gear, pet, stocked supplies, and expected loot against ${routeProjection.enemyName}.`
+                  : 'Pick a target to estimate kill pace, pressure, sustain, and vendor value before starting.'}
               </Text>
             </View>
             {routeProjection ? (
@@ -175,16 +183,47 @@ export function CombatHuntView({
                   : '--'}
               </Text>
             </View>
+            <View style={styles.projectionMetric}>
+              <Text style={styles.projectionMetricLabel}>Value / Kill</Text>
+              <Text style={styles.projectionMetricValue}>
+                {routeProjection ? `🪙 ${formatProjectionCoins(routeProjection.totalValuePerKill)}` : '--'}
+              </Text>
+            </View>
+            <View style={styles.projectionMetric}>
+              <Text style={styles.projectionMetricLabel}>Value / Min</Text>
+              <Text style={styles.projectionMetricValue}>
+                {routeProjection ? `🪙 ${formatProjectionCoins(routeProjection.valuePerMinute)}` : '--'}
+              </Text>
+            </View>
           </View>
 
           {routeProjection ? (
-            <Text style={styles.projectionNote}>
-              {routeProjection.killsBeforeRestock === null
-                ? 'Passive regen and pet sustain cover this route without consuming stocked food.'
-                : routeProjection.totalFoodCount <= 0
-                  ? 'No food is stocked for this route. Queue Cooking before leaving this on auto-fight.'
-                  : `Current stock covers about ${formatNumber(routeProjection.foodPerKill ?? 0)} food per kill across ${formatNumber(routeProjection.totalFoodCount)} prepared meals.`}
-            </Text>
+            <>
+              <Text style={styles.projectionNote}>
+                {routeProjection.killsBeforeRestock === null
+                  ? 'Passive regen and pet sustain cover this route without consuming stocked food.'
+                  : routeProjection.totalFoodCount <= 0
+                    ? 'No food is stocked for this route. Queue Cooking before leaving this on auto-fight.'
+                    : `Current stock covers about ${formatNumber(routeProjection.foodPerKill ?? 0)} food per kill across ${formatNumber(routeProjection.totalFoodCount)} prepared meals.`}
+              </Text>
+              {routeProjection.notableDrops.length > 0 ? (
+                <View style={styles.notableDropsSection}>
+                  <Text style={styles.notableDropsTitle}>Top Drops</Text>
+                  <View style={styles.notableDropsGrid}>
+                    {routeProjection.notableDrops.map((drop) => (
+                      <View key={drop.itemId} style={styles.notableDropChip}>
+                        <Text style={styles.notableDropName}>
+                          {drop.icon} {drop.name}
+                        </Text>
+                        <Text style={styles.notableDropMeta}>
+                          {formatPercent(drop.chance, 0)} • 🪙 {formatProjectionCoins(drop.expectedValuePerKill)}/kill
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+            </>
           ) : null}
         </View>
 
@@ -403,6 +442,33 @@ const styles = StyleSheet.create({
   },
   projectionNote: {
     fontSize: fontSize.sm,
+    color: colors.textSecondary,
+  },
+  notableDropsSection: {
+    gap: spacing.sm,
+  },
+  notableDropsTitle: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  notableDropsGrid: {
+    gap: spacing.sm,
+  },
+  notableDropChip: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.xs,
+  },
+  notableDropName: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  notableDropMeta: {
+    fontSize: fontSize.xs,
     color: colors.textSecondary,
   },
   summaryGrid: {

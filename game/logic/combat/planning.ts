@@ -1,5 +1,6 @@
-import { ENEMY_DEFINITIONS, ITEM_DEFINITIONS } from '../../data';
+import { COMBAT_DROP_TABLES, ENEMY_DEFINITIONS, ITEM_DEFINITIONS } from '../../data';
 import type { GameState } from '../../types';
+import type { ItemId } from '../../types/items';
 import { isFood } from '../../types/items';
 import { getActivePetCombatProfile, getSummoningCombatBonuses } from '../summoning';
 import { scaleAttackIntervalSeconds, scaleEnemyMaxHp } from './balance';
@@ -28,6 +29,10 @@ export interface CombatRouteProjection {
   enemyName: string;
   timeToKillSeconds: number;
   xpPerMinute: number;
+  averageCoinsPerKill: number;
+  averageLootValuePerKill: number;
+  totalValuePerKill: number;
+  valuePerMinute: number;
   playerDps: number;
   petDps: number;
   totalDps: number;
@@ -39,6 +44,16 @@ export interface CombatRouteProjection {
   foodPerKill: number | null;
   killsBeforeRestock: number | null;
   risk: CombatRouteRisk;
+  notableDrops: CombatRouteDropProjection[];
+}
+
+export interface CombatRouteDropProjection {
+  itemId: ItemId;
+  name: string;
+  icon: string;
+  chance: number;
+  averageQuantity: number;
+  expectedValuePerKill: number;
 }
 
 function getFoodStock(bag: GameState['bag']) {
@@ -90,6 +105,58 @@ function classifyRisk(killsBeforeRestock: number | null, totalDps: number): Comb
   return 'safe';
 }
 
+function averageRoll(min: number, max: number) {
+  return (min + max) / 2;
+}
+
+function getLootProjection(enemyId: string) {
+  const table = COMBAT_DROP_TABLES[enemyId];
+
+  if (!table) {
+    return {
+      averageCoinsPerKill: 0,
+      averageLootValuePerKill: 0,
+      notableDrops: [] as CombatRouteDropProjection[],
+    };
+  }
+
+  const averageCoinsPerKill = averageRoll(table.coins.min, table.coins.max);
+  const notableDrops = table.items
+    .map((drop) => {
+      const definition = ITEM_DEFINITIONS[drop.itemId];
+      const averageQuantity = averageRoll(drop.minQuantity, drop.maxQuantity);
+      const expectedValuePerKill = definition
+        ? drop.chance * averageQuantity * definition.sellPrice
+        : 0;
+
+      return {
+        itemId: drop.itemId,
+        name: definition?.name ?? drop.itemId,
+        icon: definition?.icon ?? '🎒',
+        chance: drop.chance,
+        averageQuantity,
+        expectedValuePerKill,
+      };
+    })
+    .sort((left, right) => {
+      if (right.expectedValuePerKill !== left.expectedValuePerKill) {
+        return right.expectedValuePerKill - left.expectedValuePerKill;
+      }
+
+      return right.chance - left.chance;
+    });
+  const averageLootValuePerKill = notableDrops.reduce(
+    (total, drop) => total + drop.expectedValuePerKill,
+    0
+  );
+
+  return {
+    averageCoinsPerKill,
+    averageLootValuePerKill,
+    notableDrops: notableDrops.slice(0, 3),
+  };
+}
+
 export function estimateCombatRoute(
   state: CombatPlanningState,
   enemyId: string
@@ -102,6 +169,10 @@ export function estimateCombatRoute(
       enemyName: enemyId,
       timeToKillSeconds: Infinity,
       xpPerMinute: 0,
+      averageCoinsPerKill: 0,
+      averageLootValuePerKill: 0,
+      totalValuePerKill: 0,
+      valuePerMinute: 0,
       playerDps: 0,
       petDps: 0,
       totalDps: 0,
@@ -113,12 +184,14 @@ export function estimateCombatRoute(
       foodPerKill: null,
       killsBeforeRestock: 0,
       risk: 'lethal',
+      notableDrops: [],
     };
   }
 
   const bonuses = getSummoningCombatBonuses(state.summoning, state.summoningLevel);
   const petProfile = getActivePetCombatProfile(state.summoning, state.summoningLevel);
   const foodStock = getFoodStock(state.bag);
+  const lootProjection = getLootProjection(enemy.id);
   const enemyHp = scaleEnemyMaxHp(enemy.maxHp);
 
   const playerDamagePerHit = calculateDamage(
@@ -141,6 +214,11 @@ export function estimateCombatRoute(
   const timeToKillSeconds = totalDps > 0 ? enemyHp / totalDps : Infinity;
   const xpPerMinute = Number.isFinite(timeToKillSeconds) && timeToKillSeconds > 0
     ? (enemy.xpReward * 60) / timeToKillSeconds
+    : 0;
+  const totalValuePerKill =
+    lootProjection.averageCoinsPerKill + lootProjection.averageLootValuePerKill;
+  const valuePerMinute = Number.isFinite(timeToKillSeconds) && timeToKillSeconds > 0
+    ? (totalValuePerKill * 60) / timeToKillSeconds
     : 0;
 
   const enemyDamagePerHit = Math.max(
@@ -172,6 +250,10 @@ export function estimateCombatRoute(
     enemyName: enemy.name,
     timeToKillSeconds,
     xpPerMinute,
+    averageCoinsPerKill: lootProjection.averageCoinsPerKill,
+    averageLootValuePerKill: lootProjection.averageLootValuePerKill,
+    totalValuePerKill,
+    valuePerMinute,
     playerDps,
     petDps,
     totalDps,
@@ -183,5 +265,6 @@ export function estimateCombatRoute(
     foodPerKill,
     killsBeforeRestock,
     risk: classifyRisk(killsBeforeRestock, totalDps),
+    notableDrops: lootProjection.notableDrops,
   };
 }
