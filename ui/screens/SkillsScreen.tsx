@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
 import { SafeContainer } from '../components/layout/SafeContainer';
-import { Card } from '../components/common/Card';
+import { Card } from '../components/common/Cards/Card';
 import { Button } from '../components/common/Button';
 import { SkillProgressBar } from '../components/game/SkillProgressBar';
 import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/constants/theme';
@@ -53,7 +53,7 @@ export function SkillsScreen() {
   ]);
 
   return (
-    <SafeContainer padTop={false}>
+    <SafeContainer showPlayerHeader>
       <ScrollView showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Skills</Text>
         <Text style={styles.subtitle}>

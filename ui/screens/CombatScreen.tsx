@@ -121,7 +121,7 @@ export function CombatScreen() {
   };
 
   return (
-    <SafeContainer padTop={false}>
+    <SafeContainer showPlayerHeader>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}

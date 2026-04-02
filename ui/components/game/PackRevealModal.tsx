@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Modal, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../common/Button';
-import { Card } from '../common/Card';
+import { Card } from '../common/Cards/Card';
 import { colors, borderRadius, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { ITEM_DEFINITIONS } from '@/game/data';
 import type { ItemId, ItemRarity } from '@/game/types/items';

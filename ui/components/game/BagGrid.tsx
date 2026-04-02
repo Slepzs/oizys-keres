@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { BagSlot, SLOT_SIZE } from './BagSlot';
-import { Card } from '../common/Card';
+import { Card } from '../common/Cards/Card';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
 import type { BagState, ItemRarity } from '@/game/types';
 import { ITEM_DEFINITIONS } from '@/game/data';

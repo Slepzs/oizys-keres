@@ -3,11 +3,15 @@ import { View, StyleSheet, ViewStyle, ImageBackground } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '@/constants/theme';
 
+import { PlayerHeaderBar } from './PlayerHeaderBar';
+import { getSafeContainerMetrics } from './SafeContainer.metrics';
+
 interface SafeContainerProps {
   children: React.ReactNode;
   style?: ViewStyle;
   padTop?: boolean;
   padBottom?: boolean;
+  showPlayerHeader?: boolean;
 }
 
 export function SafeContainer({
@@ -15,8 +19,16 @@ export function SafeContainer({
   style,
   padTop = true,
   padBottom = true,
+  showPlayerHeader = false,
 }: SafeContainerProps) {
   const insets = useSafeAreaInsets();
+  const metrics = getSafeContainerMetrics({
+    insetsTop: insets.top,
+    insetsBottom: insets.bottom,
+    padTop,
+    padBottom,
+    showPlayerHeader,
+  });
 
   return (
     <View style={styles.root}>
@@ -27,12 +39,17 @@ export function SafeContainer({
         resizeMode="cover"
       >
         <View pointerEvents="none" style={styles.overlay} />
+        {showPlayerHeader ? (
+          <View style={[styles.fixedHeader, { top: metrics.headerTop }]}>
+            <PlayerHeaderBar />
+          </View>
+        ) : null}
         <View
           style={[
             styles.container,
             {
-              paddingTop: padTop ? insets.top + spacing.md : spacing.md,
-              paddingBottom: padBottom ? insets.bottom + spacing.md : spacing.md,
+              paddingTop: metrics.contentPaddingTop,
+              paddingBottom: metrics.contentPaddingBottom,
             },
             style,
           ]}
@@ -63,5 +80,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
     paddingHorizontal: spacing.md,
+  },
+  fixedHeader: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 2,
+    // paddingHorizontal: spacing.md,
   },
 });

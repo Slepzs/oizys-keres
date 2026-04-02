@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Card } from '../common/Card';
+import { Card } from '../common/Cards/Card';
 import { Button } from '../common/Button';
 import { ProgressBar } from '../common/ProgressBar';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';

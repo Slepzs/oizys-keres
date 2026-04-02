@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Card } from '../common/Card';
+import { Card } from '../common/Cards/Card';
 import { SkillProgressBar } from './SkillProgressBar';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import type { SkillId, SkillState } from '@/game/types';

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Card } from '../common/Card';
+import { Card } from '../common/Cards/Card';
 import { ProgressBar } from '../common/ProgressBar';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { TICK_RATE_MS } from '@/game/data';

@@ -102,7 +102,7 @@ export function BagScreen() {
   };
 
   return (
-    <SafeContainer padTop={false} padBottom={false} style={styles.safe}>
+    <SafeContainer showPlayerHeader padBottom={false} style={styles.safe}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{

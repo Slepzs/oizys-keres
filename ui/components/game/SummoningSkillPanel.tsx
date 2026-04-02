@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Switch, Pressable } from 'react-native';
-import { Card } from '../common/Card';
+import { Card } from '../common/Cards/Card';
 import { Button } from '../common/Button';
 import { ProgressBar } from '../common/ProgressBar';
 import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/constants/theme';

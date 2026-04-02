@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Card } from '../common/Card';
+import { Card } from '../common/Cards/Card';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
 import type { CombatLogEntry } from '@/store/combatFeedback';
 

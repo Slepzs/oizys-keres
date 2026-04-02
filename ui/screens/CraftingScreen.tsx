@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 import { SafeContainer } from '../components/layout/SafeContainer';
-import { Card } from '../components/common/Card';
+import { Card } from '../components/common/Cards/Card';
 import { Button } from '../components/common/Button';
 import { RpgIcon } from '../components/common/RpgIcon';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
@@ -183,7 +183,7 @@ export function CraftingScreen() {
   }, [skills.crafting, crafting.automation.recipeId, crafting.automation.tickProgress]);
 
   return (
-    <SafeContainer padTop={false}>
+    <SafeContainer showPlayerHeader>
       <ScrollView showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Crafting</Text>
         <Text style={styles.subtitle}>Convert gathered materials into permanent progression.</Text>

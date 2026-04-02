@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Card } from '../common/Card';
+import { Card } from '../common/Cards/Card';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
 
 interface CombatPetCardProps {

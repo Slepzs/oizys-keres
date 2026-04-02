@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Switch } from 'react-nat
 import { router, useLocalSearchParams } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
 import { SafeContainer } from '../components/layout/SafeContainer';
-import { Card } from '../components/common/Card';
+import { Card } from '../components/common/Cards/Card';
 import { Button } from '../components/common/Button';
 import { SkillProgressBar } from '../components/game/SkillProgressBar';
 import { TreeSelector } from '../components/game/TreeSelector';
@@ -212,7 +212,7 @@ export function SkillDetailScreen() {
   }
 
   return (
-    <SafeContainer padTop={false}>
+    <SafeContainer>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backText}>{'\u2190'}</Text>

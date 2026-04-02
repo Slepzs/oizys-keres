@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
-import { Card } from '../common/Card';
+import { Card } from '../common/Cards/Card';
 import { ProgressBar } from '../common/ProgressBar';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { useGameStore, useActiveCombat, useCombatTracker } from '@/store';

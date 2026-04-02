@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeContainer } from '../components/layout/SafeContainer';
-import { Card } from '../components/common/Card';
+import { Card } from '../components/common/Cards/Card';
 import { Button } from '../components/common/Button';
 import { useSave } from '@/hooks/useSave';
 import { useGame } from '@/hooks/useGame';
@@ -43,7 +43,7 @@ export function SettingsScreen() {
   const sessionTime = Date.now() - state.timestamps.sessionStart;
 
   return (
-    <SafeContainer padTop={false}>
+    <SafeContainer showPlayerHeader>
       <ScrollView showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Settings</Text>
 

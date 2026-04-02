@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
-import { Card } from '../common/Card';
+import { Card } from '../common/Cards/Card';
 import { Button } from '../common/Button';
 import { PackRevealModal } from './PackRevealModal';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';

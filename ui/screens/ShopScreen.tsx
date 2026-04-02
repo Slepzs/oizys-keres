@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-nati
 import { router } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
 import { SafeContainer } from '../components/layout/SafeContainer';
-import { Card } from '../components/common/Card';
+import { Card } from '../components/common/Cards/Card';
 import { Button } from '../components/common/Button';
 import { PackRevealModal } from '../components/game/PackRevealModal';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
