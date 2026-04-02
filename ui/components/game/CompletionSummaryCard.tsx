@@ -8,6 +8,36 @@ import { useCompletionProgress } from '@/store';
 
 import { Card } from '../common/Cards/Card';
 import { Button } from '../common/Button';
+import { ProgressBar } from '../common/ProgressBar';
+
+function getNonCombatCategoryLabel(category: string | null) {
+  switch (category) {
+    case 'skill':
+      return 'Skill chain';
+    case 'exploration':
+      return 'Exploration chain';
+    default:
+      return 'All tracked chains';
+  }
+}
+
+function getNonCombatBlockerAccent(kind: string) {
+  switch (kind) {
+    case 'ready':
+    case 'complete':
+      return colors.success;
+    case 'active':
+      return colors.rarityRare;
+    case 'skill':
+      return colors.primary;
+    case 'player':
+      return colors.warning;
+    case 'resource':
+      return colors.secondary;
+    default:
+      return colors.warning;
+  }
+}
 
 function getRecommendationMeta(kind: string) {
   switch (kind) {
@@ -131,6 +161,34 @@ export function CompletionSummaryCard() {
         </View>
         <Text style={styles.secondaryTitle}>{completion.nonCombatRecommendation.title}</Text>
         <Text style={styles.secondaryDetail}>{completion.nonCombatRecommendation.detail}</Text>
+        <View style={styles.supportMetaRow}>
+          <Text style={styles.supportMetaText}>
+            {completion.nonCombat.completedCount}/{completion.nonCombat.total} support quests
+          </Text>
+          <Text style={styles.supportMetaText}>
+            {getNonCombatCategoryLabel(completion.nonCombat.nextCategory)}
+          </Text>
+        </View>
+        <ProgressBar
+          progress={completion.nonCombat.progress}
+          color={nonCombatMeta.accent}
+          backgroundColor={colors.surfaceLight}
+          height={6}
+        />
+        <View style={styles.supportBlockerRow}>
+          <Text
+            style={[
+              styles.actionPill,
+              {
+                borderColor: getNonCombatBlockerAccent(completion.nonCombat.blocker.kind),
+                color: getNonCombatBlockerAccent(completion.nonCombat.blocker.kind),
+              },
+            ]}
+          >
+            {completion.nonCombat.blocker.label}
+          </Text>
+          <Text style={styles.supportBlockerDetail}>{completion.nonCombat.blocker.detail}</Text>
+        </View>
         <Button
           title={nonCombatAction.ctaLabel}
           onPress={handleNonCombatPress}
@@ -246,5 +304,23 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     lineHeight: 19,
+  },
+  supportMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  supportMetaText: {
+    flex: 1,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  supportBlockerRow: {
+    gap: spacing.xs,
+  },
+  supportBlockerDetail: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: 17,
   },
 });

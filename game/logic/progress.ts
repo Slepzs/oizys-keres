@@ -94,6 +94,37 @@ interface QuestHuntRoute {
   combatLevelRequired: number;
 }
 
+type NonCombatCategory = 'skill' | 'exploration';
+type NonCombatBlockerKind =
+  | 'ready'
+  | 'active'
+  | 'skill'
+  | 'player'
+  | 'prerequisite'
+  | 'resource'
+  | 'complete';
+
+interface NonCombatBlockerSummary {
+  kind: NonCombatBlockerKind;
+  label: string;
+  detail: string;
+}
+
+interface NonCombatProgressSummary {
+  completedCount: number;
+  total: number;
+  progress: number;
+  nextCategory: NonCombatCategory | null;
+  blocker: NonCombatBlockerSummary;
+}
+
+interface NextNonCombatQuest {
+  questId: string;
+  status: CompletionQuestStatus;
+  definition: ReturnType<typeof getQuestDefinition>;
+  category: NonCombatCategory | null;
+}
+
 export interface CompletionProgress {
   lore: typeof COMPLETION_LORE;
   ascension: {
@@ -111,6 +142,7 @@ export interface CompletionProgress {
     entries: CompletionContractEntry[];
   };
   finalHunts: CompletionHuntEntry[];
+  nonCombat: NonCombatProgressSummary;
   recommendation: CompletionRecommendation;
   nonCombatRecommendation: CompletionRecommendation;
 }
@@ -334,6 +366,140 @@ function isNonCombatQuest(questId: string) {
   return !definition.objectives.some((objective) => objective.type === 'kill');
 }
 
+function getNonCombatQuestIds() {
+  return QUEST_IDS.filter((questId) => isNonCombatQuest(questId));
+}
+
+function getNonCombatQuestCategory(questId: string): NonCombatCategory | null {
+  const definition = getQuestDefinition(questId);
+
+  return definition?.category === 'skill' || definition?.category === 'exploration'
+    ? definition.category
+    : null;
+}
+
+function getNextNonCombatQuest(
+  state: CompletionState,
+  completedQuestIds: Set<string>,
+  activeQuestById: Map<string, PlayerQuestState>
+): NextNonCombatQuest | null {
+  const nextQuestId = getNonCombatQuestIds().find((questId) => !completedQuestIds.has(questId));
+
+  if (!nextQuestId) {
+    return null;
+  }
+
+  return {
+    questId: nextQuestId,
+    status: getCompletionQuestStatus(nextQuestId, state, completedQuestIds, activeQuestById),
+    definition: getQuestDefinition(nextQuestId),
+    category: getNonCombatQuestCategory(nextQuestId),
+  };
+}
+
+function buildNonCombatBlockerSummary(
+  state: CompletionState,
+  nextQuest: NextNonCombatQuest | null,
+  completedQuestIds: Set<string>,
+  activeQuestById: Map<string, PlayerQuestState>
+): NonCombatBlockerSummary {
+  if (!nextQuest || !nextQuest.definition) {
+    return {
+      kind: 'complete',
+      label: 'Support systems complete',
+      detail: 'Every tracked non-combat quest chain is complete.',
+    };
+  }
+
+  if (nextQuest.status === 'available') {
+    return {
+      kind: 'ready',
+      label: 'Ready now',
+      detail: `${nextQuest.definition.name} can be started immediately.`,
+    };
+  }
+
+  if (nextQuest.status === 'active') {
+    const remainingObjectives = getRemainingObjectiveLabels(
+      nextQuest.questId,
+      activeQuestById.get(nextQuest.questId),
+      state
+    );
+
+    return {
+      kind: 'active',
+      label: 'Active quest',
+      detail: formatRemainingObjectives(remainingObjectives),
+    };
+  }
+
+  const unmetCondition = nextQuest.definition.unlock?.find(
+    (condition) => !evaluateQuestUnlockCondition(condition, state, completedQuestIds)
+  );
+
+  if (!unmetCondition) {
+    return {
+      kind: 'ready',
+      label: 'Ready now',
+      detail: `${nextQuest.definition.name} can be started immediately.`,
+    };
+  }
+
+  switch (unmetCondition.type) {
+    case 'level_at_least':
+      return {
+        kind: 'skill',
+        label: `${formatSkillName(unmetCondition.skill)} level ${unmetCondition.value}`,
+        detail: `${nextQuest.definition.name} is gated by a ${formatSkillName(unmetCondition.skill)} requirement.`,
+      };
+    case 'player_level_at_least':
+      return {
+        kind: 'player',
+        label: `player level ${unmetCondition.value}`,
+        detail: `${nextQuest.definition.name} is gated by player ascension.`,
+      };
+    case 'quest_completed': {
+      const prerequisite = getQuestDefinition(unmetCondition.questId);
+      return {
+        kind: 'prerequisite',
+        label: prerequisite?.name ?? unmetCondition.questId,
+        detail: `${nextQuest.definition.name} is blocked by a prerequisite quest.`,
+      };
+    }
+    case 'resource_at_least':
+      return {
+        kind: 'resource',
+        label: `${unmetCondition.value} ${unmetCondition.resource.replaceAll('_', ' ')}`,
+        detail: `${nextQuest.definition.name} needs more stored resources.`,
+      };
+    default:
+      return {
+        kind: 'prerequisite',
+        label: nextQuest.definition.name,
+        detail: `${nextQuest.definition.name} is still blocked.`,
+      };
+  }
+}
+
+function buildNonCombatSummary(
+  state: CompletionState,
+  completedQuestIds: Set<string>,
+  activeQuestById: Map<string, PlayerQuestState>
+): NonCombatProgressSummary {
+  const nonCombatQuestIds = getNonCombatQuestIds();
+  const completedCount = nonCombatQuestIds.filter((questId) => completedQuestIds.has(questId)).length;
+  const total = nonCombatQuestIds.length;
+  const nextQuest = getNextNonCombatQuest(state, completedQuestIds, activeQuestById);
+
+  return {
+    completedCount,
+    total,
+    progress: total > 0 ? completedCount / total : 1,
+    nextCategory: nextQuest?.category ?? null,
+    blocker: buildNonCombatBlockerSummary(state, nextQuest, completedQuestIds, activeQuestById),
+  };
+}
+
 function buildNonCombatLockedRecommendation(
   state: CompletionState,
   questId: string,
@@ -428,11 +594,9 @@ function buildNonCombatRecommendation(
   completedQuestIds: Set<string>,
   activeQuestById: Map<string, PlayerQuestState>
 ): CompletionRecommendation {
-  const nextQuestId = QUEST_IDS.find((questId) => {
-    return isNonCombatQuest(questId) && !completedQuestIds.has(questId);
-  });
+  const nextQuest = getNextNonCombatQuest(state, completedQuestIds, activeQuestById);
 
-  if (!nextQuestId) {
+  if (!nextQuest) {
     return {
       kind: 'complete-ledger',
       focusArea: 'completion',
@@ -442,8 +606,7 @@ function buildNonCombatRecommendation(
     };
   }
 
-  const definition = getQuestDefinition(nextQuestId);
-  const status = getCompletionQuestStatus(nextQuestId, state, completedQuestIds, activeQuestById);
+  const { questId: nextQuestId, definition, status } = nextQuest;
 
   if (!definition) {
     return {
@@ -709,6 +872,17 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
       entries: finalContracts,
     },
     finalHunts,
+    nonCombat: {
+      completedCount: 0,
+      total: 0,
+      progress: 0,
+      nextCategory: null,
+      blocker: {
+        kind: 'complete',
+        label: 'Support systems complete',
+        detail: 'Every tracked non-combat quest chain is complete.',
+      },
+    },
     recommendation: {
       kind: 'finish-ascension',
       focusArea: 'player',
@@ -736,6 +910,7 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
     completedQuestIds,
     activeQuestById
   );
+  progress.nonCombat = buildNonCombatSummary(state, completedQuestIds, activeQuestById);
 
   return progress;
 }

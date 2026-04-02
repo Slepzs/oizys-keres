@@ -2,8 +2,23 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { totalXpForCombatSkillLevel } = require('../data/curves.ts');
+const { QUEST_IDS, getQuestDefinition } = require('../data/quests.data.ts');
 const { createInitialGameState } = require('../save/initial-state.ts');
 const { getCompletionProgress } = require('./progress.ts');
+
+const NON_COMBAT_TOTAL = QUEST_IDS.filter((questId) => {
+  const definition = getQuestDefinition(questId);
+
+  if (!definition || definition.repeatable) {
+    return false;
+  }
+
+  if (!definition.category || !new Set(['skill', 'exploration']).has(definition.category)) {
+    return false;
+  }
+
+  return !definition.objectives.some((objective) => objective.type === 'kill');
+}).length;
 
 test('completion progress summarizes ascension, hunt guidance, and active final-contract status', () => {
   const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
@@ -180,6 +195,17 @@ test('completion progress surfaces the next available non-combat quest as a seco
 
   const summary = getCompletionProgress(state);
 
+  assert.deepEqual(summary.nonCombat, {
+    completedCount: 0,
+    total: NON_COMBAT_TOTAL,
+    progress: 0,
+    nextCategory: 'skill',
+    blocker: {
+      kind: 'ready',
+      label: 'Ready now',
+      detail: 'Aspiring Lumberjack can be started immediately.',
+    },
+  });
   assert.deepEqual(summary.nonCombatRecommendation, {
     kind: 'start-quest',
     focusArea: 'quests',
@@ -209,6 +235,17 @@ test('completion progress recommends skill training when the next non-combat que
 
   const summary = getCompletionProgress(state);
 
+  assert.deepEqual(summary.nonCombat, {
+    completedCount: 11,
+    total: NON_COMBAT_TOTAL,
+    progress: 11 / NON_COMBAT_TOTAL,
+    nextCategory: 'exploration',
+    blocker: {
+      kind: 'skill',
+      label: 'woodcutting level 3',
+      detail: 'Seed Collector is gated by a woodcutting requirement.',
+    },
+  });
   assert.deepEqual(summary.nonCombatRecommendation, {
     kind: 'train-skill',
     focusArea: 'skills',
@@ -217,6 +254,37 @@ test('completion progress recommends skill training when the next non-combat que
     actionLabel: 'Unlock the next non-combat quest',
     questId: 'seed_collector',
     skillId: 'woodcutting',
+  });
+});
+
+test('completion progress marks the support track as blocked by the active non-combat quest', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+
+  state.quests.completed = ['first_steps', 'wood_for_days'];
+  state.quests.active = [
+    {
+      questId: 'aspiring_lumberjack',
+      progress: {
+        level: 5,
+        seed_stock: 1,
+      },
+      completed: false,
+      startedAt: 9_500,
+    },
+  ];
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.nonCombat, {
+    completedCount: 0,
+    total: NON_COMBAT_TOTAL,
+    progress: 0,
+    nextCategory: 'skill',
+    blocker: {
+      kind: 'active',
+      label: 'Active quest',
+      detail: '3 levels and 4 tree seeds remaining',
+    },
   });
 });
 

@@ -105,6 +105,35 @@ function getRecommendationMeta(kind: string) {
   }
 }
 
+function getNonCombatCategoryLabel(category: string | null) {
+  switch (category) {
+    case 'skill':
+      return 'Skill chain';
+    case 'exploration':
+      return 'Exploration chain';
+    default:
+      return 'All tracked chains';
+  }
+}
+
+function getNonCombatBlockerAccent(kind: string) {
+  switch (kind) {
+    case 'ready':
+    case 'complete':
+      return colors.success;
+    case 'active':
+      return colors.rarityRare;
+    case 'skill':
+      return colors.primary;
+    case 'player':
+      return colors.warning;
+    case 'resource':
+      return colors.secondary;
+    default:
+      return colors.warning;
+  }
+}
+
 export function ProgressScreen({ initialTab = 'quests', initialQuestId }: ProgressScreenProps) {
   const [activeTab, setActiveTab] = useState<ProgressTabId>(initialTab);
 
@@ -262,6 +291,44 @@ function CompletionTabContent() {
           size="sm"
           style={styles.recommendationButton}
         />
+      </Card>
+
+      <Card style={styles.supportCard} variant="elevated">
+        <View style={styles.supportHeader}>
+          <View style={styles.supportHeaderCopy}>
+            <Text style={styles.supportEyebrow}>Support Track</Text>
+            <Text style={styles.supportTitle}>
+              {completion.nonCombat.completedCount}/{completion.nonCombat.total} quests cleared
+            </Text>
+          </View>
+          <Text style={styles.supportCategory}>
+            {getNonCombatCategoryLabel(completion.nonCombat.nextCategory)}
+          </Text>
+        </View>
+        <ProgressBar
+          progress={completion.nonCombat.progress}
+          color={nonCombatMeta.accent}
+          backgroundColor={colors.surfaceLight}
+          height={6}
+          style={styles.metricProgress}
+        />
+        <View style={styles.supportBlockerHeader}>
+          <Text
+            style={[
+              styles.recommendationBadge,
+              {
+                borderColor: getNonCombatBlockerAccent(completion.nonCombat.blocker.kind),
+                color: getNonCombatBlockerAccent(completion.nonCombat.blocker.kind),
+              },
+            ]}
+          >
+            {completion.nonCombat.blocker.label}
+          </Text>
+          <Text style={styles.supportProgressText}>
+            {(completion.nonCombat.progress * 100).toFixed(0)}% complete
+          </Text>
+        </View>
+        <Text style={styles.supportDetail}>{completion.nonCombat.blocker.detail}</Text>
       </Card>
 
       <View style={styles.metricsGrid}>
@@ -473,6 +540,51 @@ const styles = StyleSheet.create({
   },
   recommendationButton: {
     alignSelf: 'flex-start',
+  },
+  supportCard: {
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  supportHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  supportHeaderCopy: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  supportEyebrow: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    color: colors.rarityRare,
+    textTransform: 'uppercase',
+  },
+  supportTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  supportCategory: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textAlign: 'right',
+  },
+  supportBlockerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  supportProgressText: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  supportDetail: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: 19,
   },
   metricsGrid: {
     flexDirection: 'row',
