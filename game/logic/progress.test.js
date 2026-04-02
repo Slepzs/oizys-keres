@@ -244,6 +244,12 @@ test('completion progress recommends skill training when the next non-combat que
       kind: 'skill',
       label: 'woodcutting level 3',
       detail: 'Seed Collector is gated by a woodcutting requirement.',
+      progress: {
+        current: 1,
+        target: 3,
+        progress: 1 / 3,
+        label: 'Level 1 / 3',
+      },
     },
   });
   assert.deepEqual(summary.nonCombatRecommendation, {
@@ -284,6 +290,57 @@ test('completion progress marks the support track as blocked by the active non-c
       kind: 'active',
       label: 'Active quest',
       detail: '3 levels and 4 tree seeds remaining',
+      progress: {
+        current: 31,
+        target: 100,
+        progress: 0.3125,
+        label: '31% complete',
+      },
+    },
+  });
+});
+
+test('completion progress quantifies prerequisite quest blockers for the support track', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+
+  state.quests.completed = [
+    'aspiring_lumberjack',
+    'copper_vein',
+    'iron_hand',
+    'coal_runner',
+    'mithril_seeker',
+    'adamantite_lord',
+    'forge_journeyman',
+  ];
+  state.quests.active = [
+    {
+      questId: 'first_ritual',
+      progress: {
+        xp: 125,
+        essence: 10,
+      },
+      completed: false,
+      startedAt: 9_500,
+    },
+  ];
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.nonCombat, {
+    completedCount: 7,
+    total: NON_COMBAT_TOTAL,
+    progress: 7 / NON_COMBAT_TOTAL,
+    nextCategory: 'skill',
+    blocker: {
+      kind: 'prerequisite',
+      label: 'First Ritual',
+      detail: 'Bonded Companion is blocked by a prerequisite quest.',
+      progress: {
+        current: 50,
+        target: 100,
+        progress: 0.5,
+        label: '50% complete',
+      },
     },
   });
 });

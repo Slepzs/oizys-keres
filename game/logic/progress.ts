@@ -108,6 +108,12 @@ interface NonCombatBlockerSummary {
   kind: NonCombatBlockerKind;
   label: string;
   detail: string;
+  progress?: {
+    current: number;
+    target: number;
+    progress: number;
+    label: string;
+  };
 }
 
 interface NonCombatProgressSummary {
@@ -248,16 +254,105 @@ function getQuestHuntRoute(questId: string): QuestHuntRoute | null {
   };
 }
 
+function getObjectiveTarget(objective: Objective) {
+  switch (objective.type) {
+    case 'gain_xp':
+    case 'gain_resource':
+    case 'collect_item':
+    case 'have_item':
+    case 'kill':
+    case 'craft':
+      return objective.amount;
+    case 'reach_level':
+      return objective.level;
+    case 'timer':
+      return objective.durationMs;
+    default:
+      return 0;
+  }
+}
+
+function getInitialObjectiveCurrent(objective: Objective, state: CompletionState) {
+  switch (objective.type) {
+    case 'reach_level': {
+      const skill = state.skills[objective.target];
+      return skill?.level ?? 0;
+    }
+    case 'have_item':
+      return countItemInBag(state.bag, objective.target);
+    default:
+      return 0;
+  }
+}
+
 function getObjectiveCurrent(
   objective: Objective,
   activeQuestState: PlayerQuestState | undefined,
-  state: CompletionState
+  state: CompletionState,
+  includeInitialProgress = false
 ) {
-  if (objective.type === 'have_item' || objective.type === 'collect_item') {
+  if (objective.type === 'have_item') {
     return countItemInBag(state.bag, objective.target);
   }
 
-  return activeQuestState?.progress[objective.id] ?? 0;
+  if (objective.type === 'reach_level') {
+    const currentLevel = state.skills[objective.target]?.level ?? 0;
+    return Math.max(activeQuestState?.progress[objective.id] ?? 0, currentLevel);
+  }
+
+  if (activeQuestState) {
+    return activeQuestState.progress[objective.id] ?? 0;
+  }
+
+  return includeInitialProgress ? getInitialObjectiveCurrent(objective, state) : 0;
+}
+
+function getQuestCompletionPercentage(
+  questId: string,
+  activeQuestState: PlayerQuestState | undefined,
+  state: CompletionState
+) {
+  const definition = getQuestDefinition(questId);
+
+  if (!definition || definition.objectives.length === 0) {
+    return 0;
+  }
+
+  const totalProgress = definition.objectives.reduce((sum, objective) => {
+    const target = getObjectiveTarget(objective);
+    const current = Math.min(
+      getObjectiveCurrent(objective, activeQuestState, state, true),
+      target
+    );
+
+    return sum + (target > 0 ? current / target : 0);
+  }, 0);
+
+  return Math.max(0, Math.min(1, totalProgress / definition.objectives.length));
+}
+
+function buildPercentBlockerProgress(progressValue: number) {
+  const clampedProgress = Math.max(0, Math.min(1, progressValue));
+  const current = Math.round(clampedProgress * 100);
+
+  return {
+    current,
+    target: 100,
+    progress: clampedProgress,
+    label: `${current}% complete`,
+  };
+}
+
+function buildThresholdBlockerProgress(current: number, target: number, label: string) {
+  const safeTarget = Math.max(1, target);
+  const safeCurrent = Math.max(0, Math.min(current, safeTarget));
+
+  return {
+    current: safeCurrent,
+    target: safeTarget,
+    progress: safeCurrent / safeTarget,
+    label,
+  };
 }
 
 function pluralize(label: string, amount: number) {
@@ -276,26 +371,7 @@ function getRemainingObjectiveLabels(
   }
 
   return definition.objectives.flatMap((objective) => {
-    let target = 0;
-
-    switch (objective.type) {
-      case 'gain_xp':
-      case 'gain_resource':
-      case 'collect_item':
-      case 'have_item':
-      case 'kill':
-      case 'craft':
-        target = objective.amount;
-        break;
-      case 'reach_level':
-        target = objective.level;
-        break;
-      case 'timer':
-        target = objective.durationMs;
-        break;
-      default:
-        target = 0;
-    }
+    const target = getObjectiveTarget(objective);
 
     const current = Math.min(getObjectiveCurrent(objective, activeQuestState, state), target);
     const remaining = Math.max(0, target - current);
@@ -430,6 +506,9 @@ function buildNonCombatBlockerSummary(
       kind: 'active',
       label: 'Active quest',
       detail: formatRemainingObjectives(remainingObjectives),
+      progress: buildPercentBlockerProgress(
+        getQuestCompletionPercentage(nextQuest.questId, activeQuestById.get(nextQuest.questId), state)
+      ),
     };
   }
 
@@ -451,12 +530,22 @@ function buildNonCombatBlockerSummary(
         kind: 'skill',
         label: `${formatSkillName(unmetCondition.skill)} level ${unmetCondition.value}`,
         detail: `${nextQuest.definition.name} is gated by a ${formatSkillName(unmetCondition.skill)} requirement.`,
+        progress: buildThresholdBlockerProgress(
+          state.skills[unmetCondition.skill]?.level ?? 0,
+          unmetCondition.value,
+          `Level ${Math.min(state.skills[unmetCondition.skill]?.level ?? 0, unmetCondition.value)} / ${unmetCondition.value}`
+        ),
       };
     case 'player_level_at_least':
       return {
         kind: 'player',
         label: `player level ${unmetCondition.value}`,
         detail: `${nextQuest.definition.name} is gated by player ascension.`,
+        progress: buildThresholdBlockerProgress(
+          state.player.level,
+          unmetCondition.value,
+          `Level ${Math.min(state.player.level, unmetCondition.value)} / ${unmetCondition.value}`
+        ),
       };
     case 'quest_completed': {
       const prerequisite = getQuestDefinition(unmetCondition.questId);
@@ -464,6 +553,13 @@ function buildNonCombatBlockerSummary(
         kind: 'prerequisite',
         label: prerequisite?.name ?? unmetCondition.questId,
         detail: `${nextQuest.definition.name} is blocked by a prerequisite quest.`,
+        progress: buildPercentBlockerProgress(
+          getQuestCompletionPercentage(
+            unmetCondition.questId,
+            activeQuestById.get(unmetCondition.questId),
+            state
+          )
+        ),
       };
     }
     case 'resource_at_least':
@@ -471,6 +567,14 @@ function buildNonCombatBlockerSummary(
         kind: 'resource',
         label: `${unmetCondition.value} ${unmetCondition.resource.replaceAll('_', ' ')}`,
         detail: `${nextQuest.definition.name} needs more stored resources.`,
+        progress: buildThresholdBlockerProgress(
+          state.resources[unmetCondition.resource]?.amount ?? 0,
+          unmetCondition.value,
+          `${Math.min(
+            state.resources[unmetCondition.resource]?.amount ?? 0,
+            unmetCondition.value
+          ).toLocaleString()} / ${unmetCondition.value.toLocaleString()}`
+        ),
       };
     default:
       return {

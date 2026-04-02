@@ -188,6 +188,24 @@ export function CompletionSummaryCard() {
             {completion.nonCombat.blocker.label}
           </Text>
           <Text style={styles.supportBlockerDetail}>{completion.nonCombat.blocker.detail}</Text>
+          {completion.nonCombat.blocker.progress ? (
+            <View style={styles.supportBlockerProgressRow}>
+              <View style={styles.supportBlockerProgressHeader}>
+                <Text style={styles.supportBlockerProgressLabel}>
+                  {completion.nonCombat.blocker.progress.label}
+                </Text>
+                <Text style={styles.supportBlockerProgressValue}>
+                  {(completion.nonCombat.blocker.progress.progress * 100).toFixed(0)}%
+                </Text>
+              </View>
+              <ProgressBar
+                progress={completion.nonCombat.blocker.progress.progress}
+                color={getNonCombatBlockerAccent(completion.nonCombat.blocker.kind)}
+                backgroundColor={colors.surfaceLight}
+                height={5}
+              />
+            </View>
+          ) : null}
         </View>
         <Button
           title={nonCombatAction.ctaLabel}
@@ -317,6 +335,23 @@ const styles = StyleSheet.create({
   },
   supportBlockerRow: {
     gap: spacing.xs,
+  },
+  supportBlockerProgressRow: {
+    gap: spacing.xs,
+  },
+  supportBlockerProgressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  supportBlockerProgressLabel: {
+    flex: 1,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  supportBlockerProgressValue: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
   supportBlockerDetail: {
     fontSize: fontSize.xs,

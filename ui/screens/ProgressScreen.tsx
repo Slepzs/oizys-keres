@@ -329,6 +329,24 @@ function CompletionTabContent() {
           </Text>
         </View>
         <Text style={styles.supportDetail}>{completion.nonCombat.blocker.detail}</Text>
+        {completion.nonCombat.blocker.progress ? (
+          <View style={styles.supportBlockerProgressRow}>
+            <View style={styles.supportBlockerProgressHeader}>
+              <Text style={styles.supportBlockerProgressLabel}>
+                {completion.nonCombat.blocker.progress.label}
+              </Text>
+              <Text style={styles.supportBlockerProgressValue}>
+                {(completion.nonCombat.blocker.progress.progress * 100).toFixed(0)}%
+              </Text>
+            </View>
+            <ProgressBar
+              progress={completion.nonCombat.blocker.progress.progress}
+              color={getNonCombatBlockerAccent(completion.nonCombat.blocker.kind)}
+              backgroundColor={colors.surfaceLight}
+              height={5}
+            />
+          </View>
+        ) : null}
       </Card>
 
       <View style={styles.metricsGrid}>
@@ -585,6 +603,24 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     lineHeight: 19,
+  },
+  supportBlockerProgressRow: {
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  supportBlockerProgressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  supportBlockerProgressLabel: {
+    flex: 1,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  supportBlockerProgressValue: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
   metricsGrid: {
     flexDirection: 'row',
