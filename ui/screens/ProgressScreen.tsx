@@ -49,6 +49,41 @@ function getQuestStatusStyle(status: ProgressStatus) {
   }
 }
 
+function getRecommendationMeta(kind: string) {
+  switch (kind) {
+    case 'start-contract':
+      return {
+        eyebrow: 'Next Contract',
+        icon: '📜',
+        accent: colors.warning,
+      };
+    case 'hunt-contract':
+      return {
+        eyebrow: 'Active Hunt',
+        icon: '🎯',
+        accent: colors.error,
+      };
+    case 'train-combat':
+      return {
+        eyebrow: 'Combat Gate',
+        icon: '⚔️',
+        accent: colors.primary,
+      };
+    case 'complete-ledger':
+      return {
+        eyebrow: 'Completion',
+        icon: '🏁',
+        accent: colors.success,
+      };
+    default:
+      return {
+        eyebrow: 'Ledger Gap',
+        icon: '📈',
+        accent: colors.rarityRare,
+      };
+  }
+}
+
 export function ProgressScreen({ initialTab = 'quests' }: ProgressScreenProps) {
   const [activeTab, setActiveTab] = useState<ProgressTabId>(initialTab);
 
@@ -91,6 +126,9 @@ export function ProgressScreen({ initialTab = 'quests' }: ProgressScreenProps) {
 
 function CompletionTabContent() {
   const completion = useCompletionProgress();
+  const recommendationMeta = useMemo(() => {
+    return getRecommendationMeta(completion.recommendation.kind);
+  }, [completion.recommendation.kind]);
   const overviewCards = useMemo(() => {
     return [
       {
@@ -136,6 +174,24 @@ function CompletionTabContent() {
       <Card style={styles.loreCard} variant="elevated">
         <Text style={styles.loreEyebrow}>{completion.lore.title}</Text>
         <Text style={styles.loreBody}>{completion.lore.intro}</Text>
+      </Card>
+
+      <Card style={styles.recommendationCard} variant="elevated">
+        <View style={styles.recommendationHeader}>
+          <View style={styles.recommendationTitleRow}>
+            <Text style={styles.recommendationIcon}>{recommendationMeta.icon}</Text>
+            <View style={styles.recommendationCopy}>
+              <Text style={[styles.recommendationEyebrow, { color: recommendationMeta.accent }]}>
+                {recommendationMeta.eyebrow}
+              </Text>
+              <Text style={styles.recommendationTitle}>{completion.recommendation.title}</Text>
+            </View>
+          </View>
+          <Text style={[styles.recommendationBadge, { borderColor: recommendationMeta.accent, color: recommendationMeta.accent }]}>
+            {completion.recommendation.actionLabel}
+          </Text>
+        </View>
+        <Text style={styles.recommendationDetail}>{completion.recommendation.detail}</Text>
       </Card>
 
       <View style={styles.metricsGrid}>
@@ -289,6 +345,10 @@ const styles = StyleSheet.create({
   loreCard: {
     marginBottom: spacing.md,
   },
+  recommendationCard: {
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
   loreEyebrow: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
@@ -300,6 +360,46 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.text,
     lineHeight: 21,
+  },
+  recommendationHeader: {
+    gap: spacing.sm,
+  },
+  recommendationTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  recommendationIcon: {
+    fontSize: 22,
+  },
+  recommendationCopy: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  recommendationEyebrow: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    textTransform: 'uppercase',
+  },
+  recommendationTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  recommendationBadge: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    backgroundColor: colors.surface,
+  },
+  recommendationDetail: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: 19,
   },
   metricsGrid: {
     flexDirection: 'row',

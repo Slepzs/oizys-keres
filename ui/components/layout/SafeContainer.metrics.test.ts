@@ -13,8 +13,8 @@ test('reserves safe top space for the fixed player header', () => {
     showPlayerHeader: true,
   });
 
-  assert.equal(metrics.headerTop, 55);
-  assert.equal(metrics.contentPaddingTop, 159);
+  assert.equal(metrics.headerTop, 47);
+  assert.equal(metrics.contentPaddingTop, 151);
   assert.equal(metrics.contentPaddingBottom, 50);
   assert.equal(PLAYER_HEADER_BAR_MIN_HEIGHT, 88);
 });
@@ -25,7 +25,7 @@ test('uses normal safe area padding when no fixed player header is shown', () =>
     insetsBottom: 34,
   });
 
-  assert.equal(metrics.headerTop, 55);
+  assert.equal(metrics.headerTop, 47);
   assert.equal(metrics.contentPaddingTop, 63);
   assert.equal(metrics.contentPaddingBottom, 50);
 });

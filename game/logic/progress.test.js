@@ -101,4 +101,71 @@ test('completion progress marks the next final contract as available after the p
     target: 8,
     remaining: 0,
   });
+  assert.deepEqual(summary.recommendation, {
+    kind: 'start-contract',
+    title: 'Start Ruins Warden',
+    detail: 'Return to the Haunted Ruins and reopen the banshee hunt.',
+    actionLabel: 'Next final contract',
+    questId: 'ruins_warden',
+    enemyId: 'banshee',
+    zoneId: 'ruins',
+  });
+});
+
+test('completion progress recommends the active final-contract hunt with concrete remaining objectives', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+  const combatXp = totalXpForCombatSkillLevel(80);
+
+  state.quests.completed = ['demon_contract', 'abyss_walker'];
+  state.quests.active = [
+    {
+      questId: 'silencer',
+      progress: {
+        banshee_kills: 3,
+      },
+      completed: false,
+      startedAt: 9_500,
+    },
+  ];
+  state.combat.combatSkills.attack.xp = combatXp;
+  state.combat.combatSkills.strength.xp = combatXp;
+  state.combat.combatSkills.defense.xp = combatXp;
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.recommendation, {
+    kind: 'hunt-contract',
+    title: 'Hunt Banshee',
+    detail: 'The Silencer is active in Haunted Ruins.',
+    actionLabel: '5 kills and 2 banshee wisps remaining',
+    questId: 'silencer',
+    enemyId: 'banshee',
+    zoneId: 'ruins',
+  });
+});
+
+test('completion progress recommends combat training when the active final hunt is not unlocked yet', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+
+  state.quests.completed = ['demon_contract', 'abyss_walker', 'silencer', 'ruins_warden'];
+  state.quests.active = [
+    {
+      questId: 'dragonkin',
+      progress: {},
+      completed: false,
+      startedAt: 9_500,
+    },
+  ];
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.recommendation, {
+    kind: 'train-combat',
+    title: 'Reach combat level 65',
+    detail: "Dragonkin is active, but Dragon Whelp in Dragon's Lair is still locked.",
+    actionLabel: 'Unlock the next final hunt',
+    questId: 'dragonkin',
+    enemyId: 'dragon_whelp',
+    zoneId: 'dragon_lair',
+  });
 });
