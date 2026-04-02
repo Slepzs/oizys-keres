@@ -159,6 +159,22 @@ test('completion progress recommends the active final-contract hunt with concret
     enemyId: 'banshee',
     zoneId: 'ruins',
   });
+  assert.deepEqual(summary.completionAdvisor, {
+    rationale: {
+      label: 'Active contract first',
+      detail: 'The Silencer is already underway, so it stays ahead of Ruins Warden.',
+    },
+    alternative: {
+      kind: 'start-contract',
+      focusArea: 'quests',
+      title: 'Start Ruins Warden',
+      actionLabel: 'Next final contract',
+      detail: 'Return to the Haunted Ruins and reopen the banshee hunt.',
+      questId: 'ruins_warden',
+      enemyId: 'banshee',
+      zoneId: 'ruins',
+    },
+  });
 });
 
 test('completion progress recommends combat training when the active final hunt is not unlocked yet', () => {
@@ -539,7 +555,7 @@ test('completion progress exposes combat ascension focus after the final contrac
     'dragonkin',
     'elder_nemesis',
   ];
-  state.combat.totalKills = 10_000;
+  state.combat.totalKills = 9_500;
   state.combat.combatSkills.attack.xp = combatXp;
   state.combat.combatSkills.strength.xp = combatXp;
   state.combat.combatSkills.defense.xp = combatXp;
@@ -552,6 +568,19 @@ test('completion progress exposes combat ascension focus after the final contrac
     title: 'Push combat level',
     detail: '90/99 recorded toward the final ledger.',
     actionLabel: '9 remaining',
+  });
+  assert.deepEqual(summary.completionAdvisor, {
+    rationale: {
+      label: 'Lowest completion metric',
+      detail: 'Combat level is 91% of the final ledger, behind total kills at 95%.',
+    },
+    alternative: {
+      kind: 'finish-ascension',
+      focusArea: 'kills',
+      title: 'Push total kills',
+      actionLabel: '500 remaining',
+      detail: '9,500/10,000 recorded toward the final ledger.',
+    },
   });
 });
 

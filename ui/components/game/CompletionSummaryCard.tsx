@@ -106,6 +106,11 @@ export function CompletionSummaryCard() {
   const nonCombatMeta = useMemo(() => {
     return getRecommendationMeta(completion.nonCombatRecommendation.kind);
   }, [completion.nonCombatRecommendation.kind]);
+  const completionAdvisorAlternativeMeta = useMemo(() => {
+    return completion.completionAdvisor.alternative
+      ? getRecommendationMeta(completion.completionAdvisor.alternative.kind)
+      : null;
+  }, [completion.completionAdvisor.alternative]);
 
   return (
     <Card style={styles.card} variant="elevated">
@@ -121,6 +126,35 @@ export function CompletionSummaryCard() {
 
       <Text style={styles.primaryText}>{completion.recommendation.title}</Text>
       <Text style={styles.detailText}>{completion.recommendation.detail}</Text>
+      <View style={styles.advisorSection}>
+        <Text style={styles.advisorEyebrow}>Why this objective</Text>
+        <Text style={styles.advisorTitle}>{completion.completionAdvisor.rationale.label}</Text>
+        <Text style={styles.advisorDetail}>{completion.completionAdvisor.rationale.detail}</Text>
+        {completion.completionAdvisor.alternative && completionAdvisorAlternativeMeta ? (
+          <View style={styles.advisorAlternativeCard}>
+            <View style={styles.advisorAlternativeHeader}>
+              <Text style={styles.advisorAlternativeEyebrow}>After this</Text>
+              <Text
+                style={[
+                  styles.actionPill,
+                  {
+                    borderColor: completionAdvisorAlternativeMeta.accent,
+                    color: completionAdvisorAlternativeMeta.accent,
+                  },
+                ]}
+              >
+                {completion.completionAdvisor.alternative.actionLabel}
+              </Text>
+            </View>
+            <Text style={styles.advisorAlternativeTitle}>
+              {completion.completionAdvisor.alternative.title}
+            </Text>
+            <Text style={styles.advisorAlternativeDetail}>
+              {completion.completionAdvisor.alternative.detail}
+            </Text>
+          </View>
+        ) : null}
+      </View>
 
       <View style={styles.footer}>
         <View style={styles.footerRow}>

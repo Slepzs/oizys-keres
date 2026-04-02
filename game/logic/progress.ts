@@ -139,6 +139,14 @@ interface NonCombatAdvisorSummary {
   } | null;
 }
 
+interface CompletionAdvisorSummary {
+  rationale: {
+    label: string;
+    detail: string;
+  };
+  alternative: CompletionRecommendation | null;
+}
+
 interface NextNonCombatQuest {
   questId: string;
   status: CompletionQuestStatus;
@@ -169,6 +177,7 @@ export interface CompletionProgress {
     entries: CompletionContractEntry[];
   };
   finalHunts: CompletionHuntEntry[];
+  completionAdvisor: CompletionAdvisorSummary;
   nonCombat: NonCombatProgressSummary;
   nonCombatAdvisor: NonCombatAdvisorSummary;
   recommendation: CompletionRecommendation;
@@ -554,6 +563,10 @@ function getCandidateProgressScore(status: CompletionQuestStatus, blocker: NonCo
 
 function formatCandidatePercent(progressValue: number) {
   return `${Math.round(Math.max(0, Math.min(1, progressValue)) * 100)}%`;
+}
+
+function capitalizeLabel(value: string) {
+  return value.length > 0 ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
 }
 
 function compareRankedNonCombatQuest(left: RankedNonCombatQuest, right: RankedNonCombatQuest) {
@@ -994,11 +1007,36 @@ function buildNonCombatRecommendation(
 }
 
 function getAscensionRecommendation(progress: CompletionProgress): CompletionRecommendation {
-  const candidates: Array<{
-    key: Exclude<CompletionRecommendationFocusArea, 'completion' | 'skills'>;
-    label: string;
-    metric: ProgressMetric;
-  }> = [
+  const candidates = getAscensionCandidates(progress);
+
+  if (candidates.length === 0) {
+    return {
+      kind: 'complete-ledger',
+      focusArea: 'completion',
+      title: 'Last Ledger Closed',
+      detail: 'Every tracked completion target is done.',
+      actionLabel: 'System complete',
+    };
+  }
+
+  const nextMetric = candidates[0];
+  const remaining = Math.max(0, nextMetric.metric.target - nextMetric.metric.current);
+
+  return {
+    kind: 'finish-ascension',
+    focusArea: nextMetric.key,
+    title: `Push ${nextMetric.label}`,
+    detail: `${nextMetric.metric.current.toLocaleString()}/${nextMetric.metric.target.toLocaleString()} recorded toward the final ledger.`,
+    actionLabel: `${remaining.toLocaleString()} remaining`,
+  };
+}
+
+function getAscensionCandidates(progress: CompletionProgress): Array<{
+  key: Exclude<CompletionRecommendationFocusArea, 'completion' | 'skills'>;
+  label: string;
+  metric: ProgressMetric;
+}> {
+  return [
     {
       key: 'player' as const,
       label: 'player level',
@@ -1024,27 +1062,207 @@ function getAscensionRecommendation(progress: CompletionProgress): CompletionRec
       label: 'zones unlocked',
       metric: progress.realm.zones,
     },
-  ].filter((candidate) => candidate.metric.progress < 1);
+  ]
+    .filter((candidate) => candidate.metric.progress < 1)
+    .sort((left, right) => left.metric.progress - right.metric.progress);
+}
 
-  if (candidates.length === 0) {
+function buildFinalContractRecommendation(
+  state: CompletionState,
+  contract: CompletionContractEntry,
+  finalHunts: CompletionHuntEntry[],
+  activeQuestById: Map<string, PlayerQuestState>
+): CompletionRecommendation {
+  const linkedHunt = finalHunts.find((hunt) => hunt.questId === contract.questId);
+  const questHuntRoute = linkedHunt
+    ? {
+        enemyId: linkedHunt.enemyId,
+        enemyName: linkedHunt.enemyName,
+        zoneId: linkedHunt.zoneId,
+        zoneName: linkedHunt.zoneName,
+        combatLevelRequired: linkedHunt.combatLevelRequired,
+      }
+    : getQuestHuntRoute(contract.questId);
+
+  if (contract.status === 'available') {
     return {
-      kind: 'complete-ledger',
-      focusArea: 'completion',
-      title: 'Last Ledger Closed',
-      detail: 'Every tracked completion target is done.',
-      actionLabel: 'System complete',
+      kind: 'start-contract',
+      focusArea: 'quests',
+      title: `Start ${contract.name}`,
+      detail: questHuntRoute
+        ? `Return to the ${questHuntRoute.zoneName} and reopen the ${questHuntRoute.enemyName.toLowerCase()} hunt.`
+        : contract.description,
+      actionLabel: 'Next final contract',
+      questId: contract.questId,
+      enemyId: questHuntRoute?.enemyId,
+      zoneId: questHuntRoute?.zoneId,
     };
   }
 
-  const nextMetric = candidates.sort((left, right) => left.metric.progress - right.metric.progress)[0];
-  const remaining = Math.max(0, nextMetric.metric.target - nextMetric.metric.current);
+  if (contract.status === 'active' && questHuntRoute) {
+    if (calculateCombatLevel(state.combat.combatSkills) < questHuntRoute.combatLevelRequired) {
+      return {
+        kind: 'train-combat',
+        focusArea: 'combat',
+        title: `Reach combat level ${questHuntRoute.combatLevelRequired}`,
+        detail: `${contract.name} is active, but ${questHuntRoute.enemyName} in ${questHuntRoute.zoneName} is still locked.`,
+        actionLabel: 'Unlock the next final hunt',
+        questId: contract.questId,
+        enemyId: questHuntRoute.enemyId,
+        zoneId: questHuntRoute.zoneId,
+      };
+    }
+
+    const remainingObjectives = getRemainingObjectiveLabels(
+      contract.questId,
+      activeQuestById.get(contract.questId),
+      state
+    );
+
+    return {
+      kind: 'hunt-contract',
+      focusArea: 'combat',
+      title: `Hunt ${questHuntRoute.enemyName}`,
+      detail: `${contract.name} is active in ${questHuntRoute.zoneName}.`,
+      actionLabel: formatRemainingObjectives(remainingObjectives),
+      questId: contract.questId,
+      enemyId: questHuntRoute.enemyId,
+      zoneId: questHuntRoute.zoneId,
+    };
+  }
 
   return {
-    kind: 'finish-ascension',
-    focusArea: nextMetric.key,
-    title: `Push ${nextMetric.label}`,
-    detail: `${nextMetric.metric.current}/${nextMetric.metric.target} recorded toward the final ledger.`,
-    actionLabel: `${remaining.toLocaleString()} remaining`,
+    kind: 'start-contract',
+    focusArea: 'quests',
+    title: `Start ${contract.name}`,
+    detail: contract.description,
+    actionLabel: 'Next final contract',
+    questId: contract.questId,
+  };
+}
+
+function buildFinalContractPreview(
+  contract: CompletionContractEntry,
+  finalHunts: CompletionHuntEntry[]
+): CompletionRecommendation {
+  const linkedHunt = finalHunts.find((hunt) => hunt.questId === contract.questId);
+  const questHuntRoute = linkedHunt
+    ? {
+        enemyId: linkedHunt.enemyId,
+        enemyName: linkedHunt.enemyName,
+        zoneId: linkedHunt.zoneId,
+        zoneName: linkedHunt.zoneName,
+      }
+    : getQuestHuntRoute(contract.questId);
+
+  return {
+    kind: 'start-contract',
+    focusArea: 'quests',
+    title: `Start ${contract.name}`,
+    detail: questHuntRoute
+      ? `Return to the ${questHuntRoute.zoneName} and reopen the ${questHuntRoute.enemyName.toLowerCase()} hunt.`
+      : contract.description,
+    actionLabel: 'Next final contract',
+    questId: contract.questId,
+    enemyId: questHuntRoute?.enemyId,
+    zoneId: questHuntRoute?.zoneId,
+  };
+}
+
+function buildCompletionAdvisor(
+  state: CompletionState,
+  progress: CompletionProgress,
+  finalContracts: CompletionContractEntry[],
+  finalHunts: CompletionHuntEntry[],
+  activeQuestById: Map<string, PlayerQuestState>
+): CompletionAdvisorSummary {
+  const nextContractIndex = finalContracts.findIndex((entry) => entry.status !== 'completed');
+
+  if (nextContractIndex >= 0) {
+    const nextContract = finalContracts[nextContractIndex];
+    const followUpContract = finalContracts.slice(nextContractIndex + 1).find(
+      (entry) => entry.status !== 'completed'
+    );
+    const linkedHunt = finalHunts.find((hunt) => hunt.questId === nextContract.questId);
+    const combatLevel = calculateCombatLevel(state.combat.combatSkills);
+
+    if (
+      nextContract.status === 'active' &&
+      linkedHunt &&
+      combatLevel < linkedHunt.combatLevelRequired
+    ) {
+      return {
+        rationale: {
+          label: 'Combat gate first',
+          detail: followUpContract
+            ? `${nextContract.name} is active, but ${linkedHunt.enemyName} stays locked until combat level ${linkedHunt.combatLevelRequired} before ${followUpContract.name}.`
+            : `${nextContract.name} is active, but ${linkedHunt.enemyName} stays locked until combat level ${linkedHunt.combatLevelRequired}.`,
+        },
+        alternative: followUpContract
+          ? buildFinalContractPreview(followUpContract, finalHunts)
+          : null,
+      };
+    }
+
+    if (nextContract.status === 'active') {
+      return {
+        rationale: {
+          label: 'Active contract first',
+          detail: followUpContract
+            ? `${nextContract.name} is already underway, so it stays ahead of ${followUpContract.name}.`
+            : `${nextContract.name} is already underway, so it keeps the ledger focused.`,
+        },
+        alternative: followUpContract
+          ? buildFinalContractPreview(followUpContract, finalHunts)
+          : null,
+      };
+    }
+
+    return {
+      rationale: {
+        label: 'Final contract sequence',
+        detail: followUpContract
+          ? `${nextContract.name} is the next unfinished final contract before ${followUpContract.name}.`
+          : `${nextContract.name} is the last unfinished final contract.`,
+      },
+      alternative: followUpContract
+        ? buildFinalContractPreview(followUpContract, finalHunts)
+        : null,
+    };
+  }
+
+  const ascensionCandidates = getAscensionCandidates(progress);
+  const primary = ascensionCandidates[0] ?? null;
+  const secondary = ascensionCandidates[1] ?? null;
+
+  if (!primary) {
+    return {
+      rationale: {
+        label: 'Final ledger closed',
+        detail: 'Every tracked completion target is done.',
+      },
+      alternative: null,
+    };
+  }
+
+  const alternative = secondary
+    ? {
+        kind: 'finish-ascension' as const,
+        focusArea: secondary.key,
+        title: `Push ${secondary.label}`,
+        detail: `${secondary.metric.current.toLocaleString()}/${secondary.metric.target.toLocaleString()} recorded toward the final ledger.`,
+        actionLabel: `${Math.max(0, secondary.metric.target - secondary.metric.current).toLocaleString()} remaining`,
+      }
+    : null;
+
+  return {
+    rationale: {
+      label: 'Lowest completion metric',
+      detail: secondary
+        ? `${capitalizeLabel(primary.label)} is ${formatCandidatePercent(primary.metric.progress)} of the final ledger, behind ${secondary.label} at ${formatCandidatePercent(secondary.metric.progress)}.`
+        : `${capitalizeLabel(primary.label)} is the last remaining ledger target.`,
+    },
+    alternative,
   };
 }
 
@@ -1060,72 +1278,7 @@ function buildCompletionRecommendation(
     return null;
   }
 
-  const linkedHunt = finalHunts.find((hunt) => hunt.questId === nextContract.questId);
-  const questHuntRoute = linkedHunt
-    ? {
-        enemyId: linkedHunt.enemyId,
-        enemyName: linkedHunt.enemyName,
-        zoneId: linkedHunt.zoneId,
-        zoneName: linkedHunt.zoneName,
-        combatLevelRequired: linkedHunt.combatLevelRequired,
-      }
-    : getQuestHuntRoute(nextContract.questId);
-
-  if (nextContract.status === 'available') {
-    return {
-      kind: 'start-contract',
-      focusArea: 'quests',
-      title: `Start ${nextContract.name}`,
-      detail: questHuntRoute
-        ? `Return to the ${questHuntRoute.zoneName} and reopen the ${questHuntRoute.enemyName.toLowerCase()} hunt.`
-        : nextContract.description,
-      actionLabel: 'Next final contract',
-      questId: nextContract.questId,
-      enemyId: questHuntRoute?.enemyId,
-      zoneId: questHuntRoute?.zoneId,
-    };
-  }
-
-  if (nextContract.status === 'active' && questHuntRoute) {
-    if (calculateCombatLevel(state.combat.combatSkills) < questHuntRoute.combatLevelRequired) {
-      return {
-        kind: 'train-combat',
-        focusArea: 'combat',
-        title: `Reach combat level ${questHuntRoute.combatLevelRequired}`,
-        detail: `${nextContract.name} is active, but ${questHuntRoute.enemyName} in ${questHuntRoute.zoneName} is still locked.`,
-        actionLabel: 'Unlock the next final hunt',
-        questId: nextContract.questId,
-        enemyId: questHuntRoute.enemyId,
-        zoneId: questHuntRoute.zoneId,
-      };
-    }
-
-    const remainingObjectives = getRemainingObjectiveLabels(
-      nextContract.questId,
-      activeQuestById.get(nextContract.questId),
-      state
-    );
-
-    return {
-      kind: 'hunt-contract',
-      focusArea: 'combat',
-      title: `Hunt ${questHuntRoute.enemyName}`,
-      detail: `${nextContract.name} is active in ${questHuntRoute.zoneName}.`,
-      actionLabel: formatRemainingObjectives(remainingObjectives),
-      questId: nextContract.questId,
-      enemyId: questHuntRoute.enemyId,
-      zoneId: questHuntRoute.zoneId,
-    };
-  }
-
-  return {
-    kind: 'start-contract',
-    focusArea: 'quests',
-    title: `Start ${nextContract.name}`,
-    detail: nextContract.description,
-    actionLabel: 'Next final contract',
-    questId: nextContract.questId,
-  };
+  return buildFinalContractRecommendation(state, nextContract, finalHunts, activeQuestById);
 }
 
 export function getCompletionProgress(state: CompletionState): CompletionProgress {
@@ -1215,6 +1368,13 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
       entries: finalContracts,
     },
     finalHunts,
+    completionAdvisor: {
+      rationale: {
+        label: 'Final ledger in motion',
+        detail: 'The completion planner is deriving the strongest remaining target.',
+      },
+      alternative: null,
+    },
     nonCombat: {
       completedCount: 0,
       total: 0,
@@ -1265,6 +1425,13 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
     completedQuestIds,
     activeQuestById,
     rankedNonCombatQuests
+  );
+  progress.completionAdvisor = buildCompletionAdvisor(
+    state,
+    progress,
+    finalContracts,
+    finalHunts,
+    activeQuestById
   );
   progress.nonCombat = buildNonCombatSummary(completedQuestIds, rankedNonCombatQuests);
   progress.nonCombatAdvisor = buildNonCombatAdvisor(rankedNonCombatQuests);

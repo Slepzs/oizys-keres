@@ -187,6 +187,11 @@ function CompletionTabContent() {
   const nonCombatMeta = useMemo(() => {
     return getRecommendationMeta(completion.nonCombatRecommendation.kind);
   }, [completion.nonCombatRecommendation.kind]);
+  const completionAdvisorAlternativeMeta = useMemo(() => {
+    return completion.completionAdvisor.alternative
+      ? getRecommendationMeta(completion.completionAdvisor.alternative.kind)
+      : null;
+  }, [completion.completionAdvisor.alternative]);
   const overviewCards = useMemo(() => {
     return [
       {
@@ -250,6 +255,39 @@ function CompletionTabContent() {
           </Text>
         </View>
         <Text style={styles.recommendationDetail}>{completion.recommendation.detail}</Text>
+        <View style={styles.supportAdvisorSection}>
+          <Text style={styles.supportAdvisorEyebrow}>Why this objective</Text>
+          <Text style={styles.supportAdvisorTitle}>
+            {completion.completionAdvisor.rationale.label}
+          </Text>
+          <Text style={styles.supportAdvisorDetail}>
+            {completion.completionAdvisor.rationale.detail}
+          </Text>
+          {completion.completionAdvisor.alternative && completionAdvisorAlternativeMeta ? (
+            <View style={styles.supportAlternativeCard}>
+              <View style={styles.supportAlternativeHeader}>
+                <Text style={styles.supportAlternativeEyebrow}>After this</Text>
+                <Text
+                  style={[
+                    styles.recommendationBadge,
+                    {
+                      borderColor: completionAdvisorAlternativeMeta.accent,
+                      color: completionAdvisorAlternativeMeta.accent,
+                    },
+                  ]}
+                >
+                  {completion.completionAdvisor.alternative.actionLabel}
+                </Text>
+              </View>
+              <Text style={styles.supportAlternativeTitle}>
+                {completion.completionAdvisor.alternative.title}
+              </Text>
+              <Text style={styles.supportAlternativeDetail}>
+                {completion.completionAdvisor.alternative.detail}
+              </Text>
+            </View>
+          ) : null}
+        </View>
         <Button
           title={action.ctaLabel}
           onPress={handlePress}
