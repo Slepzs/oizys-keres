@@ -11,6 +11,7 @@ import {
   useBagPotions,
   useCombatActions,
   useCombatFeedback,
+  useCombatRouteProjection,
   useCombatSummary,
   useEquipment,
 } from '@/store';
@@ -92,6 +93,7 @@ export function CombatScreen() {
 
     return effectiveEnemyId ? ENEMY_DEFINITIONS[effectiveEnemyId] ?? null : null;
   }, [combatSummary.combatLevel, combatSummary.selectedEnemyByZone, selectedZone]);
+  const routeProjection = useCombatRouteProjection(selectedEnemy?.id ?? null);
   const activeEnemy = activeCombat ? ENEMY_DEFINITIONS[activeCombat.enemyId] : null;
 
   const handleTrainingModeChange = (mode: TrainingMode) => {
@@ -156,6 +158,7 @@ export function CombatScreen() {
             totalPotionCount={totalPotionCount}
             selectedZone={selectedZone}
             selectedEnemy={selectedEnemy}
+            routeProjection={routeProjection}
             selectedZoneId={combatSummary.selectedZoneId}
             selectedEnemyByZone={combatSummary.selectedEnemyByZone}
             activeCombatZoneId={activeCombat?.zoneId ?? null}

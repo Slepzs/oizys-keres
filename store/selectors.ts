@@ -17,6 +17,7 @@ import {
   getPetEvolutionStage,
   getSummoningCombatBonuses,
   calculateCombatLevel,
+  estimateCombatRoute,
   getPlayerAttack,
   getPlayerStrength,
   getPlayerDefense,
@@ -195,6 +196,33 @@ export function useCombatSummary() {
       petBonuses,
     };
   }, [combat, summoning, summoningLevel]);
+}
+
+export function useCombatRouteProjection(enemyId: string | null) {
+  const { combat, summoning, summoningLevel, bag } = useGameStore(
+    useShallow((state) => ({
+      combat: state.combat,
+      summoning: state.summoning,
+      summoningLevel: state.skills.summoning.level,
+      bag: state.bag,
+    }))
+  );
+
+  return useMemo(() => {
+    if (!enemyId) {
+      return null;
+    }
+
+    return estimateCombatRoute(
+      {
+        bag,
+        combat,
+        summoning,
+        summoningLevel,
+      },
+      enemyId
+    );
+  }, [bag, combat, enemyId, summoning, summoningLevel]);
 }
 
 export function useActiveCombat() {

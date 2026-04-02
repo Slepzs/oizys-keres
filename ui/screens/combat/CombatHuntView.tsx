@@ -2,9 +2,11 @@ import React from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/constants/theme';
+import type { CombatRouteProjection } from '@/game/logic';
 import { ZONE_IDS } from '@/game/data';
 import { CombatZoneCard } from '@/ui/components/game/CombatZoneCard';
 import { Card } from '@/ui/components/common';
+import { formatNumber, formatTime } from '@/utils/format';
 
 interface SelectionSummary {
   id: string;
@@ -23,6 +25,7 @@ interface CombatHuntViewProps {
   totalPotionCount: number;
   selectedZone: SelectionSummary | null;
   selectedEnemy: SelectionSummary | null;
+  routeProjection: CombatRouteProjection | null;
   selectedZoneId: string | null;
   selectedEnemyByZone: Record<string, string> | null | undefined;
   activeCombatZoneId: string | null;
@@ -44,6 +47,7 @@ export function CombatHuntView({
   totalPotionCount,
   selectedZone,
   selectedEnemy,
+  routeProjection,
   selectedZoneId,
   selectedEnemyByZone,
   activeCombatZoneId,
@@ -110,6 +114,78 @@ export function CombatHuntView({
                 : 'Select a zone to choose which enemy should be farmed there.'}
             </Text>
           </View>
+        </View>
+
+        <View style={styles.projectionCard}>
+          <View style={styles.projectionHeader}>
+            <View>
+              <Text style={styles.projectionTitle}>Route Projection</Text>
+              <Text style={styles.projectionSubtitle}>
+                {routeProjection
+                  ? `Projected from your current gear, pet, and stocked supplies against ${routeProjection.enemyName}.`
+                  : 'Pick a target to estimate kill pace, pressure, and sustain before starting.'}
+              </Text>
+            </View>
+            {routeProjection ? (
+              <View
+                style={[
+                  styles.riskBadge,
+                  routeProjection.risk === 'safe'
+                    ? styles.riskSafe
+                    : routeProjection.risk === 'steady'
+                      ? styles.riskSteady
+                      : routeProjection.risk === 'risky'
+                        ? styles.riskRisky
+                        : styles.riskLethal,
+                ]}
+              >
+                <Text style={styles.riskBadgeText}>{routeProjection.risk.toUpperCase()}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          <View style={styles.projectionGrid}>
+            <View style={styles.projectionMetric}>
+              <Text style={styles.projectionMetricLabel}>Kill Pace</Text>
+              <Text style={styles.projectionMetricValue}>
+                {routeProjection ? formatTime(routeProjection.timeToKillSeconds * 1000) : '--'}
+              </Text>
+            </View>
+            <View style={styles.projectionMetric}>
+              <Text style={styles.projectionMetricLabel}>XP / Min</Text>
+              <Text style={styles.projectionMetricValue}>
+                {routeProjection ? formatNumber(routeProjection.xpPerMinute) : '--'}
+              </Text>
+            </View>
+            <View style={styles.projectionMetric}>
+              <Text style={styles.projectionMetricLabel}>HP Loss / Kill</Text>
+              <Text style={styles.projectionMetricValue}>
+                {routeProjection ? formatNumber(routeProjection.netDamagePerKill) : '--'}
+              </Text>
+            </View>
+            <View style={styles.projectionMetric}>
+              <Text style={styles.projectionMetricLabel}>Sustain</Text>
+              <Text style={styles.projectionMetricValue}>
+                {routeProjection
+                  ? routeProjection.killsBeforeRestock === null
+                    ? 'No food needed'
+                    : routeProjection.killsBeforeRestock <= 0
+                      ? 'Restock now'
+                      : `~${formatNumber(routeProjection.killsBeforeRestock)} kills`
+                  : '--'}
+              </Text>
+            </View>
+          </View>
+
+          {routeProjection ? (
+            <Text style={styles.projectionNote}>
+              {routeProjection.killsBeforeRestock === null
+                ? 'Passive regen and pet sustain cover this route without consuming stocked food.'
+                : routeProjection.totalFoodCount <= 0
+                  ? 'No food is stocked for this route. Queue Cooking before leaving this on auto-fight.'
+                  : `Current stock covers about ${formatNumber(routeProjection.foodPerKill ?? 0)} food per kill across ${formatNumber(routeProjection.totalFoodCount)} prepared meals.`}
+            </Text>
+          ) : null}
         </View>
 
         <View style={styles.summaryGrid}>
@@ -252,6 +328,80 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   selectionHint: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+  },
+  projectionCard: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surfaceLight,
+    gap: spacing.md,
+  },
+  projectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  projectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  projectionSubtitle: {
+    marginTop: spacing.xs,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+  },
+  riskBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    alignSelf: 'flex-start',
+  },
+  riskSafe: {
+    backgroundColor: 'rgba(74, 222, 128, 0.18)',
+  },
+  riskSteady: {
+    backgroundColor: 'rgba(74, 158, 255, 0.18)',
+  },
+  riskRisky: {
+    backgroundColor: 'rgba(251, 191, 36, 0.18)',
+  },
+  riskLethal: {
+    backgroundColor: 'rgba(248, 113, 113, 0.18)',
+  },
+  riskBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    textTransform: 'uppercase',
+  },
+  projectionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  projectionMetric: {
+    flexGrow: 1,
+    flexBasis: '48%',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.xs,
+  },
+  projectionMetricLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  projectionMetricValue: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  projectionNote: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
   },
