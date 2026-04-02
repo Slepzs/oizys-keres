@@ -131,6 +131,12 @@ interface NextNonCombatQuest {
   category: NonCombatCategory | null;
 }
 
+interface RankedNonCombatQuest extends NextNonCombatQuest {
+  blocker: NonCombatBlockerSummary;
+  leverage: number;
+  progressScore: number;
+}
+
 export interface CompletionProgress {
   lore: typeof COMPLETION_LORE;
   ascension: {
@@ -442,8 +448,58 @@ function isNonCombatQuest(questId: string) {
   return !definition.objectives.some((objective) => objective.type === 'kill');
 }
 
+const NON_COMBAT_QUEST_IDS = QUEST_IDS.filter((questId) => isNonCombatQuest(questId));
+
+function buildNonCombatQuestLeverageMap() {
+  const childrenByQuest = new Map<string, string[]>();
+
+  NON_COMBAT_QUEST_IDS.forEach((questId) => {
+    childrenByQuest.set(questId, []);
+  });
+
+  NON_COMBAT_QUEST_IDS.forEach((questId) => {
+    const definition = getQuestDefinition(questId);
+
+    definition?.unlock?.forEach((condition) => {
+      if (condition.type !== 'quest_completed') {
+        return;
+      }
+
+      const children = childrenByQuest.get(condition.questId);
+      if (children) {
+        children.push(questId);
+      }
+    });
+  });
+
+  const leverageByQuest = new Map<string, number>();
+
+  function countDescendants(questId: string): number {
+    const cached = leverageByQuest.get(questId);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    const descendants = childrenByQuest.get(questId) ?? [];
+    const total = descendants.reduce((sum, childQuestId) => {
+      return sum + 1 + countDescendants(childQuestId);
+    }, 0);
+
+    leverageByQuest.set(questId, total);
+    return total;
+  }
+
+  NON_COMBAT_QUEST_IDS.forEach((questId) => {
+    countDescendants(questId);
+  });
+
+  return leverageByQuest;
+}
+
+const NON_COMBAT_QUEST_LEVERAGE = buildNonCombatQuestLeverageMap();
+
 function getNonCombatQuestIds() {
-  return QUEST_IDS.filter((questId) => isNonCombatQuest(questId));
+  return NON_COMBAT_QUEST_IDS;
 }
 
 function getNonCombatQuestCategory(questId: string): NonCombatCategory | null {
@@ -454,26 +510,59 @@ function getNonCombatQuestCategory(questId: string): NonCombatCategory | null {
     : null;
 }
 
-function getNextNonCombatQuest(
-  state: CompletionState,
-  completedQuestIds: Set<string>,
-  activeQuestById: Map<string, PlayerQuestState>
-): NextNonCombatQuest | null {
-  const nextQuestId = getNonCombatQuestIds().find((questId) => !completedQuestIds.has(questId));
-
-  if (!nextQuestId) {
-    return null;
-  }
-
-  return {
-    questId: nextQuestId,
-    status: getCompletionQuestStatus(nextQuestId, state, completedQuestIds, activeQuestById),
-    definition: getQuestDefinition(nextQuestId),
-    category: getNonCombatQuestCategory(nextQuestId),
-  };
+function getNonCombatQuestLeverage(questId: string) {
+  return (NON_COMBAT_QUEST_LEVERAGE.get(questId) ?? 0) + 1;
 }
 
-function buildNonCombatBlockerSummary(
+function getStatusPriority(status: CompletionQuestStatus) {
+  switch (status) {
+    case 'active':
+      return 0;
+    case 'available':
+      return 1;
+    case 'locked':
+      return 2;
+    case 'completed':
+    default:
+      return 3;
+  }
+}
+
+function getCandidateProgressScore(status: CompletionQuestStatus, blocker: NonCombatBlockerSummary) {
+  if (status === 'available' || blocker.kind === 'ready' || blocker.kind === 'complete') {
+    return 1;
+  }
+
+  return blocker.progress?.progress ?? 0;
+}
+
+function compareRankedNonCombatQuest(left: RankedNonCombatQuest, right: RankedNonCombatQuest) {
+  const statusDelta = getStatusPriority(left.status) - getStatusPriority(right.status);
+  if (statusDelta !== 0) {
+    return statusDelta;
+  }
+
+  if (left.status === 'active' || left.status === 'locked') {
+    const progressDelta = right.progressScore - left.progressScore;
+    if (Math.abs(progressDelta) > Number.EPSILON) {
+      return progressDelta;
+    }
+  }
+
+  const leverageDelta = right.leverage - left.leverage;
+  if (leverageDelta !== 0) {
+    return leverageDelta;
+  }
+
+  const categoryDelta = (left.category ?? '').localeCompare(right.category ?? '');
+  if (categoryDelta !== 0) {
+    return categoryDelta;
+  }
+
+  return left.questId.localeCompare(right.questId);
+}
+
+function buildNonCombatBlockerSummaryForQuest(
   state: CompletionState,
   nextQuest: NextNonCombatQuest | null,
   completedQuestIds: Set<string>,
@@ -585,6 +674,39 @@ function buildNonCombatBlockerSummary(
   }
 }
 
+function getPriorityNonCombatQuest(
+  state: CompletionState,
+  completedQuestIds: Set<string>,
+  activeQuestById: Map<string, PlayerQuestState>
+): RankedNonCombatQuest | null {
+  const candidates = getNonCombatQuestIds()
+    .filter((questId) => !completedQuestIds.has(questId))
+    .map((questId) => {
+      const candidate: NextNonCombatQuest = {
+        questId,
+        status: getCompletionQuestStatus(questId, state, completedQuestIds, activeQuestById),
+        definition: getQuestDefinition(questId),
+        category: getNonCombatQuestCategory(questId),
+      };
+      const blocker = buildNonCombatBlockerSummaryForQuest(
+        state,
+        candidate,
+        completedQuestIds,
+        activeQuestById
+      );
+
+      return {
+        ...candidate,
+        blocker,
+        leverage: getNonCombatQuestLeverage(questId),
+        progressScore: getCandidateProgressScore(candidate.status, blocker),
+      };
+    })
+    .sort(compareRankedNonCombatQuest);
+
+  return candidates[0] ?? null;
+}
+
 function buildNonCombatSummary(
   state: CompletionState,
   completedQuestIds: Set<string>,
@@ -593,14 +715,18 @@ function buildNonCombatSummary(
   const nonCombatQuestIds = getNonCombatQuestIds();
   const completedCount = nonCombatQuestIds.filter((questId) => completedQuestIds.has(questId)).length;
   const total = nonCombatQuestIds.length;
-  const nextQuest = getNextNonCombatQuest(state, completedQuestIds, activeQuestById);
+  const nextQuest = getPriorityNonCombatQuest(state, completedQuestIds, activeQuestById);
 
   return {
     completedCount,
     total,
     progress: total > 0 ? completedCount / total : 1,
     nextCategory: nextQuest?.category ?? null,
-    blocker: buildNonCombatBlockerSummary(state, nextQuest, completedQuestIds, activeQuestById),
+    blocker: nextQuest?.blocker ?? {
+      kind: 'complete',
+      label: 'Support systems complete',
+      detail: 'Every tracked non-combat quest chain is complete.',
+    },
   };
 }
 
@@ -698,7 +824,7 @@ function buildNonCombatRecommendation(
   completedQuestIds: Set<string>,
   activeQuestById: Map<string, PlayerQuestState>
 ): CompletionRecommendation {
-  const nextQuest = getNextNonCombatQuest(state, completedQuestIds, activeQuestById);
+  const nextQuest = getPriorityNonCombatQuest(state, completedQuestIds, activeQuestById);
 
   if (!nextQuest) {
     return {

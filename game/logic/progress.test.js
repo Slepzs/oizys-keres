@@ -188,7 +188,7 @@ test('completion progress recommends combat training when the active final hunt 
   });
 });
 
-test('completion progress surfaces the next available non-combat quest as a secondary recommendation', () => {
+test('completion progress surfaces the highest-leverage ready non-combat quest as a secondary recommendation', () => {
   const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
 
   state.quests.completed = ['first_steps', 'wood_for_days'];
@@ -203,16 +203,16 @@ test('completion progress surfaces the next available non-combat quest as a seco
     blocker: {
       kind: 'ready',
       label: 'Ready now',
-      detail: 'Aspiring Lumberjack can be started immediately.',
+      detail: 'First Cast can be started immediately.',
     },
   });
   assert.deepEqual(summary.nonCombatRecommendation, {
     kind: 'start-quest',
     focusArea: 'quests',
-    title: 'Start Aspiring Lumberjack',
-    detail: 'Train woodcutting seriously and secure seed reserves.',
+    title: 'Start First Cast',
+    detail: 'Try your luck at the pond and reel in some shrimp.',
     actionLabel: 'Next non-combat quest',
-    questId: 'aspiring_lumberjack',
+    questId: 'first_cast',
   });
 });
 
@@ -231,14 +231,29 @@ test('completion progress recommends skill training when the next non-combat que
     'awakened_bond',
     'ascending_spirit',
     'mythic_pact',
+    'first_cast',
+    'weekend_angler',
+    'river_run',
+    'deep_sea_expedition',
+    'shark_hunter',
+    'fire_it_up',
+    'camp_cook',
+    'seasoned_chef',
+    'deep_sea_kitchen',
+    'shark_fin_feast',
+    'first_brew',
+    'junior_alchemist',
+    'combat_chemist',
+    'master_herbalist',
+    'supreme_brewer',
   ];
 
   const summary = getCompletionProgress(state);
 
   assert.deepEqual(summary.nonCombat, {
-    completedCount: 11,
+    completedCount: 26,
     total: NON_COMBAT_TOTAL,
-    progress: 11 / NON_COMBAT_TOTAL,
+    progress: 26 / NON_COMBAT_TOTAL,
     nextCategory: 'exploration',
     blocker: {
       kind: 'skill',
@@ -260,6 +275,118 @@ test('completion progress recommends skill training when the next non-combat que
     actionLabel: 'Unlock the next non-combat quest',
     questId: 'seed_collector',
     skillId: 'woodcutting',
+  });
+});
+
+test('completion progress prefers active non-combat quests over earlier dormant branches', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+
+  state.quests.completed = ['first_steps', 'first_ritual'];
+  state.quests.active = [
+    {
+      questId: 'bonded_companion',
+      progress: {
+        level: 5,
+        essence: 42,
+      },
+      completed: false,
+      startedAt: 9_500,
+    },
+  ];
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.nonCombatRecommendation, {
+    kind: 'advance-quest',
+    focusArea: 'quests',
+    title: 'Advance Bonded Companion',
+    detail: 'Bonded Companion is active in your support track.',
+    actionLabel: '3 levels and 18 spirit essence remaining',
+    questId: 'bonded_companion',
+  });
+  assert.equal(summary.nonCombat.nextCategory, 'skill');
+  assert.equal(summary.nonCombat.blocker.kind, 'active');
+});
+
+test('completion progress prefers ready support branches over earlier blocked quests', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+
+  state.quests.completed = ['first_steps'];
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.nonCombatRecommendation, {
+    kind: 'start-quest',
+    focusArea: 'quests',
+    title: 'Start First Cast',
+    detail: 'Try your luck at the pond and reel in some shrimp.',
+    actionLabel: 'Next non-combat quest',
+    questId: 'first_cast',
+  });
+  assert.equal(summary.nonCombat.nextCategory, 'skill');
+  assert.deepEqual(summary.nonCombat.blocker, {
+    kind: 'ready',
+    label: 'Ready now',
+    detail: 'First Cast can be started immediately.',
+  });
+});
+
+test('completion progress chooses the closest locked support unlock instead of the first quest in file order', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+
+  state.quests.completed = [
+    'aspiring_lumberjack',
+    'copper_vein',
+    'iron_hand',
+    'coal_runner',
+    'mithril_seeker',
+    'adamantite_lord',
+    'forge_journeyman',
+    'bonded_companion',
+    'awakened_bond',
+    'ascending_spirit',
+    'mythic_pact',
+    'first_cast',
+    'weekend_angler',
+    'river_run',
+    'deep_sea_expedition',
+    'shark_hunter',
+    'fire_it_up',
+    'camp_cook',
+    'seasoned_chef',
+    'deep_sea_kitchen',
+    'shark_fin_feast',
+    'first_brew',
+    'junior_alchemist',
+    'combat_chemist',
+    'master_herbalist',
+    'supreme_brewer',
+  ];
+  state.skills.woodcutting.level = 1;
+  state.skills.mining.level = 4;
+
+  const summary = getCompletionProgress(state);
+
+  assert.deepEqual(summary.nonCombatRecommendation, {
+    kind: 'train-skill',
+    focusArea: 'skills',
+    title: 'Reach mining level 5',
+    detail: 'Gem Finder unlocks once mining reaches level 5.',
+    actionLabel: 'Unlock the next non-combat quest',
+    questId: 'gem_finder',
+    skillId: 'mining',
+  });
+  assert.equal(summary.nonCombat.nextCategory, 'exploration');
+  assert.deepEqual(summary.nonCombat.blocker, {
+    kind: 'skill',
+    label: 'mining level 5',
+    detail: 'Gem Finder is gated by a mining requirement.',
+    progress: {
+      current: 4,
+      target: 5,
+      progress: 0.8,
+      label: 'Level 4 / 5',
+    },
   });
 });
 
@@ -311,6 +438,21 @@ test('completion progress quantifies prerequisite quest blockers for the support
     'mithril_seeker',
     'adamantite_lord',
     'forge_journeyman',
+    'first_cast',
+    'weekend_angler',
+    'river_run',
+    'deep_sea_expedition',
+    'shark_hunter',
+    'fire_it_up',
+    'camp_cook',
+    'seasoned_chef',
+    'deep_sea_kitchen',
+    'shark_fin_feast',
+    'first_brew',
+    'junior_alchemist',
+    'combat_chemist',
+    'master_herbalist',
+    'supreme_brewer',
   ];
   state.quests.active = [
     {
@@ -327,9 +469,9 @@ test('completion progress quantifies prerequisite quest blockers for the support
   const summary = getCompletionProgress(state);
 
   assert.deepEqual(summary.nonCombat, {
-    completedCount: 7,
+    completedCount: 22,
     total: NON_COMBAT_TOTAL,
-    progress: 7 / NON_COMBAT_TOTAL,
+    progress: 22 / NON_COMBAT_TOTAL,
     nextCategory: 'skill',
     blocker: {
       kind: 'prerequisite',
