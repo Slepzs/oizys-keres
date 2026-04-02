@@ -55,6 +55,19 @@ interface CompletionHuntEntry {
     target: number;
     remaining: number;
   };
+  gate: CompletionHuntGateSummary;
+}
+
+interface CompletionHuntGateSummary {
+  kind: 'ready' | 'combat' | 'contract' | 'complete';
+  label: string;
+  detail: string;
+  progress?: {
+    current: number;
+    target: number;
+    progress: number;
+    label: string;
+  };
 }
 
 export type CompletionRecommendationFocusArea =
@@ -384,6 +397,16 @@ function buildThresholdBlockerProgress(current: number, target: number, label: s
     progress: safeCurrent / safeTarget,
     label,
   };
+}
+
+function buildCombatLevelProgress(currentCombatLevel: number, targetCombatLevel: number) {
+  const clampedCurrent = Math.min(currentCombatLevel, targetCombatLevel);
+
+  return buildThresholdBlockerProgress(
+    currentCombatLevel,
+    targetCombatLevel,
+    `Combat ${clampedCurrent} / ${targetCombatLevel}`
+  );
 }
 
 function pluralize(label: string, amount: number) {
@@ -1281,6 +1304,94 @@ function buildCompletionRecommendation(
   return buildFinalContractRecommendation(state, nextContract, finalHunts, activeQuestById);
 }
 
+function buildFinalHuntGateSummary(
+  state: CompletionState,
+  hunt: { enemyId: string; zoneId: string; questId: string },
+  combatLevel: number,
+  questStatus: CompletionQuestStatus,
+  completedQuestIds: Set<string>,
+  activeQuestById: Map<string, PlayerQuestState>
+): CompletionHuntGateSummary {
+  const enemy = ENEMY_DEFINITIONS[hunt.enemyId];
+  const zone = ZONE_DEFINITIONS[hunt.zoneId];
+  const quest = getQuestDefinition(hunt.questId);
+  const enemyName = enemy?.name ?? hunt.enemyId;
+  const zoneName = zone?.name ?? hunt.zoneId;
+  const combatLevelRequired = Math.max(
+    zone?.combatLevelRequired ?? 1,
+    enemy?.combatLevelRequired ?? 1
+  );
+  const activeQuestState = activeQuestById.get(hunt.questId);
+
+  if (questStatus === 'completed') {
+    return {
+      kind: 'complete',
+      label: 'Contract complete',
+      detail: `${quest?.name ?? hunt.questId} is already cleared for ${enemyName}.`,
+    };
+  }
+
+  if (
+    (questStatus === 'available' || questStatus === 'active') &&
+    combatLevel < combatLevelRequired
+  ) {
+    return {
+      kind: 'combat',
+      label: `Combat level ${combatLevelRequired}`,
+      detail: `${quest?.name ?? hunt.questId} needs combat level ${combatLevelRequired} before ${enemyName} can be hunted in ${zoneName}.`,
+      progress: buildCombatLevelProgress(combatLevel, combatLevelRequired),
+    };
+  }
+
+  if (questStatus === 'active') {
+    const remainingObjectives = getRemainingObjectiveLabels(hunt.questId, activeQuestState, state);
+
+    return {
+      kind: 'ready',
+      label: 'Active hunt',
+      detail: formatRemainingObjectives(remainingObjectives),
+      progress: buildPercentBlockerProgress(
+        getQuestCompletionPercentage(hunt.questId, activeQuestState, state)
+      ),
+    };
+  }
+
+  if (questStatus === 'available') {
+    return {
+      kind: 'ready',
+      label: 'Contract ready',
+      detail: `${quest?.name ?? hunt.questId} can be started now in ${zoneName}.`,
+    };
+  }
+
+  const unmetCondition = quest?.unlock?.find(
+    (condition) => !evaluateQuestUnlockCondition(condition, state, completedQuestIds)
+  );
+
+  if (unmetCondition?.type === 'quest_completed') {
+    const prerequisite = getQuestDefinition(unmetCondition.questId);
+
+    return {
+      kind: 'contract',
+      label: prerequisite?.name ?? unmetCondition.questId,
+      detail: `${quest?.name ?? hunt.questId} unlocks after ${prerequisite?.name ?? unmetCondition.questId} is finished.`,
+      progress: buildPercentBlockerProgress(
+        getQuestCompletionPercentage(
+          unmetCondition.questId,
+          activeQuestById.get(unmetCondition.questId),
+          state
+        )
+      ),
+    };
+  }
+
+  return {
+    kind: 'contract',
+    label: 'Contract locked',
+    detail: `${quest?.name ?? hunt.questId} is still locked.`,
+  };
+}
+
 export function getCompletionProgress(state: CompletionState): CompletionProgress {
   const completedQuestIds = new Set(state.quests.completed);
   const activeQuestById = new Map(
@@ -1348,6 +1459,14 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
         target: targetKillCount,
         remaining: Math.max(0, targetKillCount - currentKillCount),
       },
+      gate: buildFinalHuntGateSummary(
+        state,
+        hunt,
+        combatLevel,
+        questStatus,
+        completedQuestIds,
+        activeQuestById
+      ),
     };
   });
 

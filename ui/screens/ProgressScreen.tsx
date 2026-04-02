@@ -134,6 +134,20 @@ function getNonCombatBlockerAccent(kind: string) {
   }
 }
 
+function getFinalHuntGateAccent(kind: string) {
+  switch (kind) {
+    case 'complete':
+      return colors.success;
+    case 'ready':
+      return colors.rarityRare;
+    case 'combat':
+      return colors.primary;
+    case 'contract':
+    default:
+      return colors.warning;
+  }
+}
+
 export function ProgressScreen({ initialTab = 'quests', initialQuestId }: ProgressScreenProps) {
   const [activeTab, setActiveTab] = useState<ProgressTabId>(initialTab);
 
@@ -495,6 +509,40 @@ function CompletionTabContent() {
                     : hunt.questName}
               </Text>
             </View>
+            {hunt.gate.kind !== 'complete' ? (
+              <View style={styles.huntGatePanel}>
+                <View style={styles.huntGateHeader}>
+                  <Text
+                    style={[
+                      styles.recommendationBadge,
+                      {
+                        borderColor: getFinalHuntGateAccent(hunt.gate.kind),
+                        color: getFinalHuntGateAccent(hunt.gate.kind),
+                      },
+                    ]}
+                  >
+                    {hunt.gate.label}
+                  </Text>
+                  {hunt.gate.progress ? (
+                    <Text style={styles.huntGatePercent}>
+                      {(hunt.gate.progress.progress * 100).toFixed(0)}%
+                    </Text>
+                  ) : null}
+                </View>
+                <Text style={styles.huntGateDetail}>{hunt.gate.detail}</Text>
+                {hunt.gate.progress ? (
+                  <View style={styles.huntGateProgressRow}>
+                    <Text style={styles.huntGateProgressLabel}>{hunt.gate.progress.label}</Text>
+                    <ProgressBar
+                      progress={hunt.gate.progress.progress}
+                      color={getFinalHuntGateAccent(hunt.gate.kind)}
+                      backgroundColor={colors.surfaceLight}
+                      height={5}
+                    />
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
           </Card>
         ))}
       </View>
@@ -880,5 +928,34 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.textSecondary,
     fontSize: fontSize.sm,
+  },
+  huntGatePanel: {
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+  },
+  huntGateHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  huntGatePercent: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontWeight: fontWeight.medium,
+  },
+  huntGateDetail: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+  },
+  huntGateProgressRow: {
+    gap: spacing.xs,
+  },
+  huntGateProgressLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
 });

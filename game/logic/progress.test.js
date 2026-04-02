@@ -204,6 +204,74 @@ test('completion progress recommends combat training when the active final hunt 
   });
 });
 
+test('completion progress quantifies combat deficits on active final hunts', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+  const combatXp = totalXpForCombatSkillLevel(52);
+
+  state.quests.completed = ['demon_contract', 'abyss_walker', 'silencer', 'ruins_warden'];
+  state.quests.active = [
+    {
+      questId: 'dragonkin',
+      progress: {},
+      completed: false,
+      startedAt: 9_500,
+    },
+  ];
+  state.combat.combatSkills.attack.xp = combatXp;
+  state.combat.combatSkills.strength.xp = combatXp;
+  state.combat.combatSkills.defense.xp = combatXp;
+
+  const summary = getCompletionProgress(state);
+  const dragonHunt = summary.finalHunts.find((hunt) => hunt.enemyId === 'dragon_whelp');
+
+  assert.deepEqual(dragonHunt?.gate, {
+    kind: 'combat',
+    label: 'Combat level 65',
+    detail: "Dragonkin needs combat level 65 before Dragon Whelp can be hunted in Dragon's Lair.",
+    progress: {
+      current: 52,
+      target: 65,
+      progress: 52 / 65,
+      label: 'Combat 52 / 65',
+    },
+  });
+});
+
+test('completion progress surfaces prerequisite contract progress inside locked final hunts', () => {
+  const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
+  const combatXp = totalXpForCombatSkillLevel(80);
+
+  state.quests.completed = ['demon_contract', 'abyss_walker', 'silencer'];
+  state.quests.active = [
+    {
+      questId: 'ruins_warden',
+      progress: {
+        banshee_kills: 6,
+      },
+      completed: false,
+      startedAt: 9_500,
+    },
+  ];
+  state.combat.combatSkills.attack.xp = combatXp;
+  state.combat.combatSkills.strength.xp = combatXp;
+  state.combat.combatSkills.defense.xp = combatXp;
+
+  const summary = getCompletionProgress(state);
+  const dragonHunt = summary.finalHunts.find((hunt) => hunt.enemyId === 'dragon_whelp');
+
+  assert.deepEqual(dragonHunt?.gate, {
+    kind: 'contract',
+    label: 'Ruins Warden',
+    detail: 'Dragonkin unlocks after Ruins Warden is finished.',
+    progress: {
+      current: 40,
+      target: 100,
+      progress: 0.4,
+      label: '40% complete',
+    },
+  });
+});
+
 test('completion progress surfaces the highest-leverage ready non-combat quest as a secondary recommendation', () => {
   const state = createInitialGameState({ now: 10_000, rngSeed: 9 });
 
