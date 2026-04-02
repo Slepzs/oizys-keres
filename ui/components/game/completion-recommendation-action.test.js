@@ -20,6 +20,9 @@ test('available contracts map to a quest-start action', () => {
   assert.deepEqual(action, {
     ctaLabel: 'Start contract',
     route: '/quests',
+    params: {
+      questId: 'ruins_warden',
+    },
     shouldStartQuest: true,
     questId: 'ruins_warden',
   });
@@ -76,6 +79,9 @@ test('non-combat quest recommendations can start the next quest directly', () =>
   assert.deepEqual(action, {
     ctaLabel: 'Start quest',
     route: '/quests',
+    params: {
+      questId: 'first_cast',
+    },
     shouldStartQuest: true,
     questId: 'first_cast',
   });
@@ -93,9 +99,30 @@ test('skill-gated non-combat recommendations route back to skills training', () 
   });
 
   assert.deepEqual(action, {
-    ctaLabel: 'Train skills',
-    route: '/skills',
+    ctaLabel: 'Open Woodcutting',
+    route: '/skill/woodcutting',
     shouldStartQuest: false,
+  });
+});
+
+test('active quest recommendations deep link back to the referenced quest board entry', () => {
+  const action = getCompletionRecommendationAction({
+    kind: 'advance-quest',
+    focusArea: 'quests',
+    title: 'Advance Seed Collector',
+    detail: 'Seed Collector is active in your support track.',
+    actionLabel: '2 oak seeds remaining',
+    questId: 'seed_collector',
+  });
+
+  assert.deepEqual(action, {
+    ctaLabel: 'Open quests',
+    route: '/quests',
+    params: {
+      questId: 'seed_collector',
+    },
+    shouldStartQuest: false,
+    questId: 'seed_collector',
   });
 });
 

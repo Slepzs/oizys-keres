@@ -28,6 +28,14 @@ export function useCompletionRecommendationAction(
       }
     }
 
+    if (action.params) {
+      router.push({
+        pathname: action.route,
+        params: action.params,
+      } as never);
+      return;
+    }
+
     router.push(action.route as never);
   }, [action, router, selectEnemyForZone, selectZone, startQuest]);
 

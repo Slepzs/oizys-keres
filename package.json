@@ -10,7 +10,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test:logic": "node -r tsconfig-paths/register -r sucrase/register --test game ui/components/layout/SafeContainer.metrics.test.ts ui/screens/combat-screen.sections.test.ts ui/screens/skill-detail.config.test.ts"
+    "test:logic": "node -r tsconfig-paths/register -r sucrase/register --test game ui/components/layout/SafeContainer.metrics.test.ts ui/screens/combat-screen.sections.test.ts ui/screens/skill-detail.config.test.ts ui/screens/quests-focus.test.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

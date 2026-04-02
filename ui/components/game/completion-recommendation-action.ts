@@ -1,8 +1,11 @@
 import type { CompletionRecommendation } from '@/game/logic';
+import { SKILL_DEFINITIONS } from '@/game/data';
+import { getSkillDetailHref } from '@/ui/screens/skill-detail.config';
 
 export interface CompletionRecommendationAction {
   ctaLabel: string;
-  route: '/combat' | '/skills' | '/quests' | '/progress';
+  route: '/combat' | '/skills' | '/quests' | '/progress' | `/skill/${string}`;
+  params?: Record<string, string>;
   shouldStartQuest: boolean;
   questId?: string;
   enemyId?: string;
@@ -18,6 +21,11 @@ export function getCompletionRecommendationAction(
       return {
         ctaLabel: recommendation.kind === 'start-contract' ? 'Start contract' : 'Start quest',
         route: '/quests',
+        params: recommendation.questId
+          ? {
+              questId: recommendation.questId,
+            }
+          : undefined,
         shouldStartQuest: true,
         questId: recommendation.questId,
       };
@@ -25,6 +33,11 @@ export function getCompletionRecommendationAction(
       return {
         ctaLabel: 'Open quests',
         route: '/quests',
+        params: recommendation.questId
+          ? {
+              questId: recommendation.questId,
+            }
+          : undefined,
         shouldStartQuest: false,
         questId: recommendation.questId,
       };
@@ -48,7 +61,21 @@ export function getCompletionRecommendationAction(
     default:
       switch (recommendation.focusArea) {
         case 'player':
+          return {
+            ctaLabel: 'Train skills',
+            route: '/skills',
+            shouldStartQuest: false,
+          };
         case 'skills':
+          if (recommendation.skillId) {
+            const skillName = SKILL_DEFINITIONS[recommendation.skillId]?.name ?? recommendation.skillId;
+            return {
+              ctaLabel: `Open ${skillName}`,
+              route: getSkillDetailHref(recommendation.skillId),
+              shouldStartQuest: false,
+            };
+          }
+
           return {
             ctaLabel: 'Train skills',
             route: '/skills',
@@ -58,6 +85,11 @@ export function getCompletionRecommendationAction(
           return {
             ctaLabel: 'Open quests',
             route: '/quests',
+            params: recommendation.questId
+              ? {
+                  questId: recommendation.questId,
+                }
+              : undefined,
             shouldStartQuest: false,
           };
         case 'combat':

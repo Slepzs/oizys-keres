@@ -17,6 +17,7 @@ type ProgressStatus = 'completed' | 'active' | 'available' | 'locked';
 
 interface ProgressScreenProps {
   initialTab?: ProgressTabId;
+  initialQuestId?: string;
 }
 
 const PROGRESS_TABS: Array<{ id: ProgressTabId; label: string }> = [
@@ -104,7 +105,7 @@ function getRecommendationMeta(kind: string) {
   }
 }
 
-export function ProgressScreen({ initialTab = 'quests' }: ProgressScreenProps) {
+export function ProgressScreen({ initialTab = 'quests', initialQuestId }: ProgressScreenProps) {
   const [activeTab, setActiveTab] = useState<ProgressTabId>(initialTab);
 
   useEffect(() => {
@@ -136,7 +137,7 @@ export function ProgressScreen({ initialTab = 'quests' }: ProgressScreenProps) {
       </View>
 
       <View style={styles.content}>
-        {activeTab === 'quests' ? <QuestsTabContent /> : null}
+        {activeTab === 'quests' ? <QuestsTabContent highlightQuestId={initialQuestId} /> : null}
         {activeTab === 'achievements' ? <AchievementsTabContent /> : null}
         {activeTab === 'completion' ? <CompletionTabContent /> : null}
       </View>
