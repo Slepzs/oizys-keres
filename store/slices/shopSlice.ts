@@ -21,6 +21,7 @@ export function createShopSlice(set: SliceSet, get: SliceGet, helpers: StoreHelp
 
       const offer = SHOP_OFFERS[offerId];
       const isForgeOffer = offer?.tier === 'forge';
+      const isFishingOffer = offer?.effect.kind === 'unlock_fishing_rod';
 
       set({
         player: result.state.player,
@@ -28,6 +29,7 @@ export function createShopSlice(set: SliceSet, get: SliceGet, helpers: StoreHelp
         bagSettings: result.state.bagSettings,
         rngSeed: result.state.rngSeed,
         ...(isForgeOffer ? { resources: result.state.resources, multipliers: result.state.multipliers } : {}),
+        ...(isFishingOffer ? { fishingGear: result.state.fishingGear } : {}),
       });
 
       if (result.openedPacks && result.openedPacks.length > 0) {
@@ -47,6 +49,13 @@ export function createShopSlice(set: SliceSet, get: SliceGet, helpers: StoreHelp
           'Sigil Engraved',
           `${offer?.name ?? 'Forge Upgrade'} is now permanently active.`,
           { icon: offer?.icon ?? '✨', duration: 5000 }
+        );
+      } else if (isFishingOffer) {
+        get().addNotification(
+          'system',
+          'New Fishing Gear',
+          `${offer?.name ?? 'Fishing Rod'} is now permanently available.`,
+          { icon: offer?.icon ?? '🎣', duration: 5000 }
         );
       } else {
         get().addNotification(

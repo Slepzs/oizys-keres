@@ -1,5 +1,6 @@
 import type { SaveBlob } from './schema';
 import { CURRENT_SAVE_VERSION } from './schema';
+import { createInitialFishingGearState } from '../data/fishing-rods.data';
 import { createInitialBagState } from '../data/items.data';
 import { createInitialQuestsState } from '../data/quests.data';
 import { createInitialAchievementsState } from '../data/achievements.data';
@@ -344,6 +345,16 @@ const migrations: Record<number, MigrationFn> = {
         autoDrink: false,
         potionBuffs: [],
       },
+    },
+  }),
+
+  // Migration from v19 to v20: Add fishing gear unlock state
+  19: (save) => ({
+    ...save,
+    version: 20,
+    state: {
+      ...save.state,
+      fishingGear: createInitialFishingGearState(),
     },
   }),
 

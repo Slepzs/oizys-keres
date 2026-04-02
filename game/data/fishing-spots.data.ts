@@ -1,5 +1,7 @@
+import { createInitialFishingGearState } from './fishing-rods.data';
+import type { FishingGearState } from '../types/state';
 import type { ResourceId } from '../types/resources';
-import type { FishingSpotId } from '../types/skills';
+import type { FishingRodId, FishingSpotId } from '../types/skills';
 
 export interface FishingSpot {
   id: FishingSpotId;
@@ -11,6 +13,7 @@ export interface FishingSpot {
   baseResourcePerAction: number;
   resourceProduced: ResourceId;
   ticksPerAction: number;
+  requiredRodId?: FishingRodId;
 }
 
 export const FISHING_SPOTS: Record<FishingSpotId, FishingSpot> = {
@@ -46,6 +49,7 @@ export const FISHING_SPOTS: Record<FishingSpotId, FishingSpot> = {
     baseResourcePerAction: 1,
     resourceProduced: 'raw_trout',
     ticksPerAction: 42,
+    requiredRodId: 'river_rod',
   },
   bay: {
     id: 'bay',
@@ -57,6 +61,7 @@ export const FISHING_SPOTS: Record<FishingSpotId, FishingSpot> = {
     baseResourcePerAction: 1,
     resourceProduced: 'raw_salmon',
     ticksPerAction: 48,
+    requiredRodId: 'river_rod',
   },
   deep_sea: {
     id: 'deep_sea',
@@ -68,6 +73,7 @@ export const FISHING_SPOTS: Record<FishingSpotId, FishingSpot> = {
     baseResourcePerAction: 1,
     resourceProduced: 'raw_lobster',
     ticksPerAction: 55,
+    requiredRodId: 'deepwater_rod',
   },
   ocean: {
     id: 'ocean',
@@ -79,6 +85,7 @@ export const FISHING_SPOTS: Record<FishingSpotId, FishingSpot> = {
     baseResourcePerAction: 1,
     resourceProduced: 'raw_swordfish',
     ticksPerAction: 64,
+    requiredRodId: 'deepwater_rod',
   },
   abyss: {
     id: 'abyss',
@@ -90,18 +97,38 @@ export const FISHING_SPOTS: Record<FishingSpotId, FishingSpot> = {
     baseResourcePerAction: 1,
     resourceProduced: 'raw_shark',
     ticksPerAction: 75,
+    requiredRodId: 'abyssal_rod',
   },
 };
 
 export const FISHING_SPOT_IDS = Object.keys(FISHING_SPOTS) as FishingSpotId[];
 
-export function getAvailableFishingSpots(fishingLevel: number): FishingSpot[] {
-  return Object.values(FISHING_SPOTS).filter(
-    (spot) => spot.levelRequired <= fishingLevel
+type FishingGearSelectionState = Pick<FishingGearState, 'ownedRodIds'>;
+
+function canUseSpot(
+  fishingLevel: number,
+  spot: FishingSpot,
+  fishingGear: FishingGearSelectionState
+): boolean {
+  return (
+    spot.levelRequired <= fishingLevel
+    && (!spot.requiredRodId || fishingGear.ownedRodIds.includes(spot.requiredRodId))
   );
 }
 
-export function getDefaultFishingSpot(fishingLevel: number): FishingSpot {
-  const available = getAvailableFishingSpots(fishingLevel);
-  return available[available.length - 1];
+export function getAvailableFishingSpots(
+  fishingLevel: number,
+  fishingGear: FishingGearSelectionState = createInitialFishingGearState()
+): FishingSpot[] {
+  return Object.values(FISHING_SPOTS).filter(
+    (spot) => canUseSpot(fishingLevel, spot, fishingGear)
+  );
+}
+
+export function getDefaultFishingSpot(
+  fishingLevel: number,
+  fishingGear: FishingGearSelectionState = createInitialFishingGearState()
+): FishingSpot {
+  const available = getAvailableFishingSpots(fishingLevel, fishingGear);
+  return available[available.length - 1] ?? FISHING_SPOTS.pond;
 }

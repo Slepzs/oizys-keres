@@ -4,6 +4,7 @@ export type SkillId = 'woodcutting' | 'mining' | 'crafting' | 'summoning' | 'fis
 export type TreeTierId = 'normal' | 'oak' | 'willow' | 'maple' | 'yew' | 'magic';
 export type RockTierId = 'limestone' | 'copper' | 'iron' | 'coal' | 'mithril' | 'adamantite';
 export type FishingSpotId = 'pond' | 'lake' | 'river' | 'bay' | 'deep_sea' | 'ocean' | 'abyss';
+export type FishingRodId = 'river_rod' | 'deepwater_rod' | 'abyssal_rod';
 export type CookingRecipeId = 'cook_shrimp' | 'cook_sardine' | 'cook_trout' | 'cook_salmon' | 'cook_lobster' | 'cook_swordfish' | 'cook_shark';
 export type HerbloreRecipeId =
   | 'brew_attack_potion'

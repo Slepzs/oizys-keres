@@ -1,13 +1,32 @@
 import { FISHING_SPOTS, getAvailableFishingSpots, getDefaultFishingSpot } from '../data/fishing-spots.data';
+import { createInitialFishingGearState } from '../data/fishing-rods.data';
+import type { FishingSpot } from '../data/fishing-spots.data';
+import type { FishingGearState } from '../types/state';
 import type { FishingSpotId, SkillState } from '../types/skills';
 
 export { FISHING_SPOTS, getAvailableFishingSpots, getDefaultFishingSpot };
 
 type FishingSelectionState = Pick<SkillState, 'level' | 'activeFishingSpotId'>;
+type FishingGearSelectionState = Pick<FishingGearState, 'ownedRodIds'>;
 
-export function setActiveFishingSpot(skill: SkillState, spotId: FishingSpotId): SkillState {
+function canUseFishingSpot(
+  level: number,
+  spot: FishingSpot,
+  fishingGear: FishingGearSelectionState
+): boolean {
+  return (
+    level >= spot.levelRequired
+    && (!spot.requiredRodId || fishingGear.ownedRodIds.includes(spot.requiredRodId))
+  );
+}
+
+export function setActiveFishingSpot(
+  skill: SkillState,
+  spotId: FishingSpotId,
+  fishingGear: FishingGearSelectionState = createInitialFishingGearState()
+): SkillState {
   const spot = FISHING_SPOTS[spotId];
-  if (!spot || skill.level < spot.levelRequired) {
+  if (!spot || !canUseFishingSpot(skill.level, spot, fishingGear)) {
     return skill;
   }
   return {
@@ -16,19 +35,25 @@ export function setActiveFishingSpot(skill: SkillState, spotId: FishingSpotId): 
   };
 }
 
-export function getActiveFishingSpot(skill: FishingSelectionState) {
+export function getActiveFishingSpot(
+  skill: FishingSelectionState,
+  fishingGear: FishingGearSelectionState = createInitialFishingGearState()
+) {
   if (!skill.activeFishingSpotId) {
-    return getDefaultFishingSpot(skill.level);
+    return getDefaultFishingSpot(skill.level, fishingGear);
   }
 
   const selectedSpot = FISHING_SPOTS[skill.activeFishingSpotId];
-  if (!selectedSpot || skill.level < selectedSpot.levelRequired) {
-    return getDefaultFishingSpot(skill.level);
+  if (!selectedSpot || !canUseFishingSpot(skill.level, selectedSpot, fishingGear)) {
+    return getDefaultFishingSpot(skill.level, fishingGear);
   }
 
   return selectedSpot;
 }
 
-export function getFishingSpotsForLevel(level: number) {
-  return getAvailableFishingSpots(level);
+export function getFishingSpotsForLevel(
+  level: number,
+  fishingGear: FishingGearSelectionState = createInitialFishingGearState()
+) {
+  return getAvailableFishingSpots(level, fishingGear);
 }

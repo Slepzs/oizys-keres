@@ -82,8 +82,9 @@ export function createSkillsSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
       const state = get();
       const fishingSkill = state.skills.fishing;
       const spot = FISHING_SPOTS[spotId];
+      const hasRequiredRod = !spot?.requiredRodId || state.fishingGear.ownedRodIds.includes(spot.requiredRodId);
 
-      if (!spot || fishingSkill.level < spot.levelRequired) {
+      if (!spot || fishingSkill.level < spot.levelRequired || !hasRequiredRod) {
         return;
       }
 

@@ -126,6 +126,7 @@ function getGameStateSnapshot(store: GameStore): GameState {
     attributes: store.attributes,
     skillStats: store.skillStats,
     resources: store.resources,
+    fishingGear: store.fishingGear,
     bag: store.bag,
     bagSettings: store.bagSettings,
     quests: store.quests,

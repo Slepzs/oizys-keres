@@ -420,22 +420,25 @@ export function useMiningRocks() {
 }
 
 export function useFishingSpots() {
-  const { level, activeFishingSpotId } = useGameStore(
+  const { level, activeFishingSpotId, ownedRodIds } = useGameStore(
     useShallow((state) => ({
       level: state.skills.fishing.level,
       activeFishingSpotId: state.skills.fishing.activeFishingSpotId,
+      ownedRodIds: state.fishingGear.ownedRodIds,
     }))
   );
 
   return useMemo(() => {
-    const active = getActiveFishingSpot({ level, activeFishingSpotId });
+    const fishingGear = { ownedRodIds };
+    const active = getActiveFishingSpot({ level, activeFishingSpotId }, fishingGear);
     return {
-      available: getFishingSpotsForLevel(level),
+      available: getFishingSpotsForLevel(level, fishingGear),
       active,
       level,
+      ownedRodIds,
       activeFishingSpotId: active.id,
     };
-  }, [level, activeFishingSpotId]);
+  }, [level, activeFishingSpotId, ownedRodIds]);
 }
 
 export function useNotificationActions() {

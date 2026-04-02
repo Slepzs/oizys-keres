@@ -1,6 +1,6 @@
 import type { CombatState } from './combat';
 import type { ResourcesState } from './resources';
-import type { SkillId, SkillsState } from './skills';
+import type { FishingRodId, SkillId, SkillsState } from './skills';
 import type { BagState, SortMode } from './items';
 import type { QuestsState } from './quests';
 import type { AchievementsState } from './achievements';
@@ -43,6 +43,10 @@ export interface SkillStatState {
 
 export type SkillStatsState = Record<SkillId, SkillStatState>;
 
+export interface FishingGearState {
+  ownedRodIds: FishingRodId[];
+}
+
 export interface TimestampsState {
   lastActive: number;
   lastSave: number;
@@ -55,6 +59,7 @@ export interface GameState {
   attributes: AttributesState;
   skillStats: SkillStatsState;
   resources: ResourcesState;
+  fishingGear: FishingGearState;
   bag: BagState;
   bagSettings: BagSettings;
   quests: QuestsState;

@@ -2,6 +2,7 @@ import type { GameState } from '../types/state';
 import type { ItemId } from '../types/items';
 import type { GachaPackDefinition, GachaPackId, ShopOffer, ShopOfferId } from '../types/shop';
 import type { ResourceId } from '../types/resources';
+import type { FishingRodId } from '../types/skills';
 import { DEFAULT_BAG_SIZE, ITEM_DEFINITIONS } from '../data/items.data';
 import { GACHA_PACKS } from '../data/gacha.data';
 import { SHOP_OFFERS } from '../data/shop.data';
@@ -34,6 +35,10 @@ export interface BuyShopOfferResult {
  */
 export function isForgeUpgradePurchased(state: GameState, multiplierId: string): boolean {
   return state.multipliers.active.some((m) => m.id === multiplierId);
+}
+
+export function isFishingRodPurchased(state: Pick<GameState, 'fishingGear'>, rodId: FishingRodId): boolean {
+  return state.fishingGear.ownedRodIds.includes(rodId);
 }
 
 /**
@@ -212,6 +217,14 @@ export function buyShopOffer(state: GameState, offerId: ShopOfferId, quantity: n
 
   const q = Math.max(1, Math.floor(quantity));
 
+  if (offer.effect.kind === 'unlock_fishing_rod' && q !== 1) {
+    return { success: false, error: 'Fishing rods can only be purchased one at a time', state };
+  }
+
+  if (offer.effect.kind === 'unlock_fishing_rod' && isFishingRodPurchased(state, offer.effect.rodId)) {
+    return { success: false, error: 'Fishing rod already owned', state };
+  }
+
   // Handle resource-priced offers differently from coin-priced ones
   if (offer.pricing.kind === 'resource') {
     return buyResourcePricedOffer(state, offer, q);
@@ -297,6 +310,17 @@ export function buyShopOffer(state: GameState, offerId: ShopOfferId, quantity: n
     case 'grant_multiplier':
       // Not reachable for coin-priced offers, handled in buyResourcePricedOffer
       return { success: false, error: 'Invalid offer configuration', state };
+
+    case 'unlock_fishing_rod': {
+      newState = {
+        ...newState,
+        fishingGear: {
+          ...newState.fishingGear,
+          ownedRodIds: [...newState.fishingGear.ownedRodIds, offer.effect.rodId],
+        },
+      };
+      break;
+    }
   }
 
   return {

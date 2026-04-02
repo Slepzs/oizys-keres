@@ -1,4 +1,5 @@
 import type { GameState } from '../types';
+import { createInitialFishingGearState } from '../data/fishing-rods.data';
 import { DEFAULT_BAG_SIZE } from '../data/items.data';
 import { SKILL_IDS } from '../data/skills.data';
 import { createInitialSummoningState } from '../data/summoning.data';
@@ -168,6 +169,13 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...(rawSkills.herblore ?? {}),
     },
   };
+  const repairedFishingGear = {
+    ...createInitialFishingGearState(),
+    ...(state.fishingGear ?? {}),
+    ownedRodIds: Array.isArray(state.fishingGear?.ownedRodIds)
+      ? state.fishingGear.ownedRodIds.filter((rodId): rodId is GameState['fishingGear']['ownedRodIds'][number] => typeof rodId === 'string')
+      : [],
+  };
   const repairedSkillStats = {
     woodcutting: {
       ...initial.skillStats.woodcutting,
@@ -200,7 +208,7 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
   };
   repairedSkills.woodcutting.activeTreeId = getActiveTree(repairedSkills.woodcutting).id;
   repairedSkills.mining.activeRockId = getActiveMiningRock(repairedSkills.mining).id;
-  repairedSkills.fishing.activeFishingSpotId = getActiveFishingSpot(repairedSkills.fishing).id;
+  repairedSkills.fishing.activeFishingSpotId = getActiveFishingSpot(repairedSkills.fishing, repairedFishingGear).id;
   repairedSkills.cooking.activeCookingRecipeId = getActiveCookingRecipe(repairedSkills.cooking).id;
   repairedSkills.herblore.activeHerbloreRecipeId = getActiveHerbloreRecipe(repairedSkills.herblore).id;
   const initialSummoning = createInitialSummoningState();
@@ -275,6 +283,7 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
       ...initial.resources,
       ...state.resources,
     },
+    fishingGear: repairedFishingGear,
     bag: normalizeBag(state.bag ?? initial.bag),
     bagSettings: {
       autoSort: state.bagSettings?.autoSort ?? initial.bagSettings.autoSort,

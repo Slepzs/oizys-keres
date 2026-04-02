@@ -1,4 +1,5 @@
 import { createInitialAchievementsState } from "../data/achievements.data";
+import { createInitialFishingGearState } from "../data/fishing-rods.data";
 import { createInitialBagState } from "../data/items.data";
 import { createInitialQuestsState } from "../data/quests.data";
 import { createInitialResourcesState } from "../data/resources.data";
@@ -57,6 +58,7 @@ export function createInitialGameState(params: CreateInitialGameStateParams = {}
 		attributes: createInitialAttributesState(),
 		skillStats: createInitialSkillStatsState(),
 		resources: createInitialResourcesState(),
+		fishingGear: createInitialFishingGearState(),
 		bag: createInitialBagState(),
 		bagSettings: createInitialBagSettings(),
 		quests: createInitialQuestsState(),

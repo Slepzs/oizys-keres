@@ -443,6 +443,7 @@ export function SkillDetailScreen() {
       {showFishingSpotSelector && (
         <FishingSpotSelector
           currentLevel={fishingSpots.level}
+          ownedRodIds={fishingSpots.ownedRodIds}
           activeFishingSpotId={fishingSpots.activeFishingSpotId}
           onSelectSpot={setActiveFishingSpot}
           onClose={() => setShowFishingSpotSelector(false)}

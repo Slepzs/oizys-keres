@@ -1,7 +1,11 @@
 import type { ShopOffer, ShopOfferId } from '../types/shop';
+import { FISHING_RODS } from './fishing-rods.data';
 
 export const SHOP_OFFER_IDS: ShopOfferId[] = [
   'premium_bag_tab',
+  'fishing_rod_river',
+  'fishing_rod_deepwater',
+  'fishing_rod_abyssal',
   'supply_mystery_pack',
   'supply_bronze_pickaxe',
   'supply_bronze_hatchet',
@@ -31,6 +35,57 @@ export const SHOP_OFFERS: Record<ShopOfferId, ShopOffer> = {
     effect: {
       kind: 'bag_tab',
       tabs: 1,
+    },
+  },
+
+  fishing_rod_river: {
+    id: 'fishing_rod_river',
+    tier: 'fishing',
+    name: FISHING_RODS.river_rod.name,
+    description: 'Unlocks the Mountain River and Coastal Bay fishing routes.',
+    icon: FISHING_RODS.river_rod.icon,
+    pricing: {
+      kind: 'fixed',
+      currency: 'coins',
+      amount: FISHING_RODS.river_rod.priceCoins,
+    },
+    effect: {
+      kind: 'unlock_fishing_rod',
+      rodId: 'river_rod',
+    },
+  },
+
+  fishing_rod_deepwater: {
+    id: 'fishing_rod_deepwater',
+    tier: 'fishing',
+    name: FISHING_RODS.deepwater_rod.name,
+    description: 'Unlocks the Deep Sea and Open Ocean fishing routes.',
+    icon: FISHING_RODS.deepwater_rod.icon,
+    pricing: {
+      kind: 'fixed',
+      currency: 'coins',
+      amount: FISHING_RODS.deepwater_rod.priceCoins,
+    },
+    effect: {
+      kind: 'unlock_fishing_rod',
+      rodId: 'deepwater_rod',
+    },
+  },
+
+  fishing_rod_abyssal: {
+    id: 'fishing_rod_abyssal',
+    tier: 'fishing',
+    name: FISHING_RODS.abyssal_rod.name,
+    description: 'Unlocks the Abyssal Trench and its highest-tier catches.',
+    icon: FISHING_RODS.abyssal_rod.icon,
+    pricing: {
+      kind: 'fixed',
+      currency: 'coins',
+      amount: FISHING_RODS.abyssal_rod.priceCoins,
+    },
+    effect: {
+      kind: 'unlock_fishing_rod',
+      rodId: 'abyssal_rod',
     },
   },
 

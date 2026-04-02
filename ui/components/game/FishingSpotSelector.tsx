@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
-import { FISHING_SPOTS } from '@/game/data';
+import { FISHING_RODS, FISHING_SPOTS } from '@/game/data';
 import type { FishingSpot } from '@/game/data/fishing-spots.data';
-import type { FishingSpotId } from '@/game/types';
+import type { FishingRodId, FishingSpotId } from '@/game/types';
 
 interface FishingSpotSelectorProps {
   currentLevel: number;
+  ownedRodIds: FishingRodId[];
   activeFishingSpotId: FishingSpotId | undefined;
   onSelectSpot: (spotId: FishingSpotId) => void;
   onClose: () => void;
@@ -14,6 +15,7 @@ interface FishingSpotSelectorProps {
 
 export function FishingSpotSelector({
   currentLevel,
+  ownedRodIds,
   activeFishingSpotId,
   onSelectSpot,
   onClose,
@@ -34,13 +36,17 @@ export function FishingSpotSelector({
 
         <ScrollView style={styles.spotList}>
           {spots.map((spot) => {
-            const isLocked = currentLevel < spot.levelRequired;
+            const isLevelLocked = currentLevel < spot.levelRequired;
+            const isRodLocked = !isLevelLocked && !!spot.requiredRodId && !ownedRodIds.includes(spot.requiredRodId);
+            const isLocked = isLevelLocked || isRodLocked;
             const isSelected = activeFishingSpotId === spot.id;
 
             return (
               <SpotCard
                 key={spot.id}
                 spot={spot}
+                isLevelLocked={isLevelLocked}
+                isRodLocked={isRodLocked}
                 isLocked={isLocked}
                 isSelected={isSelected}
                 onPress={() => {
@@ -60,12 +66,16 @@ export function FishingSpotSelector({
 
 interface SpotCardProps {
   spot: FishingSpot;
+  isLevelLocked: boolean;
+  isRodLocked: boolean;
   isLocked: boolean;
   isSelected: boolean;
   onPress: () => void;
 }
 
-function SpotCard({ spot, isLocked, isSelected, onPress }: SpotCardProps) {
+function SpotCard({ spot, isLevelLocked, isRodLocked, isLocked, isSelected, onPress }: SpotCardProps) {
+  const requiredRod = spot.requiredRodId ? FISHING_RODS[spot.requiredRodId] : null;
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -91,10 +101,18 @@ function SpotCard({ spot, isLocked, isSelected, onPress }: SpotCardProps) {
         )}
         {isLocked && (
           <View style={styles.lockBadge}>
-            <Text style={styles.lockBadgeText}>Lvl {spot.levelRequired}</Text>
+            <Text style={styles.lockBadgeText}>
+              {isLevelLocked ? `Lvl ${spot.levelRequired}` : requiredRod?.name ?? 'Rod Required'}
+            </Text>
           </View>
         )}
       </View>
+
+      {isRodLocked && requiredRod && (
+        <Text style={styles.requirementText}>
+          Buy the {requiredRod.name} from the shopkeeper to fish here.
+        </Text>
+      )}
 
       {!isLocked && (
         <View style={styles.statsRow}>
@@ -226,6 +244,11 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
+  },
+  requirementText: {
+    fontSize: fontSize.xs,
+    color: colors.warning,
+    marginBottom: spacing.sm,
   },
   statsRow: {
     flexDirection: 'row',

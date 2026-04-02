@@ -7,11 +7,12 @@ import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { PackRevealModal } from '../components/game/PackRevealModal';
 import { colors, fontSize, fontWeight, spacing, borderRadius } from '@/constants/theme';
-import { DEFAULT_BAG_SIZE, RESOURCE_DEFINITIONS, SHOP_OFFER_IDS, SHOP_OFFERS } from '@/game/data';
+import { DEFAULT_BAG_SIZE, FISHING_RODS, RESOURCE_DEFINITIONS, SHOP_OFFER_IDS, SHOP_OFFERS } from '@/game/data';
 import {
   getBagTabCount,
   getResourceCostAffordability,
   getShopOfferUnitPriceCoinsFromBagSlots,
+  isFishingRodPurchased,
   isForgeUpgradePurchased,
   MAX_BAG_TABS,
 } from '@/game/logic';
@@ -22,23 +23,25 @@ import type { ItemId } from '@/game/types/items';
 
 export function ShopScreen() {
   const [revealingPack, setRevealingPack] = useState<{ packName: string; rolls: ItemId[] } | null>(null);
-  const { coins, bagMaxSlots, resources, multipliers } = useGameStore(
+  const { coins, bagMaxSlots, resources, multipliers, fishingGear } = useGameStore(
     useShallow((state) => ({
       coins: state.player.coins,
       bagMaxSlots: state.bag.maxSlots,
       resources: state.resources,
       multipliers: state.multipliers,
+      fishingGear: state.fishingGear,
     }))
   );
 
   const { buyShopOffer } = useGameActions();
 
-  const { premiumOffers, normalOffers, forgeOffers } = useMemo(() => {
+  const { premiumOffers, normalOffers, forgeOffers, fishingOffers } = useMemo(() => {
     const offers = SHOP_OFFER_IDS.map((id) => SHOP_OFFERS[id]);
     return {
       premiumOffers: offers.filter((o) => o.tier === 'premium'),
       normalOffers: offers.filter((o) => o.tier === 'normal'),
       forgeOffers: offers.filter((o) => o.tier === 'forge'),
+      fishingOffers: offers.filter((o) => o.tier === 'fishing'),
     };
   }, []);
 
@@ -63,7 +66,6 @@ export function ShopScreen() {
   };
 
   // Minimal state snapshot for forge affordability checks (only resources/multipliers needed)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const forgeCheckState = useMemo(() => ({ resources, multipliers }) as any, [resources, multipliers]);
 
   return (
@@ -186,6 +188,51 @@ export function ShopScreen() {
                   onPress={() => handleBuy(offer.id)}
                   disabled={!canAfford}
                   style={styles.buyButton}
+                />
+              </View>
+            </Card>
+          );
+        })}
+
+        <Text style={styles.sectionTitle}>Fishing Gear</Text>
+        <Text style={styles.sectionSubtitle}>Permanent rod unlocks for higher-tier waters</Text>
+
+        {fishingOffers.map((offer) => {
+          if (offer.effect.kind !== 'unlock_fishing_rod') return null;
+
+          const price = getShopOfferUnitPriceCoinsFromBagSlots(bagMaxSlots, offer.id);
+          const canAfford = coins >= price;
+          const isOwned = isFishingRodPurchased({ fishingGear }, offer.effect.rodId);
+          const rod = FISHING_RODS[offer.effect.rodId];
+
+          return (
+            <Card
+              key={offer.id}
+              style={isOwned ? { ...styles.offerCard, ...styles.purchasedCard } : styles.offerCard}
+            >
+              <View style={styles.offerHeader}>
+                <Text style={styles.offerIcon}>{offer.icon}</Text>
+                <View style={styles.offerInfo}>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.offerName}>{offer.name}</Text>
+                    {isOwned && <Text style={styles.purchasedBadge}>✓ Owned</Text>}
+                  </View>
+                  <Text style={styles.offerDesc}>{offer.description}</Text>
+                  <Text style={styles.offerMeta}>
+                    Unlocks: {rod.unlocksSpots.map((spotId) => spotId.replace(/_/g, ' ')).join(', ')}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.offerFooter}>
+                <Text style={styles.priceText}>
+                  {'\u{1FA99}'} {formatNumber(price)}
+                </Text>
+                <Button
+                  title={isOwned ? 'Owned' : 'Buy'}
+                  onPress={() => handleBuy(offer.id)}
+                  disabled={isOwned || !canAfford}
+                  style={isOwned ? { ...styles.buyButton, ...styles.purchasedButton } : styles.buyButton}
                 />
               </View>
             </Card>

@@ -1,14 +1,18 @@
 import type { ItemId } from './items';
 import type { ResourceId } from './resources';
 import type { MultiplierTarget } from './multipliers';
+import type { FishingRodId } from './skills';
 
-export type ShopOfferTier = 'normal' | 'premium' | 'forge';
+export type ShopOfferTier = 'normal' | 'premium' | 'forge' | 'fishing';
 
 export type ShopOfferId =
   | 'supply_mystery_pack'
   | 'supply_bronze_pickaxe'
   | 'supply_bronze_hatchet'
   | 'supply_bronze_sword'
+  | 'fishing_rod_river'
+  | 'fishing_rod_deepwater'
+  | 'fishing_rod_abyssal'
   | 'premium_bag_tab'
   | 'forge_sigil_mining_i'
   | 'forge_sigil_mining_ii'
@@ -75,6 +79,10 @@ export type ShopOfferEffect =
       target: MultiplierTarget;
       value: number;
       multiplierType: 'additive' | 'multiplicative';
+    }
+  | {
+      kind: 'unlock_fishing_rod';
+      rodId: FishingRodId;
     };
 
 export interface ShopOffer {
