@@ -11,6 +11,7 @@ import { AchievementsTabContent } from './AchievementsScreen';
 import { QuestsTabContent } from './QuestsScreen';
 
 type ProgressTabId = 'quests' | 'achievements' | 'completion';
+type ProgressStatus = 'completed' | 'active' | 'available' | 'locked';
 
 interface ProgressScreenProps {
   initialTab?: ProgressTabId;
@@ -21,6 +22,32 @@ const PROGRESS_TABS: Array<{ id: ProgressTabId; label: string }> = [
   { id: 'achievements', label: 'Achievements' },
   { id: 'completion', label: 'Completion' },
 ];
+
+function getStatusLabel(status: ProgressStatus) {
+  switch (status) {
+    case 'completed':
+      return 'DONE';
+    case 'active':
+      return 'ACTIVE';
+    case 'available':
+      return 'READY';
+    case 'locked':
+      return 'LOCKED';
+  }
+}
+
+function getQuestStatusStyle(status: ProgressStatus) {
+  switch (status) {
+    case 'completed':
+      return styles.statusComplete;
+    case 'active':
+      return styles.statusPending;
+    case 'available':
+      return styles.statusReady;
+    case 'locked':
+      return styles.statusLocked;
+  }
+}
 
 export function ProgressScreen({ initialTab = 'quests' }: ProgressScreenProps) {
   const [activeTab, setActiveTab] = useState<ProgressTabId>(initialTab);
@@ -162,10 +189,24 @@ function CompletionTabContent() {
                 {hunt.unlocked ? 'UNLOCKED' : 'LOCKED'}
               </Text>
             </View>
+            <View style={styles.huntStatusRow}>
+              <Text style={[styles.statusBadge, styles.questStatusBadge, getQuestStatusStyle(hunt.questStatus)]}>
+                {getStatusLabel(hunt.questStatus)}
+              </Text>
+              <Text style={styles.huntStatusCopy}>
+                {hunt.questKillProgress.target > 0
+                  ? `Contract kills ${hunt.questKillProgress.current}/${hunt.questKillProgress.target}`
+                  : hunt.questName}
+              </Text>
+            </View>
             <View style={styles.huntStatsRow}>
               <Text style={styles.huntStat}>Kills: {hunt.kills}</Text>
               <Text style={styles.huntStat}>
-                Quest: {hunt.questCompleted ? 'Complete' : hunt.questName}
+                {hunt.questKillProgress.remaining > 0
+                  ? `${hunt.questKillProgress.remaining} kills remaining`
+                  : hunt.questCompleted
+                    ? 'Contract complete'
+                    : hunt.questName}
               </Text>
             </View>
           </Card>
@@ -184,8 +225,8 @@ function CompletionTabContent() {
                   <Text style={styles.listSubtitle}>{entry.description}</Text>
                 </View>
               </View>
-              <Text style={[styles.statusBadge, entry.completed ? styles.statusComplete : styles.statusPending]}>
-                {entry.completed ? 'DONE' : 'OPEN'}
+              <Text style={[styles.statusBadge, getQuestStatusStyle(entry.status)]}>
+                {getStatusLabel(entry.status)}
               </Text>
             </View>
           </Card>
@@ -372,6 +413,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.sm,
     marginTop: spacing.sm,
+  },
+  huntStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  questStatusBadge: {
+    minWidth: 64,
+    textAlign: 'center',
+  },
+  huntStatusCopy: {
+    flex: 1,
+    color: colors.textSecondary,
+    fontSize: fontSize.sm,
   },
   huntStat: {
     flex: 1,

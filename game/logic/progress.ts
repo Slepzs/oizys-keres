@@ -8,10 +8,12 @@ import {
   ZONE_DEFINITIONS,
 } from '@/game/data';
 import type { GameState } from '@/game/types';
+import type { Objective, PlayerQuestState, QuestCondition } from '@/game/types/quests';
 
 import { calculateCombatLevel } from './combat';
 
 type CompletionState = Pick<GameState, 'player' | 'combat' | 'quests'>;
+type CompletionQuestStatus = 'completed' | 'active' | 'available' | 'locked';
 
 interface ProgressMetric {
   current: number;
@@ -25,6 +27,7 @@ interface CompletionContractEntry {
   icon: string;
   description: string;
   completed: boolean;
+  status: CompletionQuestStatus;
 }
 
 interface CompletionHuntEntry {
@@ -38,6 +41,12 @@ interface CompletionHuntEntry {
   questId: string;
   questName: string;
   questCompleted: boolean;
+  questStatus: CompletionQuestStatus;
+  questKillProgress: {
+    current: number;
+    target: number;
+    remaining: number;
+  };
 }
 
 export interface CompletionProgress {
@@ -69,8 +78,62 @@ function buildMetric(current: number, target: number): ProgressMetric {
   };
 }
 
+function evaluateQuestUnlockCondition(
+  condition: QuestCondition,
+  state: CompletionState,
+  completedQuestIds: Set<string>
+) {
+  switch (condition.type) {
+    case 'quest_completed':
+      return completedQuestIds.has(condition.questId);
+    case 'player_level_at_least':
+      return state.player.level >= condition.value;
+    default:
+      return false;
+  }
+}
+
+function getCompletionQuestStatus(
+  questId: string,
+  state: CompletionState,
+  completedQuestIds: Set<string>,
+  activeQuestById: Map<string, PlayerQuestState>
+): CompletionQuestStatus {
+  if (completedQuestIds.has(questId)) {
+    return 'completed';
+  }
+
+  if (activeQuestById.has(questId)) {
+    return 'active';
+  }
+
+  const definition = getQuestDefinition(questId);
+  if (!definition?.unlock?.length) {
+    return 'available';
+  }
+
+  const unlocked = definition.unlock.every((condition) =>
+    evaluateQuestUnlockCondition(condition, state, completedQuestIds)
+  );
+
+  return unlocked ? 'available' : 'locked';
+}
+
+function getKillObjective(
+  objectives: Objective[],
+  enemyId: string
+): Extract<Objective, { type: 'kill' }> | null {
+  return objectives.find(
+    (objective): objective is Extract<Objective, { type: 'kill' }> =>
+      objective.type === 'kill' && objective.target === enemyId
+  ) ?? null;
+}
+
 export function getCompletionProgress(state: CompletionState): CompletionProgress {
   const completedQuestIds = new Set(state.quests.completed);
+  const activeQuestById = new Map(
+    state.quests.active.map((questState) => [questState.questId, questState] as const)
+  );
   const combatLevel = calculateCombatLevel(state.combat.combatSkills);
   const unlockedZones = Object.values(ZONE_DEFINITIONS).filter((zone) => {
     return combatLevel >= zone.combatLevelRequired;
@@ -78,6 +141,7 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
 
   const finalContracts = COMPLETION_FINAL_CONTRACT_IDS.map((questId) => {
     const definition = getQuestDefinition(questId);
+    const status = getCompletionQuestStatus(questId, state, completedQuestIds, activeQuestById);
 
     return {
       questId,
@@ -85,6 +149,7 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
       icon: definition?.icon ?? '📜',
       description: definition?.description ?? 'Complete this final contract.',
       completed: completedQuestIds.has(questId),
+      status,
     };
   });
 
@@ -92,6 +157,18 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
     const enemy = ENEMY_DEFINITIONS[hunt.enemyId];
     const zone = ZONE_DEFINITIONS[hunt.zoneId];
     const linkedQuest = getQuestDefinition(hunt.questId);
+    const questStatus = getCompletionQuestStatus(
+      hunt.questId,
+      state,
+      completedQuestIds,
+      activeQuestById
+    );
+    const activeQuestState = activeQuestById.get(hunt.questId);
+    const killObjective = getKillObjective(linkedQuest?.objectives ?? [], hunt.enemyId);
+    const targetKillCount = killObjective?.amount ?? 0;
+    const currentKillCount = questStatus === 'completed'
+      ? targetKillCount
+      : Math.min(activeQuestState?.progress[killObjective?.id ?? ''] ?? 0, targetKillCount);
     const kills = state.combat.enemyKillCounts[hunt.enemyId] ?? 0;
     const unlocked = combatLevel >= Math.max(
       zone?.combatLevelRequired ?? 1,
@@ -109,6 +186,12 @@ export function getCompletionProgress(state: CompletionState): CompletionProgres
       questId: hunt.questId,
       questName: linkedQuest?.name ?? hunt.questId,
       questCompleted: completedQuestIds.has(hunt.questId),
+      questStatus,
+      questKillProgress: {
+        current: currentKillCount,
+        target: targetKillCount,
+        remaining: Math.max(0, targetKillCount - currentKillCount),
+      },
     };
   });
 
