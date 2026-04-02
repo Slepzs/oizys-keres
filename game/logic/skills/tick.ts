@@ -7,10 +7,10 @@ import { addSkillXp, addPlayerXp } from '../xp';
 import { addResource } from '../resources';
 import { addItemToBag, isBagFull } from '../bag';
 import { createRng, randomInt, rollChance } from '../rng';
-import { getEffectiveMultiplier, getSkillXpMultiplier } from '../multipliers';
+import { addMultiplier, getEffectiveMultiplier, getSkillXpMultiplier } from '../multipliers';
 import { getActiveTree } from '../woodcutting';
 import { getActiveMiningRock } from '../mining';
-import { getActiveFishingSpot } from '../fishing';
+import { getActiveFishingSpot, resolveFishingActions } from '../fishing';
 import { getSummoningCombatBonuses, processSummoningRituals } from '../summoning';
 import { calculateMaxHp } from '../combat';
 
@@ -99,12 +99,14 @@ function processSkillTick(state: GameState, skillId: SkillId, ticksElapsed: numb
   const totalResourceGained = Math.floor(
     effectiveDefinition.baseResourcePerAction * efficiencyMult * actionsCompleted
   );
-  const resourceRewards = getSkillResourceRewards(
-    skillId,
-    effectiveDefinition.resourceProduced,
-    totalResourceGained,
-    newState.rngSeed
-  );
+  const resourceRewards = skillId === 'fishing'
+    ? []
+    : getSkillResourceRewards(
+        skillId,
+        effectiveDefinition.resourceProduced,
+        totalResourceGained,
+        newState.rngSeed
+      );
 
   // Add XP to skill
   if (xpGained > 0) {
@@ -161,6 +163,91 @@ function processSkillTick(state: GameState, skillId: SkillId, ticksElapsed: numb
         resources: resourceResult.resources,
       };
     }
+  }
+
+  if (skillId === 'fishing') {
+    const fishingSpot = getActiveFishingSpot(newState.skills.fishing, newState.fishingGear);
+    const fishingRolls = Math.max(0, totalResourceGained);
+    const fishingResult = resolveFishingActions({
+      spot: fishingSpot,
+      actionsCompleted: fishingRolls,
+      rngSeed: newState.rngSeed,
+      fishingGear: newState.fishingGear,
+    });
+
+    for (const reward of fishingResult.resources) {
+      const resourceResult = addResource(newState.resources, reward.resourceId, reward.amount);
+      newState = {
+        ...newState,
+        resources: resourceResult.resources,
+      };
+    }
+
+    if (fishingResult.discoveredRareFishIds.length > 0) {
+      newState = {
+        ...newState,
+        fishingGear: {
+          ...newState.fishingGear,
+          discoveredRareFishIds: [
+            ...newState.fishingGear.discoveredRareFishIds,
+            ...fishingResult.discoveredRareFishIds,
+          ],
+        },
+      };
+    }
+
+    for (const multiplier of fishingResult.newMultipliers) {
+      newState = addMultiplier(newState, multiplier);
+    }
+
+    for (const reward of fishingResult.items) {
+      const bagResult = addItemToBag(newState.bag, reward.itemId, reward.quantity);
+      newState = {
+        ...newState,
+        bag: bagResult.bag,
+      };
+
+      if (bagResult.added > 0) {
+        events.push({
+          type: 'ITEM_DROPPED',
+          skillId,
+          itemId: reward.itemId,
+          quantity: bagResult.added,
+        });
+      }
+
+      if (bagResult.overflow > 0) {
+        events.push({
+          type: 'BAG_FULL',
+          itemId: reward.itemId,
+          quantity: bagResult.overflow,
+        });
+      }
+    }
+
+    if (xpGained > 0 || fishingResult.resources.length > 0) {
+      if (fishingResult.resources.length === 0) {
+        events.push({
+          type: 'SKILL_ACTION',
+          skillId,
+          xpGained,
+          resourceId: effectiveDefinition.resourceProduced,
+          resourceGained: 0,
+        });
+      } else {
+        fishingResult.resources.forEach((reward, index) => {
+          events.push({
+            type: 'SKILL_ACTION',
+            skillId,
+            xpGained: index === 0 ? xpGained : 0,
+            resourceId: reward.resourceId,
+            resourceGained: reward.amount,
+          });
+        });
+      }
+    }
+
+    return { state: newState, events };
   }
 
   if (skillId === 'summoning') {

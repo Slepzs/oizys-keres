@@ -175,6 +175,18 @@ export function repairGameState(state: Partial<GameState>, options: DeserializeO
     ownedRodIds: Array.isArray(state.fishingGear?.ownedRodIds)
       ? state.fishingGear.ownedRodIds.filter((rodId): rodId is GameState['fishingGear']['ownedRodIds'][number] => typeof rodId === 'string')
       : [],
+    ownedUpgradeIds: Array.isArray((state.fishingGear as any)?.ownedUpgradeIds)
+      ? (state.fishingGear as any).ownedUpgradeIds.filter((upgradeId: unknown): upgradeId is GameState['fishingGear']['ownedUpgradeIds'][number] => typeof upgradeId === 'string')
+      : [],
+    discoveredRareFishIds: Array.isArray((state.fishingGear as any)?.discoveredRareFishIds)
+      ? (state.fishingGear as any).discoveredRareFishIds.filter((rareFishId: unknown): rareFishId is GameState['fishingGear']['discoveredRareFishIds'][number] => typeof rareFishId === 'string')
+      : [],
+    activeUpgradePreset: (state.fishingGear as any)?.activeUpgradePreset === 'xp'
+      || (state.fishingGear as any)?.activeUpgradePreset === 'supply'
+      || (state.fishingGear as any)?.activeUpgradePreset === 'value'
+      || (state.fishingGear as any)?.activeUpgradePreset === 'rare'
+      ? (state.fishingGear as any).activeUpgradePreset
+      : initial.fishingGear.activeUpgradePreset,
   };
   const repairedSkillStats = {
     woodcutting: {

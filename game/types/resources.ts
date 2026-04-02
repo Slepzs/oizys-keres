@@ -19,7 +19,10 @@ export type ResourceId =
   | 'raw_salmon'
   | 'raw_lobster'
   | 'raw_swordfish'
-  | 'raw_shark';
+  | 'raw_shark'
+  | 'raw_glacier_fish'
+  | 'raw_stormsnap_tuna'
+  | 'raw_celestial_koi';
 
 export interface ResourceState {
   amount: number;

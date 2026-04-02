@@ -358,6 +358,19 @@ const migrations: Record<number, MigrationFn> = {
     },
   }),
 
+  // Migration from v20 to v21: Add fishing expansion state fields
+  20: (save) => ({
+    ...save,
+    version: 21,
+    state: {
+      ...save.state,
+      fishingGear: {
+        ...createInitialFishingGearState(),
+        ...(save.state.fishingGear ?? {}),
+      },
+    },
+  }),
+
   // Migration from v16 to v17: Add cooking skill
   16: (save) => ({
     ...save,

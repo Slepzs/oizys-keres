@@ -35,10 +35,21 @@ export const FISHING_RODS: Record<FishingRodId, FishingRodDefinition> = {
     priceCoins: 12_000,
     unlocksSpots: ['abyss'],
   },
+  mythic_rod: {
+    id: 'mythic_rod',
+    name: 'Mythic Rod',
+    description: 'A myth-bound rod tuned for frozen currents, storm shelves, and celestial depths.',
+    icon: '🌌',
+    priceCoins: 35_000,
+    unlocksSpots: ['glacier_fjord', 'storm_shelf', 'celestial_reef'],
+  },
 };
 
 export function createInitialFishingGearState(): FishingGearState {
   return {
     ownedRodIds: [],
+    ownedUpgradeIds: [],
+    discoveredRareFishIds: [],
+    activeUpgradePreset: 'supply',
   };
 }

@@ -19,5 +19,7 @@ export * from './rock-tiers.data';
 export * from './summoning.data';
 export * from './fishing-spots.data';
 export * from './fishing-rods.data';
+export * from './fishing-upgrades.data';
+export * from './rare-fish.data';
 export * from './cooking-recipes.data';
 export * from './herblore-recipes.data';

@@ -13,6 +13,7 @@ export type ShopOfferId =
   | 'fishing_rod_river'
   | 'fishing_rod_deepwater'
   | 'fishing_rod_abyssal'
+  | 'fishing_rod_mythic'
   | 'premium_bag_tab'
   | 'forge_sigil_mining_i'
   | 'forge_sigil_mining_ii'

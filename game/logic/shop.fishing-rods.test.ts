@@ -15,6 +15,9 @@ test('buying a fishing rod deducts coins and permanently unlocks the rod', () =>
     },
     fishingGear: {
       ownedRodIds: [],
+      ownedUpgradeIds: [],
+      discoveredRareFishIds: [],
+      activeUpgradePreset: 'supply',
     },
   };
 
@@ -35,6 +38,9 @@ test('owned fishing rods cannot be repurchased', () => {
     },
     fishingGear: {
       ownedRodIds: ['river_rod'],
+      ownedUpgradeIds: [],
+      discoveredRareFishIds: [],
+      activeUpgradePreset: 'supply',
     },
   };
 

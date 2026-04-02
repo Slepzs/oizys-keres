@@ -6,6 +6,7 @@ export const SHOP_OFFER_IDS: ShopOfferId[] = [
   'fishing_rod_river',
   'fishing_rod_deepwater',
   'fishing_rod_abyssal',
+  'fishing_rod_mythic',
   'supply_mystery_pack',
   'supply_bronze_pickaxe',
   'supply_bronze_hatchet',
@@ -86,6 +87,23 @@ export const SHOP_OFFERS: Record<ShopOfferId, ShopOffer> = {
     effect: {
       kind: 'unlock_fishing_rod',
       rodId: 'abyssal_rod',
+    },
+  },
+
+  fishing_rod_mythic: {
+    id: 'fishing_rod_mythic',
+    tier: 'fishing',
+    name: FISHING_RODS.mythic_rod.name,
+    description: 'Unlocks Glacier Fjord, Storm Shelf, and Celestial Reef.',
+    icon: FISHING_RODS.mythic_rod.icon,
+    pricing: {
+      kind: 'fixed',
+      currency: 'coins',
+      amount: FISHING_RODS.mythic_rod.priceCoins,
+    },
+    effect: {
+      kind: 'unlock_fishing_rod',
+      rodId: 'mythic_rod',
     },
   },
 

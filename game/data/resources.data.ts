@@ -127,6 +127,24 @@ export const RESOURCE_DEFINITIONS: Record<ResourceId, ResourceDefinition> = {
     description: 'Apex predator of the abyssal trench. Fearless anglers only.',
     icon: '🦈',
   },
+  raw_glacier_fish: {
+    id: 'raw_glacier_fish',
+    name: 'Raw Glacier Fish',
+    description: 'Dense coldwater fish hauled from glacial supply routes.',
+    icon: '🐟',
+  },
+  raw_stormsnap_tuna: {
+    id: 'raw_stormsnap_tuna',
+    name: 'Raw Stormsnap Tuna',
+    description: 'A fierce shelf-runner prized for value and weight.',
+    icon: '🐠',
+  },
+  raw_celestial_koi: {
+    id: 'raw_celestial_koi',
+    name: 'Raw Celestial Koi',
+    description: 'A radiant reef fish tied to the rarest fishing waters.',
+    icon: '✨',
+  },
 };
 
 export const RESOURCE_IDS = Object.keys(RESOURCE_DEFINITIONS) as ResourceId[];
@@ -161,5 +179,8 @@ export function createInitialResourcesState(): ResourcesState {
     raw_lobster: createInitialResourceState(),
     raw_swordfish: createInitialResourceState(),
     raw_shark: createInitialResourceState(),
+    raw_glacier_fish: createInitialResourceState(),
+    raw_stormsnap_tuna: createInitialResourceState(),
+    raw_celestial_koi: createInitialResourceState(),
   };
 }
