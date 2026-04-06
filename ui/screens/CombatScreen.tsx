@@ -61,13 +61,6 @@ export function CombatScreen() {
     () => bagPotions.reduce((sum, item) => sum + item.quantity, 0),
     [bagPotions]
   );
-  const kdRatio = useMemo(() => {
-    if (combatSummary.totalKills <= 0) {
-      return '0.0';
-    }
-
-    return (combatSummary.totalKills / Math.max(1, combatSummary.totalDeaths)).toFixed(1);
-  }, [combatSummary.totalDeaths, combatSummary.totalKills]);
   const selectedZone = useMemo(() => {
     if (!combatSummary.selectedZoneId) {
       return null;
@@ -94,7 +87,10 @@ export function CombatScreen() {
     return effectiveEnemyId ? ENEMY_DEFINITIONS[effectiveEnemyId] ?? null : null;
   }, [combatSummary.combatLevel, combatSummary.selectedEnemyByZone, selectedZone]);
   const routeProjection = useCombatRouteProjection(selectedEnemy?.id ?? null);
-  const activeEnemy = activeCombat ? ENEMY_DEFINITIONS[activeCombat.enemyId] : null;
+  const activeEnemy = useMemo(
+    () => (activeCombat ? ENEMY_DEFINITIONS[activeCombat.enemyId] ?? null : null),
+    [activeCombat]
+  );
 
   const handleTrainingModeChange = (mode: TrainingMode) => {
     setTrainingMode(mode);
@@ -174,14 +170,12 @@ export function CombatScreen() {
         {activeView === 'battle-feed' ? (
           <CombatBattleView
             totalKills={combatSummary.totalKills}
-            kdRatio={kdRatio}
+            totalDeaths={combatSummary.totalDeaths}
             activeCombat={activeCombat}
-            activeEnemyName={activeEnemy?.name ?? null}
             playerAttackIntervalSeconds={combatSummary.attackSpeed}
             enemyAttackIntervalSeconds={
               activeEnemy ? scaleAttackIntervalSeconds(activeEnemy.attackSpeed) : null
             }
-            petAttackIntervalSeconds={combatSummary.activePet?.attackIntervalSeconds ?? null}
             onFleeCombat={fleeCombat}
             entries={combatFeedback.entries}
             killsThisSession={combatFeedback.killsThisSession}
