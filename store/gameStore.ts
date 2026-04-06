@@ -263,6 +263,7 @@ export const useGameActions = () =>
       eatFood: state.eatFood,
       toggleAutoDrink: state.toggleAutoDrink,
       drinkPotion: state.drinkPotion,
+      useCombatAbility: state.useCombatAbility,
       // Notification actions
       addNotification: state.addNotification,
       removeNotification: state.removeNotification,

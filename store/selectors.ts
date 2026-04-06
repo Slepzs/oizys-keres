@@ -192,6 +192,8 @@ export function useCombatSummary() {
       autoEatThreshold: combat.autoEatThreshold,
       autoDrink: combat.autoDrink,
       potionBuffs: combat.potionBuffs,
+      abilityCooldowns: combat.abilityCooldowns,
+      abilityEffects: combat.abilityEffects,
       totalKills: combat.totalKills,
       totalDeaths: combat.totalDeaths,
       selectedZoneId: combat.selectedZoneId,
@@ -203,11 +205,16 @@ export function useCombatSummary() {
 }
 
 export function useCompletionProgress() {
-  const { player, combat, quests } = useGameStore(
+  const { player, combat, quests, bag, skills, resources, summoning, multipliers } = useGameStore(
     useShallow((state) => ({
       player: state.player,
       combat: state.combat,
       quests: state.quests,
+      bag: state.bag,
+      skills: state.skills,
+      resources: state.resources,
+      summoning: state.summoning,
+      multipliers: state.multipliers,
     }))
   );
 
@@ -216,8 +223,13 @@ export function useCompletionProgress() {
       player,
       combat,
       quests,
+      bag,
+      skills,
+      resources,
+      summoning,
+      multipliers,
     });
-  }, [combat, player, quests]);
+  }, [bag, combat, multipliers, player, quests, resources, skills, summoning]);
 }
 
 export function useCombatRouteProjection(enemyId: string | null) {
@@ -353,6 +365,7 @@ export function useCombatActions() {
       toggleAutoEat: state.toggleAutoEat,
       toggleAutoDrink: state.toggleAutoDrink,
       setAutoEatThreshold: state.setAutoEatThreshold,
+      useCombatAbility: state.useCombatAbility,
       equipItem: state.equipItem,
       unequipSlot: state.unequipSlot,
       selectZone: state.selectZone,

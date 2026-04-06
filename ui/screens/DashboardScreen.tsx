@@ -7,6 +7,7 @@ import { QuestSummaryCard } from '../components/game/QuestSummaryCard';
 import { ShopSummaryCard } from '../components/game/ShopSummaryCard';
 import { GachaSummaryCard } from '../components/game/GachaSummaryCard';
 import { ActiveSessionCard } from '../components/game/ActiveSessionCard';
+import { CompletionSummaryCard } from '../components/game/CompletionSummaryCard';
 import { OfflineProgressModal } from '../components/game/OfflineProgressModal';
 import { useGame } from '@/hooks/useGame';
 import { useSave } from '@/hooks/useSave';
@@ -35,6 +36,7 @@ export function DashboardScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Active Session */}
         <ActiveSessionCard />
+        <CompletionSummaryCard />
 
         {/* Resources Row */}
         <View style={styles.resourcesGrid}>

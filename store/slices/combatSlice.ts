@@ -1,4 +1,4 @@
-import type { EquipmentSlot, ItemId, TrainingMode } from '@/game/types';
+import type { CombatAbilityId, EquipmentSlot, ItemId, TrainingMode } from '@/game/types';
 import { ITEM_DEFINITIONS } from '@/game/data';
 import { isFood } from '@/game/types/items';
 import { removeItemFromBag } from '@/game/logic/bag';
@@ -17,6 +17,7 @@ import {
   drinkPotion as drinkPotionLogic,
   setAutoEatThreshold as setAutoEatThresholdLogic,
   unequipSlot as unequipSlotLogic,
+  useCombatAbility as useCombatAbilityLogic,
 } from '@/game/logic';
 import type { SliceGet, SliceSet, StoreHelpers } from './types';
 
@@ -34,6 +35,7 @@ export interface CombatSlice {
   selectEnemyForZone: (zoneId: string, enemyId: string) => void;
   eatFood: (itemId: ItemId) => void;
   drinkPotion: (itemId: ItemId) => void;
+  useCombatAbility: (abilityId: CombatAbilityId) => boolean;
 }
 
 export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreHelpers): CombatSlice {
@@ -142,6 +144,19 @@ export function createCombatSlice(set: SliceSet, get: SliceGet, _helpers: StoreH
           playerCurrentHp: newHp,
         },
       });
+    },
+
+    useCombatAbility: (abilityId: CombatAbilityId) => {
+      const state = get();
+      const now = Date.now();
+      const result = useCombatAbilityLogic(state.combat, abilityId, now);
+
+      if (!result.success) {
+        return false;
+      }
+
+      set({ combat: result.state });
+      return true;
     },
   };
 }

@@ -4,17 +4,25 @@ import { SafeContainer } from '../components/layout/SafeContainer';
 import { QuestCard } from '../components/game/QuestCard';
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { useQuestsHook } from '@/hooks/useQuests';
+import { resolveQuestSpotlight } from './quests-focus';
 
-export function QuestsScreen() {
+interface QuestsScreenProps {
+  highlightQuestId?: string;
+}
+
+export function QuestsScreen({ highlightQuestId }: QuestsScreenProps) {
   return (
     <SafeContainer padTop={false}>
-      <QuestsTabContent />
+      <QuestsTabContent highlightQuestId={highlightQuestId} />
     </SafeContainer>
   );
 }
 
-export function QuestsTabContent() {
-  const [showCompleted, setShowCompleted] = useState(false);
+interface QuestsTabContentProps {
+  highlightQuestId?: string;
+}
+
+export function QuestsTabContent({ highlightQuestId }: QuestsTabContentProps) {
   const {
     activeQuests,
     readyToClaim,
@@ -25,6 +33,18 @@ export function QuestsTabContent() {
     claimRewards,
     abandonQuest,
   } = useQuestsHook();
+  const spotlight = resolveQuestSpotlight({
+    questId: highlightQuestId,
+    readyToClaimIds: readyToClaim.map((quest) => quest.state.questId),
+    activeQuestIds: activeQuests.map((quest) => quest.state.questId),
+    availableQuestIds: availableQuests.map((quest) => quest.id),
+    completedQuestIds: completedQuests.map((quest) => quest.definition.id),
+  });
+  const [showCompleted, setShowCompleted] = useState(spotlight.showCompleted);
+
+  React.useEffect(() => {
+    setShowCompleted(spotlight.showCompleted);
+  }, [spotlight.showCompleted]);
 
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
@@ -45,6 +65,7 @@ export function QuestsTabContent() {
               progress={quest.progress}
               isComplete={quest.isComplete}
               variant="claim"
+              isHighlighted={spotlight.section === 'claim' && highlightQuestId === quest.state.questId}
               onClaim={() => claimRewards(quest.state.questId)}
             />
           ))}
@@ -63,6 +84,7 @@ export function QuestsTabContent() {
               progress={quest.progress}
               isComplete={quest.isComplete}
               variant="active"
+              isHighlighted={spotlight.section === 'active' && highlightQuestId === quest.state.questId}
               onAbandon={() => abandonQuest(quest.state.questId)}
             />
           ))}
@@ -78,6 +100,7 @@ export function QuestsTabContent() {
               key={definition.id}
               definition={definition}
               variant="available"
+              isHighlighted={spotlight.section === 'available' && highlightQuestId === definition.id}
               onStart={() => startQuest(definition.id)}
             />
           ))}
@@ -106,6 +129,9 @@ export function QuestsTabContent() {
               variant="completed"
               completedAt={quest.completedAt}
               completedCount={quest.completedCount}
+              isHighlighted={
+                spotlight.section === 'completed' && highlightQuestId === quest.definition.id
+              }
             />
           ))}
         </View>

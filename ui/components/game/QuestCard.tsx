@@ -19,6 +19,7 @@ interface QuestCardProps {
   onAbandon?: () => void;
   completedAt?: number;
   completedCount?: number;
+  isHighlighted?: boolean;
 }
 
 export function QuestCard({
@@ -32,6 +33,7 @@ export function QuestCard({
   onAbandon,
   completedAt,
   completedCount,
+  isHighlighted = false,
 }: QuestCardProps) {
   const getCategoryColor = () => {
     switch (definition.category) {
@@ -49,7 +51,7 @@ export function QuestCard({
   };
 
   return (
-    <Card style={styles.card}>
+    <Card style={[styles.card, isHighlighted && styles.cardHighlighted]}>
       <View style={styles.header}>
         <Text style={styles.icon}>{definition.icon}</Text>
         <View style={styles.titleContainer}>
@@ -60,6 +62,11 @@ export function QuestCard({
             </Text>
           )}
         </View>
+        {isHighlighted && (
+          <View style={styles.recommendedBadge}>
+            <Text style={styles.recommendedBadgeText}>GUIDED</Text>
+          </View>
+        )}
         {isComplete && variant === 'claim' && (
           <View style={styles.completeBadge}>
             <Text style={styles.completeBadgeText}>COMPLETE</Text>
@@ -233,6 +240,11 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.sm,
   },
+  cardHighlighted: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.surfaceLight,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -265,6 +277,18 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
     color: colors.text,
+  },
+  recommendedBadge: {
+    backgroundColor: colors.primaryDark,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 4,
+    marginRight: spacing.xs,
+  },
+  recommendedBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
   description: {
     fontSize: fontSize.sm,

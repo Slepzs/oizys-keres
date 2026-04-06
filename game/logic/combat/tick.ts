@@ -1,6 +1,5 @@
-import type { GameState } from '../../types';
+import type { GameState, ItemId } from '../../types';
 import type { CombatState } from '../../types/combat';
-import type { ItemId } from '../../types';
 import type { GameEvent } from '../../systems/events.types';
 import { ENEMY_DEFINITIONS } from '../../data/enemies.data';
 import { ZONE_DEFINITIONS } from '../../data/zones.data';
@@ -31,6 +30,8 @@ export interface CombatTickResult {
 }
 
 const MAX_COMBAT_STEPS_PER_TICK = 250;
+const BURST_DAMAGE_MULTIPLIER = 1.75;
+const GUARD_DAMAGE_MULTIPLIER = 0.6;
 
 function getCurrentBonuses(state: GameState) {
   return getSummoningCombatBonuses(state.summoning, state.skills.summoning.level);
@@ -347,10 +348,21 @@ export function processCombatTick(
 
   // Filter expired potion buffs at the start of each tick
   const activeBuffs = (newState.combat.potionBuffs ?? []).filter((b) => b.expiresAt > now);
-  if (activeBuffs.length !== (newState.combat.potionBuffs ?? []).length) {
+  const guardExpired = newState.combat.abilityEffects.guardExpiresAt > 0
+    && newState.combat.abilityEffects.guardExpiresAt <= now;
+  if (activeBuffs.length !== (newState.combat.potionBuffs ?? []).length || guardExpired) {
     newState = {
       ...newState,
-      combat: { ...newState.combat, potionBuffs: activeBuffs },
+      combat: {
+        ...newState.combat,
+        potionBuffs: activeBuffs,
+        abilityEffects: guardExpired
+          ? {
+              ...newState.combat.abilityEffects,
+              guardExpiresAt: 0,
+            }
+          : newState.combat.abilityEffects,
+      },
     };
   }
 
@@ -428,7 +440,9 @@ export function processCombatTick(
       const playerStrength = getPlayerStrength(newState.combat, bonuses);
       const isCritical = rollChance(rng, PLAYER_CRIT_CHANCE);
       const baseDamagePlayer = calculateDamage(playerStrength, enemy.defense);
-      const damage = isCritical ? Math.floor(baseDamagePlayer * CRIT_DAMAGE_MULTIPLIER) : baseDamagePlayer;
+      const burstMultiplier = newState.combat.abilityEffects.burstReady ? BURST_DAMAGE_MULTIPLIER : 1;
+      const scaledBaseDamage = Math.max(1, Math.floor(baseDamagePlayer * burstMultiplier));
+      const damage = isCritical ? Math.floor(scaledBaseDamage * CRIT_DAMAGE_MULTIPLIER) : scaledBaseDamage;
       const enemyHpRemaining = Math.max(0, combat.enemyCurrentHp - damage);
 
       events.push({
@@ -443,6 +457,10 @@ export function processCombatTick(
         ...newState,
         combat: {
           ...newState.combat,
+          abilityEffects: {
+            ...newState.combat.abilityEffects,
+            burstReady: false,
+          },
           activeCombat: {
             ...combat,
             enemyCurrentHp: enemyHpRemaining,
@@ -494,7 +512,10 @@ export function processCombatTick(
       const baseDamage = calculateDamage(enemy.strength, playerDefense);
       const isCritical = rollChance(rng, ENEMY_CRIT_CHANCE);
       const damageAfterReduction = Math.max(1, baseDamage - bonuses.damageReduction);
-      const damage = isCritical ? Math.floor(damageAfterReduction * CRIT_DAMAGE_MULTIPLIER) : damageAfterReduction;
+      const guardedDamage = newState.combat.abilityEffects.guardExpiresAt > nextEventAt
+        ? Math.max(1, Math.floor(damageAfterReduction * GUARD_DAMAGE_MULTIPLIER))
+        : damageAfterReduction;
+      const damage = isCritical ? Math.floor(guardedDamage * CRIT_DAMAGE_MULTIPLIER) : guardedDamage;
       const playerHpRemaining = Math.max(0, newState.combat.playerCurrentHp - damage);
 
       events.push({

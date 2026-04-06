@@ -3,3 +3,4 @@ export * from './useGameTick';
 export * from './useSave';
 export * from './useOfflineProgress';
 export * from './useQuests';
+export * from './useCompletionRecommendationAction';
