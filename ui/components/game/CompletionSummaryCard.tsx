@@ -25,6 +25,11 @@ interface AdvisorTradeoffViewModel {
   };
 }
 
+interface ProgressEtaViewModel {
+  label: string;
+  detail: string;
+}
+
 function getNonCombatCategoryLabel(category: string | null) {
   switch (category) {
     case 'skill':
@@ -129,6 +134,15 @@ function AdvisorTradeoffPanel({ tradeoff }: { tradeoff: AdvisorTradeoffViewModel
           </View>
         ))}
       </View>
+    </View>
+  );
+}
+
+function ProgressEtaPanel({ eta }: { eta: ProgressEtaViewModel }) {
+  return (
+    <View style={styles.etaCard}>
+      <Text style={styles.etaLabel}>{eta.label}</Text>
+      <Text style={styles.etaDetail}>{eta.detail}</Text>
     </View>
   );
 }
@@ -283,6 +297,9 @@ export function CompletionSummaryCard() {
             {completion.nonCombat.blocker.label}
           </Text>
           <Text style={styles.supportBlockerDetail}>{completion.nonCombat.blocker.detail}</Text>
+          {completion.nonCombat.blocker.eta ? (
+            <ProgressEtaPanel eta={completion.nonCombat.blocker.eta} />
+          ) : null}
           {completion.nonCombat.blocker.progress ? (
             <View style={styles.supportBlockerProgressRow}>
               <View style={styles.supportBlockerProgressHeader}>
@@ -489,6 +506,23 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   supportBlockerDetail: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: 17,
+  },
+  etaCard: {
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+  },
+  etaLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+    textTransform: 'uppercase',
+  },
+  etaDetail: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
     lineHeight: 17,

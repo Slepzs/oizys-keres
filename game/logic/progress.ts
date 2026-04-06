@@ -10,17 +10,27 @@ import {
   getQuestDefinition,
   ZONE_DEFINITIONS,
 } from '@/game/data';
+import { skillSpeedMultiplier, totalXpForCombatSkillLevel, xpForSkillLevel } from '@/game/data/curves';
 import type { GameState } from '@/game/types';
 import type { Objective, PlayerQuestState, QuestCondition } from '@/game/types/quests';
 
 import { countItemInBag } from './bag';
-import { calculateCombatLevel } from './combat';
+import { buildCombatFarmPlan, calculateCombatLevel, getCombatSkillLevel } from './combat';
+import { getActiveMiningRock } from './mining';
+import { getSkillXpMultiplier } from './multipliers';
+import { getActiveTree } from './woodcutting';
+import { addSkillXp } from './xp';
 
 type CompletionState = Pick<
   GameState,
-  'player' | 'combat' | 'quests' | 'bag' | 'skills' | 'resources'
+  'player' | 'combat' | 'quests' | 'bag' | 'skills' | 'resources' | 'summoning' | 'multipliers'
 >;
 type CompletionQuestStatus = 'completed' | 'active' | 'available' | 'locked';
+
+interface ProgressEtaSummary {
+  label: string;
+  detail: string;
+}
 
 interface ProgressMetric {
   current: number;
@@ -62,6 +72,7 @@ interface CompletionHuntGateSummary {
   kind: 'ready' | 'combat' | 'contract' | 'complete';
   label: string;
   detail: string;
+  eta?: ProgressEtaSummary;
   progress?: {
     current: number;
     target: number;
@@ -121,6 +132,7 @@ interface NonCombatBlockerSummary {
   kind: NonCombatBlockerKind;
   label: string;
   detail: string;
+  eta?: ProgressEtaSummary;
   progress?: {
     current: number;
     target: number;
@@ -206,6 +218,8 @@ export interface CompletionProgress {
 }
 
 const NON_COMBAT_QUEST_CATEGORIES = new Set(['skill', 'exploration']);
+const GAME_TICKS_PER_SECOND = 10;
+const BALANCED_COMBAT_SKILL_IDS = ['attack', 'strength', 'defense'] as const;
 
 function buildMetric(current: number, target: number): ProgressMetric {
   const safeTarget = Math.max(1, target);
@@ -415,6 +429,182 @@ function buildCombatLevelProgress(currentCombatLevel: number, targetCombatLevel:
     targetCombatLevel,
     `Combat ${clampedCurrent} / ${targetCombatLevel}`
   );
+}
+
+function formatEtaDuration(seconds: number) {
+  const safeSeconds = Math.max(1, Math.floor(seconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    return `${days}d ${hours % 24}h`;
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${minutes % 60}m`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes}m ${safeSeconds % 60}s`;
+  }
+
+  return `${safeSeconds}s`;
+}
+
+function appendEtaDetail(detail: string, eta: ProgressEtaSummary | null) {
+  return eta ? `${detail} ${eta.detail}` : detail;
+}
+
+function estimateSkillGateEta(
+  state: CompletionState,
+  skillId: keyof typeof SKILL_DEFINITIONS,
+  targetLevel: number
+): ProgressEtaSummary | null {
+  const skill = state.skills[skillId];
+
+  if (!skill || skill.level >= targetLevel) {
+    return null;
+  }
+
+  const xpMultiplier = getSkillXpMultiplier(state, skillId);
+  if (!Number.isFinite(xpMultiplier) || xpMultiplier <= 0) {
+    return null;
+  }
+
+  let baseXpPerAction = SKILL_DEFINITIONS[skillId].baseXpPerAction;
+  let ticksPerAction = SKILL_DEFINITIONS[skillId].ticksPerAction;
+  let paceLabel = `${SKILL_DEFINITIONS[skillId].name.toLowerCase()} pace`;
+
+  if (skillId === 'woodcutting') {
+    const tree = getActiveTree(skill);
+    baseXpPerAction = tree.baseXpPerAction;
+    ticksPerAction = tree.ticksPerAction;
+    paceLabel = `${tree.name.toLowerCase()} pace`;
+  } else if (skillId === 'mining') {
+    const rock = getActiveMiningRock(skill);
+    baseXpPerAction = rock.baseXpPerAction;
+    ticksPerAction = rock.ticksPerAction;
+    paceLabel = `${rock.name.toLowerCase()} pace`;
+  } else if (skillId !== 'summoning') {
+    return null;
+  }
+
+  let simulatedLevel = skill.level;
+  let simulatedXp = skill.xp;
+  let totalTicks = 0;
+
+  while (simulatedLevel < targetLevel) {
+    const xpPerAction = Math.max(1, Math.floor(baseXpPerAction * xpMultiplier));
+    const targetXp = xpForSkillLevel(simulatedLevel + 1);
+    const remainingXp = Math.max(0, targetXp - simulatedXp);
+    const actionsNeeded = Math.max(1, Math.ceil(remainingXp / xpPerAction));
+    const effectiveTicksPerAction = ticksPerAction / Math.max(1, skillSpeedMultiplier(simulatedLevel));
+
+    totalTicks += actionsNeeded * effectiveTicksPerAction;
+
+    const leveledSkill = addSkillXp(
+      {
+        ...skill,
+        level: simulatedLevel,
+        xp: simulatedXp,
+      },
+      actionsNeeded * xpPerAction
+    );
+
+    simulatedLevel = leveledSkill.newLevel;
+    simulatedXp = leveledSkill.newXp;
+  }
+
+  return {
+    label: 'Focused ETA',
+    detail: `About ${formatEtaDuration(totalTicks / GAME_TICKS_PER_SECOND)} at ${paceLabel}.`,
+  };
+}
+
+function estimateCombatGateEta(
+  state: CompletionState,
+  targetCombatLevel: number
+): ProgressEtaSummary | null {
+  const currentCombatLevel = calculateCombatLevel(state.combat.combatSkills);
+
+  if (currentCombatLevel >= targetCombatLevel) {
+    return null;
+  }
+
+  const plan = buildCombatFarmPlan(
+    {
+      bag: state.bag,
+      combat: state.combat,
+      summoning: state.summoning,
+      summoningLevel: state.skills.summoning.level,
+      activeQuests: state.quests.active,
+    },
+    currentCombatLevel,
+    'xp'
+  );
+  const bestRoute = plan.bestRoute;
+  const enemyDefinition = bestRoute ? ENEMY_DEFINITIONS[bestRoute.enemyId] : null;
+
+  if (
+    !bestRoute
+    || !enemyDefinition
+    || !Number.isFinite(bestRoute.projection.timeToKillSeconds)
+    || bestRoute.projection.timeToKillSeconds <= 0
+    || bestRoute.projection.risk === 'lethal'
+  ) {
+    return null;
+  }
+
+  const adjustedXpReward = Math.max(1, Math.floor(enemyDefinition.xpReward * 1.5));
+  const xpPerSkillPerSecond = adjustedXpReward / BALANCED_COMBAT_SKILL_IDS.length / bestRoute.projection.timeToKillSeconds;
+
+  if (!Number.isFinite(xpPerSkillPerSecond) || xpPerSkillPerSecond <= 0) {
+    return null;
+  }
+
+  let simulatedSkills = {
+    attack: { ...state.combat.combatSkills.attack },
+    strength: { ...state.combat.combatSkills.strength },
+    defense: { ...state.combat.combatSkills.defense },
+  };
+  let totalSeconds = 0;
+  let iterations = 0;
+
+  while (calculateCombatLevel(simulatedSkills) < targetCombatLevel && iterations < 256) {
+    const secondsToNextLevel = BALANCED_COMBAT_SKILL_IDS
+      .map((skillId) => {
+        const currentXp = simulatedSkills[skillId].xp;
+        const currentLevel = getCombatSkillLevel(currentXp);
+        const nextLevelXp = totalXpForCombatSkillLevel(currentLevel + 1);
+        return Math.max(0, nextLevelXp - currentXp) / xpPerSkillPerSecond;
+      })
+      .filter((seconds) => seconds > 0);
+
+    const nextStepSeconds = Math.min(...secondsToNextLevel);
+
+    if (!Number.isFinite(nextStepSeconds) || nextStepSeconds <= 0) {
+      return null;
+    }
+
+    totalSeconds += nextStepSeconds;
+    iterations += 1;
+
+    BALANCED_COMBAT_SKILL_IDS.forEach((skillId) => {
+      simulatedSkills[skillId] = {
+        xp: simulatedSkills[skillId].xp + xpPerSkillPerSecond * nextStepSeconds,
+      };
+    });
+  }
+
+  if (calculateCombatLevel(simulatedSkills) < targetCombatLevel) {
+    return null;
+  }
+
+  return {
+    label: 'Best XP ETA',
+    detail: `About ${formatEtaDuration(totalSeconds)} via ${bestRoute.projection.enemyName} in ${bestRoute.zoneName} with balanced training.`,
+  };
 }
 
 function pluralize(label: string, amount: number) {
@@ -769,6 +959,7 @@ function buildNonCombatBlockerSummaryForQuest(
         kind: 'skill',
         label: `${formatSkillName(unmetCondition.skill)} level ${unmetCondition.value}`,
         detail: `${nextQuest.definition.name} is gated by a ${formatSkillName(unmetCondition.skill)} requirement.`,
+        eta: estimateSkillGateEta(state, unmetCondition.skill, unmetCondition.value),
         progress: buildThresholdBlockerProgress(
           state.skills[unmetCondition.skill]?.level ?? 0,
           unmetCondition.value,
@@ -1030,16 +1221,22 @@ function buildNonCombatLockedRecommendation(
   }
 
   switch (unmetCondition.type) {
-    case 'level_at_least':
+    case 'level_at_least': {
+      const eta = estimateSkillGateEta(state, unmetCondition.skill, unmetCondition.value);
+
       return {
         kind: 'train-skill',
         focusArea: 'skills',
         title: `Reach ${formatSkillName(unmetCondition.skill)} level ${unmetCondition.value}`,
-        detail: `${definition.name} unlocks once ${formatSkillName(unmetCondition.skill)} reaches level ${unmetCondition.value}.`,
+        detail: appendEtaDetail(
+          `${definition.name} unlocks once ${formatSkillName(unmetCondition.skill)} reaches level ${unmetCondition.value}.`,
+          eta
+        ),
         actionLabel: 'Unlock the next non-combat quest',
         questId,
         skillId: unmetCondition.skill,
       };
+    }
     case 'player_level_at_least':
       return {
         kind: 'finish-ascension',
@@ -1267,11 +1464,16 @@ function buildFinalContractRecommendation(
 
   if (contract.status === 'active' && questHuntRoute) {
     if (calculateCombatLevel(state.combat.combatSkills) < questHuntRoute.combatLevelRequired) {
+      const eta = estimateCombatGateEta(state, questHuntRoute.combatLevelRequired);
+
       return {
         kind: 'train-combat',
         focusArea: 'combat',
         title: `Reach combat level ${questHuntRoute.combatLevelRequired}`,
-        detail: `${contract.name} is active, but ${questHuntRoute.enemyName} in ${questHuntRoute.zoneName} is still locked.`,
+        detail: appendEtaDetail(
+          `${contract.name} is active, but ${questHuntRoute.enemyName} in ${questHuntRoute.zoneName} is still locked.`,
+          eta
+        ),
         actionLabel: 'Unlock the next final hunt',
         questId: contract.questId,
         enemyId: questHuntRoute.enemyId,
@@ -1523,10 +1725,13 @@ function buildFinalHuntGateSummary(
     (questStatus === 'available' || questStatus === 'active') &&
     combatLevel < combatLevelRequired
   ) {
+    const eta = estimateCombatGateEta(state, combatLevelRequired);
+
     return {
       kind: 'combat',
       label: `Combat level ${combatLevelRequired}`,
       detail: `${quest?.name ?? hunt.questId} needs combat level ${combatLevelRequired} before ${enemyName} can be hunted in ${zoneName}.`,
+      eta,
       progress: buildCombatLevelProgress(combatLevel, combatLevelRequired),
     };
   }

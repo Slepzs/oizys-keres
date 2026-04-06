@@ -208,7 +208,7 @@ test('completion progress recommends combat training when the active final hunt 
     kind: 'train-combat',
     focusArea: 'combat',
     title: 'Reach combat level 65',
-    detail: "Dragonkin is active, but Dragon Whelp in Dragon's Lair is still locked.",
+    detail: "Dragonkin is active, but Dragon Whelp in Dragon's Lair is still locked. About 96d 23h via Giant Rat in City Sewers with balanced training.",
     actionLabel: 'Unlock the next final hunt',
     questId: 'dragonkin',
     enemyId: 'dragon_whelp',
@@ -246,7 +246,15 @@ test('completion progress quantifies combat deficits on active final hunts', () 
       progress: 52 / 65,
       label: 'Combat 52 / 65',
     },
+    eta: {
+      label: 'Best XP ETA',
+      detail: 'About 4d 12h via Lesser Demon in Demonic Abyss with balanced training.',
+    },
   });
+  assert.equal(
+    summary.recommendation.detail,
+    "Dragonkin is active, but Dragon Whelp in Dragon's Lair is still locked. About 4d 12h via Lesser Demon in Demonic Abyss with balanced training."
+  );
 });
 
 test('completion progress surfaces prerequisite contract progress inside locked final hunts', () => {
@@ -361,13 +369,17 @@ test('completion progress recommends skill training when the next non-combat que
         progress: 1 / 3,
         label: 'Level 1 / 3',
       },
+      eta: {
+        label: 'Focused ETA',
+        detail: 'About 59s at normal tree pace.',
+      },
     },
   });
   assert.deepEqual(summary.nonCombatRecommendation, {
     kind: 'train-skill',
     focusArea: 'skills',
     title: 'Reach woodcutting level 3',
-    detail: 'Seed Collector unlocks once woodcutting reaches level 3.',
+    detail: 'Seed Collector unlocks once woodcutting reaches level 3. About 59s at normal tree pace.',
     actionLabel: 'Unlock the next non-combat quest',
     questId: 'seed_collector',
     skillId: 'woodcutting',
@@ -503,7 +515,7 @@ test('completion progress chooses the closest locked support unlock instead of t
     kind: 'train-skill',
     focusArea: 'skills',
     title: 'Reach mining level 5',
-    detail: 'Gem Finder unlocks once mining reaches level 5.',
+    detail: 'Gem Finder unlocks once mining reaches level 5. About 2m 12s at limestone rock pace.',
     actionLabel: 'Unlock the next non-combat quest',
     questId: 'gem_finder',
     skillId: 'mining',
@@ -513,6 +525,10 @@ test('completion progress chooses the closest locked support unlock instead of t
     kind: 'skill',
     label: 'mining level 5',
     detail: 'Gem Finder is gated by a mining requirement.',
+    eta: {
+      label: 'Focused ETA',
+      detail: 'About 2m 12s at limestone rock pace.',
+    },
     progress: {
       current: 4,
       target: 5,
@@ -543,7 +559,7 @@ test('completion progress chooses the closest locked support unlock instead of t
       kind: 'train-skill',
       focusArea: 'skills',
       title: 'Reach woodcutting level 3',
-      detail: 'Seed Collector unlocks once woodcutting reaches level 3.',
+      detail: 'Seed Collector unlocks once woodcutting reaches level 3. About 59s at normal tree pace.',
       actionLabel: 'Unlock the next non-combat quest',
       questId: 'seed_collector',
       skillId: 'woodcutting',

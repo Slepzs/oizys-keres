@@ -35,6 +35,11 @@ interface AdvisorTradeoffViewModel {
   };
 }
 
+interface ProgressEtaViewModel {
+  label: string;
+  detail: string;
+}
+
 const PROGRESS_TABS: Array<{ id: ProgressTabId; label: string }> = [
   { id: 'quests', label: 'Quests' },
   { id: 'achievements', label: 'Achievements' },
@@ -185,6 +190,15 @@ function AdvisorTradeoffPanel({ tradeoff }: { tradeoff: AdvisorTradeoffViewModel
           </View>
         ))}
       </View>
+    </View>
+  );
+}
+
+function ProgressEtaPanel({ eta }: { eta: ProgressEtaViewModel }) {
+  return (
+    <View style={styles.etaCard}>
+      <Text style={styles.etaLabel}>{eta.label}</Text>
+      <Text style={styles.etaDetail}>{eta.detail}</Text>
     </View>
   );
 }
@@ -446,6 +460,9 @@ function CompletionTabContent() {
           </Text>
         </View>
         <Text style={styles.supportDetail}>{completion.nonCombat.blocker.detail}</Text>
+        {completion.nonCombat.blocker.eta ? (
+          <ProgressEtaPanel eta={completion.nonCombat.blocker.eta} />
+        ) : null}
         {completion.nonCombat.blocker.progress ? (
           <View style={styles.supportBlockerProgressRow}>
             <View style={styles.supportBlockerProgressHeader}>
@@ -602,6 +619,7 @@ function CompletionTabContent() {
                   ) : null}
                 </View>
                 <Text style={styles.huntGateDetail}>{hunt.gate.detail}</Text>
+                {hunt.gate.eta ? <ProgressEtaPanel eta={hunt.gate.eta} /> : null}
                 {hunt.gate.progress ? (
                   <View style={styles.huntGateProgressRow}>
                     <Text style={styles.huntGateProgressLabel}>{hunt.gate.progress.label}</Text>
@@ -798,6 +816,23 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     lineHeight: 19,
+  },
+  etaCard: {
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+  },
+  etaLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+    textTransform: 'uppercase',
+  },
+  etaDetail: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: 17,
   },
   supportBlockerProgressRow: {
     gap: spacing.xs,
