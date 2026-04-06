@@ -1,12 +1,29 @@
-import type { CombatState, EquipmentSlot, PotionBuff, TrainingMode } from '../../types/combat';
+import type {
+  CombatAbilityEffects,
+  CombatAbilityId,
+  CombatState,
+  EquipmentSlot,
+  PotionBuff,
+  TrainingMode,
+} from '../../types/combat';
 import type { EquipmentDefinition, ItemId } from '../../types/items';
 import { isEquipment, isPotion } from '../../types/items';
 import { ENEMY_DEFINITIONS } from '../../data/enemies.data';
 import { ITEM_DEFINITIONS } from '../../data/items.data';
+import { COMBAT_ABILITY_DEFINITIONS, createInitialCombatAbilityCooldowns } from '../../data/combat-abilities.data';
 import { ZONE_DEFINITIONS } from '../../data/zones.data';
 import { createInitialCombatSkillsState } from '../../data/combat-skills.data';
 import { calculateCombatLevel, calculateMaxHp, getPlayerAttackSpeed, REGEN_INTERVAL_MS } from './queries';
 import { scaleAttackIntervalSeconds, scaleEnemyMaxHp } from './balance';
+
+const RECOVER_HEAL_RATIO = 0.2;
+
+function createInitialCombatAbilityEffects(): CombatAbilityEffects {
+  return {
+    burstReady: false,
+    guardExpiresAt: 0,
+  };
+}
 
 /**
  * Start combat in a zone.
@@ -142,6 +159,73 @@ export function drinkPotion(
   };
 }
 
+export function useCombatAbility(
+  combatState: CombatState,
+  abilityId: CombatAbilityId,
+  now: number
+): { state: CombatState; success: boolean } {
+  if (!combatState.activeCombat) {
+    return { state: combatState, success: false };
+  }
+
+  const definition = COMBAT_ABILITY_DEFINITIONS[abilityId];
+  if (!definition) {
+    return { state: combatState, success: false };
+  }
+
+  if ((combatState.abilityCooldowns[abilityId] ?? 0) > now) {
+    return { state: combatState, success: false };
+  }
+
+  if (abilityId === 'recover' && combatState.playerCurrentHp >= combatState.playerMaxHp) {
+    return { state: combatState, success: false };
+  }
+
+  const abilityCooldowns = {
+    ...combatState.abilityCooldowns,
+    [abilityId]: now + definition.cooldownMs,
+  };
+
+  if (abilityId === 'burst') {
+    return {
+      state: {
+        ...combatState,
+        abilityCooldowns,
+        abilityEffects: {
+          ...combatState.abilityEffects,
+          burstReady: true,
+        },
+      },
+      success: true,
+    };
+  }
+
+  if (abilityId === 'guard') {
+    return {
+      state: {
+        ...combatState,
+        abilityCooldowns,
+        abilityEffects: {
+          ...combatState.abilityEffects,
+          guardExpiresAt: now + 4_000,
+        },
+      },
+      success: true,
+    };
+  }
+
+  const healAmount = Math.max(1, Math.floor(combatState.playerMaxHp * RECOVER_HEAL_RATIO));
+
+  return {
+    state: {
+      ...combatState,
+      playerCurrentHp: Math.min(combatState.playerMaxHp, combatState.playerCurrentHp + healAmount),
+      abilityCooldowns,
+    },
+    success: true,
+  };
+}
+
 /**
  * Set auto-eat HP threshold (fraction of max HP, 0.1–1.0).
  */
@@ -270,6 +354,8 @@ export function createInitialCombatState(): CombatState {
     autoEatThreshold: 0.5,
     autoDrink: false,
     potionBuffs: [],
+    abilityCooldowns: createInitialCombatAbilityCooldowns(),
+    abilityEffects: createInitialCombatAbilityEffects(),
     totalKills: 0,
     enemyKillCounts: {},
     totalDeaths: 0,

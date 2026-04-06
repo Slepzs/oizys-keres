@@ -2,6 +2,7 @@ import React, { type ComponentProps, useEffect, useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native';
 
 import { colors, fontSize, fontWeight, spacing } from '@/constants/theme';
+import type { CombatAbilityCooldowns, CombatAbilityEffects, CombatAbilityId } from '@/game/types';
 import { CombatLogCard } from '@/ui/components/game/CombatLogCard';
 import { TICK_RATE_MS } from '@/game/data';
 
@@ -27,7 +28,10 @@ interface CombatBattleViewProps extends CombatLogProps {
   activeCombat: ActiveCombatState | null;
   playerAttackIntervalSeconds: number;
   enemyAttackIntervalSeconds: number | null;
+  abilityCooldowns: CombatAbilityCooldowns;
+  abilityEffects: CombatAbilityEffects;
   onFleeCombat: () => void;
+  onUseAbility: (abilityId: CombatAbilityId) => void;
 }
 
 export function CombatBattleView({
@@ -36,7 +40,10 @@ export function CombatBattleView({
   activeCombat,
   playerAttackIntervalSeconds,
   enemyAttackIntervalSeconds,
+  abilityCooldowns,
+  abilityEffects,
   onFleeCombat,
+  onUseAbility,
   entries,
   killsThisSession,
 }: CombatBattleViewProps) {
@@ -57,10 +64,14 @@ export function CombatBattleView({
       totalDeaths,
       playerAttackIntervalSeconds,
       enemyAttackIntervalSeconds,
+      abilityCooldowns,
+      abilityEffects,
       now,
     });
   }, [
     activeCombat,
+    abilityCooldowns,
+    abilityEffects,
     enemyAttackIntervalSeconds,
     now,
     playerAttackIntervalSeconds,
@@ -80,7 +91,7 @@ export function CombatBattleView({
         </Text>
       </View>
 
-      <CombatBattleScene scene={scene} onFleeCombat={onFleeCombat} />
+      <CombatBattleScene scene={scene} onFleeCombat={onFleeCombat} onUseAbility={onUseAbility} />
 
       <View style={styles.section}>
         <CombatLogCard entries={entries} killsThisSession={killsThisSession} />

@@ -3,12 +3,14 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/constants/theme';
 import { ProgressBar } from '@/ui/components/common';
+import type { CombatAbilityId } from '@/game/types';
 
 import type { BattleSceneModel } from './battle-scene.model';
 
 interface CombatBattleSceneProps {
   scene: BattleSceneModel;
   onFleeCombat: () => void;
+  onUseAbility: (abilityId: CombatAbilityId) => void;
 }
 
 function formatAttackWindow(nextAttackAt: number, now: number) {
@@ -103,7 +105,19 @@ function PlaceholderActor({
   );
 }
 
-export function CombatBattleScene({ scene, onFleeCombat }: CombatBattleSceneProps) {
+function formatCooldownMeta(cooldownRemainingMs: number, isActive: boolean) {
+  if (isActive) {
+    return 'Active';
+  }
+
+  if (cooldownRemainingMs <= 0) {
+    return 'Ready';
+  }
+
+  return `${(cooldownRemainingMs / 1000).toFixed(1)}s`;
+}
+
+export function CombatBattleScene({ scene, onFleeCombat, onUseAbility }: CombatBattleSceneProps) {
   const now = Date.now();
 
   return (
@@ -205,7 +219,17 @@ export function CombatBattleScene({ scene, onFleeCombat }: CombatBattleSceneProp
 
         <View style={styles.actionBar}>
           {scene.actionSlots.map((slot) => (
-            <View key={slot.id} style={styles.actionTile}>
+            <Pressable
+              key={slot.id}
+              style={({ pressed }) => [
+                styles.actionTile,
+                !slot.isReady && styles.actionTileCoolingDown,
+                slot.isActive && styles.actionTileActive,
+                pressed && slot.isReady && styles.actionTilePressed,
+              ]}
+              onPress={() => onUseAbility(slot.id)}
+              disabled={!slot.isReady}
+            >
               <View
                 style={[
                   styles.actionIcon,
@@ -217,8 +241,10 @@ export function CombatBattleScene({ scene, onFleeCombat }: CombatBattleSceneProp
                 ]}
               />
               <Text style={styles.actionLabel}>{slot.label}</Text>
-              <Text style={styles.actionMeta}>Soon</Text>
-            </View>
+              <Text style={styles.actionMeta}>
+                {formatCooldownMeta(slot.cooldownRemainingMs, slot.isActive)}
+              </Text>
+            </Pressable>
           ))}
         </View>
 
@@ -443,6 +469,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     padding: spacing.sm,
+  },
+  actionTileCoolingDown: {
+    opacity: 0.55,
+  },
+  actionTileActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryDark,
+  },
+  actionTilePressed: {
+    opacity: 0.82,
   },
   actionIcon: {
     width: 24,

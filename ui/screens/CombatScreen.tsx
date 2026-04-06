@@ -45,6 +45,7 @@ export function CombatScreen() {
     selectEnemyForZone,
     eatFood,
     drinkPotion,
+    useCombatAbility,
   } = useCombatActions();
   const bagFood = useBagFood();
   const bagPotions = useBagPotions();
@@ -176,7 +177,10 @@ export function CombatScreen() {
             enemyAttackIntervalSeconds={
               activeEnemy ? scaleAttackIntervalSeconds(activeEnemy.attackSpeed) : null
             }
+            abilityCooldowns={combatSummary.abilityCooldowns}
+            abilityEffects={combatSummary.abilityEffects}
             onFleeCombat={fleeCombat}
+            onUseAbility={useCombatAbility}
             entries={combatFeedback.entries}
             killsThisSession={combatFeedback.killsThisSession}
           />

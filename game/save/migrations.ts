@@ -111,7 +111,7 @@ const migrations: Record<number, MigrationFn> = {
       { id: 'maple', level: 45 },
       { id: 'yew', level: 60 },
       { id: 'magic', level: 75 },
-    ] satisfies Array<{ id: TreeTierId; level: number }>;
+    ] satisfies { id: TreeTierId; level: number }[];
     const availableTrees = treeTiers.filter(tree => tree.level <= woodcuttingLevel);
     const defaultTree = availableTrees[availableTrees.length - 1];
 
@@ -211,7 +211,7 @@ const migrations: Record<number, MigrationFn> = {
         },
         multipliers: {
           ...(save.state.multipliers ?? createInitialMultipliersState()),
-          active: ((save.state.multipliers?.active ?? []) as Array<any>).map((multiplier) => (
+          active: ((save.state.multipliers?.active ?? []) as any[]).map((multiplier) => (
             multiplier.target === 'smithing'
               ? { ...multiplier, target: 'crafting' }
               : multiplier
@@ -251,7 +251,7 @@ const migrations: Record<number, MigrationFn> = {
       { id: 'coal', level: 40 },
       { id: 'mithril', level: 55 },
       { id: 'adamantite', level: 70 },
-    ] satisfies Array<{ id: RockTierId; level: number }>;
+    ] satisfies { id: RockTierId; level: number }[];
     const availableRocks = rockTiers.filter(rock => rock.level <= miningLevel);
     const defaultRock = availableRocks[availableRocks.length - 1];
 
@@ -381,6 +381,19 @@ const migrations: Record<number, MigrationFn> = {
         ...createInitialCombatState(),
         ...save.state.combat,
         enemyKillCounts: (save.state.combat as any)?.enemyKillCounts ?? {},
+      },
+    },
+  }),
+
+  // Migration from v22 to v23: Add combat ability cooldown and effect state
+  22: (save) => ({
+    ...save,
+    version: 23,
+    state: {
+      ...save.state,
+      combat: {
+        ...createInitialCombatState(),
+        ...save.state.combat,
       },
     },
   }),

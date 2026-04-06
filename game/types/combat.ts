@@ -1,6 +1,7 @@
 export type CombatSkillId = 'attack' | 'strength' | 'defense';
 export type TrainingMode = 'attack' | 'strength' | 'defense' | 'balanced';
 export type EquipmentSlot = 'weapon' | 'helmet' | 'chest' | 'legs' | 'boots' | 'accessory';
+export type CombatAbilityId = 'burst' | 'guard' | 'recover';
 
 export interface CombatSkillState {
   xp: number;
@@ -57,6 +58,13 @@ export interface PotionBuff {
   expiresAt: number;
 }
 
+export interface CombatAbilityEffects {
+  burstReady: boolean;
+  guardExpiresAt: number;
+}
+
+export type CombatAbilityCooldowns = Record<CombatAbilityId, number>;
+
 export interface CombatState {
   combatSkills: CombatSkillsState;
   equipment: EquipmentState;
@@ -71,6 +79,8 @@ export interface CombatState {
   autoEatThreshold: number;
   autoDrink: boolean;
   potionBuffs: PotionBuff[];
+  abilityCooldowns: CombatAbilityCooldowns;
+  abilityEffects: CombatAbilityEffects;
   totalKills: number;
   enemyKillCounts: Record<string, number>;
   totalDeaths: number;
@@ -83,5 +93,14 @@ export interface CombatSkillDefinition {
   icon: string;
 }
 
+export interface CombatAbilityDefinition {
+  id: CombatAbilityId;
+  label: string;
+  description: string;
+  tone: 'attack' | 'defense' | 'support';
+  cooldownMs: number;
+}
+
 export const COMBAT_SKILL_IDS: CombatSkillId[] = ['attack', 'strength', 'defense'];
 export const EQUIPMENT_SLOTS: EquipmentSlot[] = ['weapon', 'helmet', 'chest', 'legs', 'boots', 'accessory'];
+export const COMBAT_ABILITY_IDS: CombatAbilityId[] = ['burst', 'guard', 'recover'];

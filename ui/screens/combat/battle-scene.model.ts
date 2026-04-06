@@ -1,14 +1,13 @@
-import { ENEMY_DEFINITIONS } from '@/game/data';
+import { COMBAT_ABILITY_DEFINITIONS, ENEMY_DEFINITIONS } from '@/game/data';
 import { scaleEnemyMaxHp } from '@/game/logic/combat/balance';
+import {
+  COMBAT_ABILITY_IDS,
+  type CombatAbilityCooldowns,
+  type CombatAbilityEffects,
+  type CombatAbilityId,
+} from '@/game/types';
 
-const DEFAULT_ACTION_SLOTS = [
-  { id: 'slash', label: 'Slash', tone: 'attack' },
-  { id: 'burst', label: 'Burst', tone: 'attack' },
-  { id: 'guard', label: 'Guard', tone: 'defense' },
-  { id: 'potion', label: 'Potion', tone: 'support' },
-] as const;
-
-type ActionSlotTone = (typeof DEFAULT_ACTION_SLOTS)[number]['tone'];
+type ActionSlotTone = 'attack' | 'defense' | 'support';
 type TelegraphState = 'idle' | 'charging' | 'imminent';
 
 interface BattleSceneActiveCombat {
@@ -28,6 +27,8 @@ interface BuildBattleSceneModelOptions {
   totalDeaths: number;
   playerAttackIntervalSeconds: number;
   enemyAttackIntervalSeconds: number | null;
+  abilityCooldowns: CombatAbilityCooldowns;
+  abilityEffects: CombatAbilityEffects;
   now: number;
 }
 
@@ -38,9 +39,12 @@ interface BattleSceneHpModel {
 }
 
 interface BattleSceneActionSlot {
-  id: string;
+  id: CombatAbilityId;
   label: string;
   tone: ActionSlotTone;
+  cooldownRemainingMs: number;
+  isReady: boolean;
+  isActive: boolean;
 }
 
 interface BattleSceneIdleModel {
@@ -105,15 +109,39 @@ function getTelegraphState(nextAttackAt: number, now: number) {
   return 'charging' satisfies TelegraphState;
 }
 
+function buildActionSlots(
+  abilityCooldowns: CombatAbilityCooldowns,
+  abilityEffects: CombatAbilityEffects,
+  now: number
+): BattleSceneActionSlot[] {
+  return COMBAT_ABILITY_IDS.map((abilityId) => {
+    const definition = COMBAT_ABILITY_DEFINITIONS[abilityId];
+    const cooldownRemainingMs = Math.max(0, (abilityCooldowns[abilityId] ?? 0) - now);
+
+    return {
+      id: abilityId,
+      label: definition.label,
+      tone: definition.tone,
+      cooldownRemainingMs,
+      isReady: cooldownRemainingMs <= 0,
+      isActive:
+        (abilityId === 'burst' && abilityEffects.burstReady)
+        || (abilityId === 'guard' && abilityEffects.guardExpiresAt > now),
+    };
+  });
+}
+
 export function buildBattleSceneModel({
   activeCombat,
   totalKills,
   totalDeaths,
   playerAttackIntervalSeconds,
   enemyAttackIntervalSeconds,
+  abilityCooldowns,
+  abilityEffects,
   now,
 }: BuildBattleSceneModelOptions): BattleSceneModel {
-  const actionSlots = [...DEFAULT_ACTION_SLOTS];
+  const actionSlots = buildActionSlots(abilityCooldowns, abilityEffects, now);
 
   if (!activeCombat) {
     return {
